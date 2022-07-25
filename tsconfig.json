@@ -1,6 +1,9 @@
 {
   "extends": "@tsconfig/node16/tsconfig.json",
   "compilerOptions": {
+    "typeRoots": [
+      "src/@types", "node_modules/@types"
+    ],
     "outDir": "dist"
   },
   "include": ["src"],

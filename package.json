@@ -46,5 +46,9 @@
       "eslint --fix",
       "git add"
     ]
+  },
+  "dependencies": {
+    "dotenv": "^16.0.1",
+    "yandex-short-api": "^1.0.0"
   }
 }
