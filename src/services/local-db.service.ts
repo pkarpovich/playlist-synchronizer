@@ -4,16 +4,16 @@ import { Low, JSONFile } from 'lowdb';
 export class LocalDbService<T> {
     private db: Low<T>;
 
-    constructor() {
+    constructor(private readonly initialData: T) {
         const file = join('db.json');
         const adapter = new JSONFile<T>(file);
         this.db = new Low(adapter);
     }
 
-    async start(initialData: T): Promise<void> {
+    async start(): Promise<void> {
         await this.db.read();
 
-        this.db.data ||= initialData;
+        this.db.data ||= this.initialData;
     }
 
     async save(): Promise<void> {
@@ -24,8 +24,8 @@ export class LocalDbService<T> {
         return this.db.read();
     }
 
-    get(): T | null {
-        return this.db.data;
+    get(): T {
+        return this.db.data || this.initialData;
     }
 
     async set(newValue: T): Promise<T | null> {

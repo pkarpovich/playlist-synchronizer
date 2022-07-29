@@ -7,11 +7,21 @@ export interface IConfig {
         userId: string;
         playlistId: string;
     };
+    spotify: {
+        clientId: string;
+        clientSecret: string;
+        redirectUri: string;
+    };
 }
 
 export const Config = {
     yandex: {
         userId: process.env.YANDEX_USER_ID,
         playlistId: process.env.YANDEX_PLAYLIST_ID,
+    },
+    spotify: {
+        clientId: process.env.SPOTIFY_CLIENT_ID,
+        clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
+        redirectUri: process.env.SPOTIFY_REDIRECT_URI,
     },
 } as IConfig;

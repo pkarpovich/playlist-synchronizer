@@ -26,6 +26,7 @@
     "@swc/core": "^1.2.220",
     "@tsconfig/node16": "^1.0.3",
     "@types/node": "^18.6.1",
+    "@types/spotify-web-api-node": "^5.0.7",
     "@typescript-eslint/eslint-plugin": "^5.31.0",
     "@typescript-eslint/parser": "^5.31.0",
     "eslint": "^8.20.0",
@@ -53,6 +54,7 @@
   "dependencies": {
     "dotenv": "^16.0.1",
     "lowdb": "^3.0.0",
+    "spotify-web-api-node": "^5.0.2",
     "yandex-short-api": "^1.0.0"
   }
 }
