@@ -3,10 +3,12 @@ import {
     YandexMusicService,
     LocalDbService,
     SpotifyService,
+    HttpService,
 } from './services';
 import { AuthStore } from './entities';
 
 import { Config, IConfig } from './config';
+import { SpotifyController } from './controllers';
 
 const DEFAULT_AUTH_STORE: AuthStore = {
     refreshToken: '',
@@ -15,12 +17,16 @@ const DEFAULT_AUTH_STORE: AuthStore = {
 (async function () {
     const configService = new ConfigService<IConfig>(Config);
     const db = new LocalDbService<AuthStore>(DEFAULT_AUTH_STORE);
+    const http = new HttpService(configService);
 
     await db.start();
+    http.start();
 
     const yandexMusicService = new YandexMusicService();
     const spotifyService = new SpotifyService(db, configService);
     await spotifyService.initializeClient();
+
+    new SpotifyController(spotifyService, http);
 
     const originalPlaylist = {
         userId: configService.get('yandex.userId'),

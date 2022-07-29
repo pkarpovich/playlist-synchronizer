@@ -11,13 +11,13 @@ export class LocalDbService<T> {
     }
 
     async start(): Promise<void> {
-        await this.db.read();
+        await this.load();
 
         this.db.data ||= this.initialData;
     }
 
     async save(): Promise<void> {
-        return this.db.read();
+        return this.db.write();
     }
 
     async load(): Promise<void> {
