@@ -1,17 +1,24 @@
 import SpotifyClient from 'spotify-web-api-node';
 
 import { LocalDbService } from './local-db.service';
-import { AuthStore } from '../entities';
+import { AuthStore, Track } from '../entities';
 import { ConfigService } from './config.service';
 import { IConfig } from '../config';
+import {
+    BaseMusicService,
+    GetPlaylistTracksOptions,
+} from './base-music.service';
 
 const scopes = [
     'user-read-playback-state',
     'user-modify-playback-state',
     'user-read-currently-playing',
+    'playlist-read-private',
+    'playlist-modify-private',
+    'playlist-modify-public',
 ];
 
-export class SpotifyService {
+export class SpotifyService implements BaseMusicService {
     private client: SpotifyClient;
 
     constructor(
@@ -51,5 +58,43 @@ export class SpotifyService {
         const { body } = await this.client.refreshAccessToken();
 
         await this.client.setAccessToken(body.access_token);
+    }
+
+    async getPlaylistTracks({
+        playlistId,
+    }: GetPlaylistTracksOptions): Promise<Track[]> {
+        const { body } = await this.client.getPlaylistTracks(playlistId);
+
+        // @ts-ignore
+        return body.tracks.items.map<Track>(({ track }) => ({
+            id: track.uri,
+            name: track.name,
+            artist: track.artists[0].name,
+        }));
+    }
+
+    async searchTrackByName(name: string, artist: string): Promise<Track> {
+        const { body } = await this.client.search(
+            `track:${name} artist:${artist}`,
+            ['track'],
+        );
+
+        const track = body.tracks?.items[0];
+        if (!track) {
+            throw new Error(`Track not found. Name: ${name} Artist: ${artist}`);
+        }
+
+        return {
+            id: track.uri,
+            name: track.name,
+            artist: track.artists[0].name,
+        } as Track;
+    }
+
+    async addTracksIntoPlaylist(
+        trackIds: string[],
+        playlistId: string,
+    ): Promise<void> {
+        await this.client.addTracksToPlaylist(playlistId, trackIds);
     }
 }

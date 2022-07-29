@@ -1,18 +1,27 @@
 import { YandexMusicApi } from 'yandex-short-api';
-import { Track } from '../entities/track.entity';
 
-export class YandexMusicService {
+import { Track } from '../entities';
+import {
+    BaseMusicService,
+    GetPlaylistTracksOptions,
+} from './base-music.service';
+
+export class YandexMusicService implements BaseMusicService {
     client: YandexMusicApi;
 
     constructor() {
         this.client = new YandexMusicApi();
     }
 
-    async getPlaylistTracks(
-        userName: string,
-        playlistId: string,
-    ): Promise<Track[]> {
-        const { tracks } = await this.client.getPlaylist(userName, playlistId);
+    async getPlaylistTracks({
+        playlistId,
+        userName,
+    }: GetPlaylistTracksOptions): Promise<Track[]> {
+        const resp = await this.client.getPlaylist(
+            userName as string,
+            playlistId,
+        );
+        const { tracks } = resp;
 
         return tracks.map<Track>((track) => ({
             name: track.title,

@@ -11,6 +11,8 @@ export interface IConfig {
         clientId: string;
         clientSecret: string;
         redirectUri: string;
+
+        playlistId: string;
     };
     http: {
         port: number;
@@ -26,6 +28,8 @@ export const Config = {
         clientId: process.env.SPOTIFY_CLIENT_ID,
         clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
         redirectUri: process.env.SPOTIFY_REDIRECT_URI,
+
+        playlistId: process.env.SPOTIFY_PLAYLIST_ID,
     },
     http: {
         port: Number(process.env.HTTP_PORT),
