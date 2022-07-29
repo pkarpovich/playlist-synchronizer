@@ -1,9 +1,18 @@
+import { ConfigService, YandexMusicService, LocalDbService } from './services';
+import { AuthStore } from './entities';
+
 import { Config, IConfig } from './config';
-import { ConfigService, YandexMusicService } from './services';
+
+const DEFAULT_AUTH_STORE: AuthStore = {
+    refreshToken: '',
+};
 
 (async function () {
     const configService = new ConfigService<IConfig>(Config);
     const yandexMusicService = new YandexMusicService();
+    const db = new LocalDbService<AuthStore>();
+
+    await db.start(DEFAULT_AUTH_STORE);
 
     const originalPlaylist = {
         userId: configService.get('yandex.userId'),

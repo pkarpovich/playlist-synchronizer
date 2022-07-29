@@ -4,7 +4,11 @@
     "typeRoots": [
       "src/@types", "node_modules/@types"
     ],
-    "outDir": "dist"
+    "outDir": "dist",
+    "module": "ES2022",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true
   },
   "include": ["src"],
   "exclude": ["node_modules"]
