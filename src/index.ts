@@ -1,36 +1,15 @@
-import {
-    ConfigService,
-    YandexMusicService,
-    LocalDbService,
-    SpotifyService,
-    HttpService,
-    SyncService,
-} from './services';
-import { AuthStore } from './entities';
-
-import { Config, getSyncConfig, IConfig } from './config';
-import { SpotifyController } from './controllers';
-
-const DEFAULT_AUTH_STORE: AuthStore = {
-    refreshToken: '',
-};
+import { getSyncConfig } from './config';
+import { initContainer } from './container';
 
 (async function () {
-    const configService = new ConfigService<IConfig>(Config);
-    const syncConfig = await getSyncConfig(configService);
-    const db = new LocalDbService<AuthStore>(DEFAULT_AUTH_STORE);
-    const http = new HttpService(configService);
+    const { configService, httpService, authStore, syncService } =
+        initContainer().cradle;
 
-    await db.start();
-    http.start();
+    await authStore.start();
+    httpService.start();
 
-    const yandexMusicService = new YandexMusicService();
-    const spotifyService = new SpotifyService(db, configService);
-    await spotifyService.initializeClient();
-
-    new SpotifyController(spotifyService, http);
-
-    const syncService = new SyncService(yandexMusicService, spotifyService);
+    const syncConfigPath: string = configService.get('syncConfigPath');
+    const syncConfig = await getSyncConfig(syncConfigPath);
 
     for (let playlistConfig of syncConfig.playlists) {
         await syncService.sync(playlistConfig);

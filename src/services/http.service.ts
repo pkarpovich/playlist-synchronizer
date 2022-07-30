@@ -6,20 +6,21 @@ import { IConfig } from '../config';
 export class HttpService {
     private readonly app: express.Application;
 
-    constructor(private readonly congigService: ConfigService<IConfig>) {
+    constructor(
+        private readonly configService: ConfigService<IConfig>,
+        private readonly apiRouter: express.Router,
+    ) {
         this.app = express();
     }
 
-    newRouter(): express.Router {
+    static newRouter(): express.Router {
         return express.Router();
     }
 
-    initRoutes(routePrefix: string, router: express.Router): void {
-        this.app.use(routePrefix, router);
-    }
-
     start(cb?: () => void): void {
-        const port = this.congigService.get('http.port');
+        const port = this.configService.get('http.port');
+
+        this.app.use('/', this.apiRouter);
 
         this.app.listen(
             port,

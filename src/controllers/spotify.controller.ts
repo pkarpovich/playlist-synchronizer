@@ -2,15 +2,14 @@ import { HttpService, SpotifyService } from '../services';
 import express from 'express';
 
 export class SpotifyController {
-    constructor(
-        private readonly spotifyService: SpotifyService,
-        private readonly httpService: HttpService,
-    ) {
-        const router = this.httpService.newRouter();
+    constructor(private readonly spotifyService: SpotifyService) {}
+
+    getRoutes(): express.Router {
+        const router = HttpService.newRouter();
 
         router.get('/callback', this.authCallback.bind(this));
 
-        this.httpService.initRoutes('/spotify', router);
+        return router;
     }
 
     async authCallback(

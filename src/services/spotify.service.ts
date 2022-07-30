@@ -27,9 +27,12 @@ export class SpotifyService implements BaseMusicService {
             clientSecret: configService.get('spotify.clientSecret'),
             redirectUri: configService.get('spotify.redirectUri'),
         });
+
+        this.initializeClient();
     }
 
     async initializeClient(): Promise<void> {
+        await this.authStore.start();
         const { refreshToken } = this.authStore.get();
 
         if (!refreshToken) {

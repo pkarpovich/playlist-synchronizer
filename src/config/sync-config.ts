@@ -1,8 +1,6 @@
 import { readFile } from 'fs/promises';
 import { object, array, string } from 'yup';
 
-import { ConfigService } from '../services';
-import { IConfig } from './config';
 import { Playlist, MusicServiceTypes } from '../entities';
 
 export interface PlaylistConfig {
@@ -47,18 +45,16 @@ const SyncConfigSchema = object({
 });
 
 export async function getSyncConfig(
-    configService: ConfigService<IConfig>,
+    syncConfigPath: string,
 ): Promise<SyncConfig> {
-    const config = await readConfigFile(configService);
+    const config = await readConfigFile(syncConfigPath);
     await validateConfig(config);
 
     return config;
 }
 
-async function readConfigFile(
-    configService: ConfigService<IConfig>,
-): Promise<SyncConfig> {
-    const fileData = await readFile(configService.get('syncConfigPath'));
+async function readConfigFile(syncConfigPath: string): Promise<SyncConfig> {
+    const fileData = await readFile(syncConfigPath);
 
     return JSON.parse(fileData.toString());
 }
