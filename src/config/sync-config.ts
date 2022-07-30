@@ -3,10 +3,9 @@ import { object, array, string } from 'yup';
 
 import { ConfigService } from '../services';
 import { IConfig } from './config';
-import { Playlist } from '../entities/playlist.entity';
-import { MusicServiceTypes } from '../entities/music-service.type';
+import { Playlist, MusicServiceTypes } from '../entities';
 
-interface PlaylistConfig {
+export interface PlaylistConfig {
     type: MusicServiceTypes;
     metadata: Playlist;
     excludedTrackIds: ReadonlyArray<string>;

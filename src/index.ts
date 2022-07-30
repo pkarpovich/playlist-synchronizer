@@ -4,6 +4,7 @@ import {
     LocalDbService,
     SpotifyService,
     HttpService,
+    SyncService,
 } from './services';
 import { AuthStore } from './entities';
 
@@ -23,32 +24,15 @@ const DEFAULT_AUTH_STORE: AuthStore = {
     await db.start();
     http.start();
 
-    // const yandexMusicService = new YandexMusicService();
+    const yandexMusicService = new YandexMusicService();
     const spotifyService = new SpotifyService(db, configService);
     await spotifyService.initializeClient();
 
     new SpotifyController(spotifyService, http);
 
-    // const originalTracks = await yandexMusicService.getPlaylistTracks({
-    //     playlistId: originalPlaylist.playlistId,
-    //     userName: originalPlaylist.userId,
-    // });
-    //
-    // const spotifyTrackIds: string[] = (
-    //     await Promise.all(
-    //         originalTracks.map((track) =>
-    //             spotifyService.searchTrackByName(track.name, track.artist),
-    //         ),
-    //     )
-    // ).map((t) => t.id as string);
-    //
-    // await spotifyService.addTracksIntoPlaylist(
-    //     spotifyTrackIds,
-    //     destinationPlaylist.playlistId,
-    // );
+    const syncService = new SyncService(yandexMusicService, spotifyService);
 
-    // const destinationTracks = await spotifyService.getPlaylistTracks({
-    //     playlistId: destinationPlaylist.playlistId,
-    // });
-    // console.log(originalTracks);
+    for (let playlistConfig of syncConfig.playlists) {
+        await syncService.sync(playlistConfig);
+    }
 })();

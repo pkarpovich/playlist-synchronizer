@@ -1,13 +1,10 @@
 import SpotifyClient from 'spotify-web-api-node';
 
 import { LocalDbService } from './local-db.service';
-import { AuthStore, Track } from '../entities';
+import { AuthStore, Playlist, Track } from '../entities';
 import { ConfigService } from './config.service';
 import { IConfig } from '../config';
-import {
-    BaseMusicService,
-    GetPlaylistTracksOptions,
-} from './base-music.service';
+import { BaseMusicService } from './base-music.service';
 
 const scopes = [
     'user-read-playback-state',
@@ -60,16 +57,13 @@ export class SpotifyService implements BaseMusicService {
         await this.client.setAccessToken(body.access_token);
     }
 
-    async getPlaylistTracks({
-        playlistId,
-    }: GetPlaylistTracksOptions): Promise<Track[]> {
-        const { body } = await this.client.getPlaylistTracks(playlistId);
+    async getPlaylistTracks({ id }: Playlist): Promise<Track[]> {
+        const { body } = await this.client.getPlaylistTracks(id);
 
-        // @ts-ignore
-        return body.tracks.items.map<Track>(({ track }) => ({
-            id: track.uri,
-            name: track.name,
-            artist: track.artists[0].name,
+        return body.items.map<Track>(({ track }) => ({
+            id: track?.uri,
+            name: track?.name as string,
+            artist: track?.artists[0].name as string,
         }));
     }
 
@@ -91,10 +85,10 @@ export class SpotifyService implements BaseMusicService {
         } as Track;
     }
 
-    async addTracksIntoPlaylist(
+    async addTracksToPlaylist(
         trackIds: string[],
-        playlistId: string,
+        playlist: Playlist,
     ): Promise<void> {
-        await this.client.addTracksToPlaylist(playlistId, trackIds);
+        await this.client.addTracksToPlaylist(playlist.id, trackIds);
     }
 }
