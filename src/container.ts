@@ -10,6 +10,7 @@ import {
     CronService,
     HttpService,
     LocalDbService,
+    LogService,
     SpotifyService,
     SyncService,
     YandexMusicService,
@@ -24,6 +25,7 @@ const defaultAuthStore: AuthStore = {
 };
 
 interface Container {
+    logService: LogService;
     configService: ConfigService<IConfig>;
     authStore: LocalDbService<AuthStore>;
     httpService: HttpService;
@@ -41,6 +43,7 @@ export function initContainer(): AwilixContainer<Container> {
     });
 
     container.register({
+        logService: asClass(LogService).singleton(),
         configService: asClass(ConfigService<IConfig>)
             .inject(() => ({ config: Config }))
             .singleton(),

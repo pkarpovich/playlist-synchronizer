@@ -1,12 +1,14 @@
 import express from 'express';
 
 import { ConfigService } from './config.service';
+import { LogService } from './log.service';
 import { IConfig } from '../config';
 
 export class HttpService {
     private readonly app: express.Application;
 
     constructor(
+        private readonly logService: LogService,
         private readonly configService: ConfigService<IConfig>,
         private readonly apiRouter: express.Router,
     ) {
@@ -24,7 +26,12 @@ export class HttpService {
 
         this.app.listen(
             port,
-            cb ? cb : () => console.log(`Listening on port ${port}`),
+            cb
+                ? cb
+                : () =>
+                      this.logService.info(
+                          `Http server listening on port ${port}`,
+                      ),
         );
     }
 }

@@ -4,14 +4,16 @@
       "type": "yandex",
       "metadata": {
         "id": "1004",
-        "userName": "flomaster-mc"
+        "userName": "flomaster-mc",
+        "name": "РЗТ Mainstream 2022"
       },
       "excludedTrackIds": [],
       "targetPlaylists": [
         {
           "type": "spotify",
           "metadata": {
-            "id": "5hawKrDsYBhjPKP88E8avR"
+            "id": "5hawKrDsYBhjPKP88E8avR",
+            "name": "РЗТ Mainstream 2022 Spotify Clone"
           }
         }
       ]

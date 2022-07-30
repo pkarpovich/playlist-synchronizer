@@ -1,12 +1,14 @@
-import { ConfigService } from './config.service';
 import { YandexMusicService } from './yandex-music.service';
 import { SpotifyService } from './spotify.service';
 import { PlaylistConfig } from '../config';
 import { MusicServiceTypes, Playlist, Track } from '../entities';
 import { BaseMusicService } from './base-music.service';
+import { LogService } from './log.service';
+import { retry } from '../utils/retry';
 
 export class SyncService {
     constructor(
+        private readonly logService: LogService,
         private readonly yandexMusicService: YandexMusicService,
         private readonly spotifyService: SpotifyService,
     ) {}
@@ -23,6 +25,9 @@ export class SyncService {
                 originalPlaylistTracks,
                 target.type,
             );
+            this.logService.success(
+                `Found ${tracksForAdding.length} tracks in ${target.type} service`,
+            );
 
             const trackIdsForAdd: string[] = (
                 await this.filterDuplicates(
@@ -33,6 +38,9 @@ export class SyncService {
             ).map((newTrack) => newTrack.id as string);
 
             if (!trackIdsForAdd.length) {
+                this.logService.success(
+                    `No tracks to add in ${target.metadata.name} playlist`,
+                );
                 continue;
             }
 
@@ -40,9 +48,12 @@ export class SyncService {
                 trackIdsForAdd,
                 target.metadata,
             );
+            this.logService.success(
+                `Added ${trackIdsForAdd.length} tracks to ${target.metadata.name} playlist`,
+            );
         }
 
-        console.log('Sync completed');
+        this.logService.success('Sync completed');
     }
 
     private getMusicServiceByType(type: MusicServiceTypes): BaseMusicService {
@@ -62,7 +73,15 @@ export class SyncService {
     ): Promise<Track[]> {
         const service = this.getMusicServiceByType(serviceType);
 
-        return service.getPlaylistTracks(playlistMetadata);
+        this.logService.await(
+            `Try to get tracks from ${playlistMetadata.name} playlist`,
+        );
+        const tracks = await service.getPlaylistTracks(playlistMetadata);
+        this.logService.success(
+            `Found ${tracks.length} tracks in ${playlistMetadata.name} playlist`,
+        );
+
+        return tracks;
     }
 
     private async findTracksInService(
@@ -70,12 +89,26 @@ export class SyncService {
         serviceType: MusicServiceTypes,
     ): Promise<Track[]> {
         const service = this.getMusicServiceByType(serviceType);
+        this.logService.await(`Try to find tracks in ${serviceType} service`);
+        const serviceTracks = [];
 
-        return Promise.all(
-            tracks.map((track) =>
-                service.searchTrackByName(track.name, track.artist),
-            ),
-        );
+        for (let track of tracks) {
+            const serviceTrack = await retry(
+                () => service.searchTrackByName(track.name, track.artist),
+                () => service.refreshAccess(),
+            );
+
+            if (!serviceTrack) {
+                this.logService.warn(
+                    `Track ${track.name} by ${track.artist} not found`,
+                );
+                continue;
+            }
+
+            serviceTracks.push(serviceTrack);
+        }
+
+        return serviceTracks;
     }
 
     private async filterDuplicates(

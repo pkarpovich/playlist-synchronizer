@@ -54,7 +54,7 @@ export class SpotifyService implements BaseMusicService {
         await this.authStore.set({ refreshToken: body.refresh_token });
     }
 
-    private async refreshAccess(): Promise<void> {
+    async refreshAccess(): Promise<void> {
         const { body } = await this.client.refreshAccessToken();
 
         await this.client.setAccessToken(body.access_token);
@@ -70,7 +70,10 @@ export class SpotifyService implements BaseMusicService {
         }));
     }
 
-    async searchTrackByName(name: string, artist: string): Promise<Track> {
+    async searchTrackByName(
+        name: string,
+        artist: string,
+    ): Promise<Track | null> {
         const { body } = await this.client.search(
             `track:${name} artist:${artist}`,
             ['track'],
@@ -78,7 +81,7 @@ export class SpotifyService implements BaseMusicService {
 
         const track = body.tracks?.items[0];
         if (!track) {
-            throw new Error(`Track not found. Name: ${name} Artist: ${artist}`);
+            return null;
         }
 
         return {

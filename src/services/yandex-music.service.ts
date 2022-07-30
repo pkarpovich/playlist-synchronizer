@@ -27,4 +27,8 @@ export class YandexMusicService implements BaseMusicService {
     addTracksToPlaylist(trackIds: string[], playlist: Playlist): Promise<void> {
         throw new Error('Method not implemented.');
     }
+
+    refreshAccess(): Promise<void> {
+        throw new Error('Method not implemented.');
+    }
 }

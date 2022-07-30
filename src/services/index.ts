@@ -5,3 +5,4 @@ export * from './spotify.service';
 export * from './http.service';
 export * from './sync.service';
 export * from './cron.service';
+export * from './log.service';
