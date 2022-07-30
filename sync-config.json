@@ -1,0 +1,20 @@
+{
+  "playlists": [
+    {
+      "type": "yandex",
+      "metadata": {
+        "id": "1004",
+        "userName": "flomaster-mc"
+      },
+      "excludedTrackIds": [],
+      "targetPlaylists": [
+        {
+          "type": "spotify",
+          "metadata": {
+            "id": "5hawKrDsYBhjPKP88E8avR"
+          }
+        }
+      ]
+    }
+  ]
+}

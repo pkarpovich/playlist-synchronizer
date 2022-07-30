@@ -3,16 +3,12 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 export interface IConfig {
-    yandex: {
-        userId: string;
-        playlistId: string;
-    };
+    syncConfigPath: string;
+
     spotify: {
         clientId: string;
         clientSecret: string;
         redirectUri: string;
-
-        playlistId: string;
     };
     http: {
         port: number;
@@ -20,16 +16,12 @@ export interface IConfig {
 }
 
 export const Config = {
-    yandex: {
-        userId: process.env.YANDEX_USER_ID,
-        playlistId: process.env.YANDEX_PLAYLIST_ID,
-    },
+    syncConfigPath: process.env.SYNC_CONFIG_PATH || './sync-config.json',
+
     spotify: {
         clientId: process.env.SPOTIFY_CLIENT_ID,
         clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
         redirectUri: process.env.SPOTIFY_REDIRECT_URI,
-
-        playlistId: process.env.SPOTIFY_PLAYLIST_ID,
     },
     http: {
         port: Number(process.env.HTTP_PORT),
