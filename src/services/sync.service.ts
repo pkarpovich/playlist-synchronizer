@@ -33,7 +33,7 @@ export class SyncService {
             ).map((newTrack) => newTrack.id as string);
 
             if (!trackIdsForAdd.length) {
-                return;
+                continue;
             }
 
             await targetMusicService.addTracksToPlaylist(
@@ -41,6 +41,8 @@ export class SyncService {
                 target.metadata,
             );
         }
+
+        console.log('Sync completed');
     }
 
     private getMusicServiceByType(type: MusicServiceTypes): BaseMusicService {

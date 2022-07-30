@@ -1,7 +1,5 @@
 import {
     asClass,
-    asValue,
-    aliasTo,
     AwilixContainer,
     createContainer,
     InjectionMode,
@@ -9,6 +7,7 @@ import {
 } from 'awilix';
 import {
     ConfigService,
+    CronService,
     HttpService,
     LocalDbService,
     SpotifyService,
@@ -28,6 +27,7 @@ interface Container {
     configService: ConfigService<IConfig>;
     authStore: LocalDbService<AuthStore>;
     httpService: HttpService;
+    cronService: CronService;
     yandexMusicService: YandexMusicService;
     spotifyService: SpotifyService;
     spotifyController: SpotifyController;
@@ -48,6 +48,7 @@ export function initContainer(): AwilixContainer<Container> {
             .inject(() => ({ initialData: defaultAuthStore }))
             .singleton(),
         httpService: asClass(HttpService).singleton(),
+        cronService: asClass(CronService).singleton(),
         yandexMusicService: asClass(YandexMusicService).singleton(),
         spotifyService: asClass(SpotifyService).singleton(),
         spotifyController: asClass(SpotifyController).singleton(),
