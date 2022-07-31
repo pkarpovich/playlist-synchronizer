@@ -20,7 +20,7 @@ FROM node:16.16-alpine3.15
 ENV NODE_ENV production
 WORKDIR /usr/app
 
-RUN apk add dumb-init && mkdir db
+RUN apk add dumb-init && mkdir db && chown node db
 
 USER node
 

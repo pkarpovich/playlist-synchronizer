@@ -23,7 +23,7 @@ export class LogService {
         this.logger.success(message);
     }
 
-    error(message: string): void {
+    error(message: string | Error): void {
         this.logger.error(message);
     }
 
