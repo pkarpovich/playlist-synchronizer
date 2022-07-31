@@ -1,5 +1,5 @@
 {
-  "name": "yandex2spotify-synchronizer",
+  "name": "playlist-synchronizer",
   "version": "1.0.0",
   "description": "Synchronize Yandex.Music playlist to Spotify",
   "main": "index.js",
