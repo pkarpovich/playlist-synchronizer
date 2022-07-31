@@ -1,8 +1,17 @@
-import { HttpService, SpotifyService } from '../services';
+import {
+    CronService,
+    HttpService,
+    LogService,
+    SpotifyService,
+} from '../services';
 import express from 'express';
 
 export class SpotifyController {
-    constructor(private readonly spotifyService: SpotifyService) {}
+    constructor(
+        private readonly spotifyService: SpotifyService,
+        private readonly cronService: CronService,
+        private readonly logService: LogService,
+    ) {}
 
     getRoutes(): express.Router {
         const router = HttpService.newRouter();
@@ -19,6 +28,9 @@ export class SpotifyController {
         const code = req.query.code as string;
 
         await this.spotifyService.authorizationCodeGrant(code);
+        this.cronService.triggerAllJobs();
+
+        this.logService.success('Spotify authorization was successful');
 
         res.status(200).send('OK');
     }

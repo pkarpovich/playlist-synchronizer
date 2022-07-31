@@ -1,10 +1,12 @@
 import SpotifyClient from 'spotify-web-api-node';
 
-import { LocalDbService } from './local-db.service';
-import { AuthStore, Playlist, Track } from '../entities';
-import { ConfigService } from './config.service';
-import { IConfig } from '../config';
+import { LocalDbService } from '../local-db.service';
+import { AuthStore, Playlist, Track } from '../../entities';
+import { ConfigService } from '../config.service';
+import { IConfig } from '../../config';
 import { BaseMusicService } from './base-music.service';
+import { retry } from '../../utils/retry';
+import { LogService } from '../log.service';
 
 const scopes = [
     'user-read-playback-state',
@@ -15,20 +17,27 @@ const scopes = [
     'playlist-modify-public',
 ];
 
+interface Response<T> {
+    body: T;
+    headers: Record<string, string>;
+    statusCode: number;
+}
+
 export class SpotifyService implements BaseMusicService {
     private client: SpotifyClient;
+
+    isReady: boolean = false;
 
     constructor(
         private readonly authStore: LocalDbService<AuthStore>,
         private readonly configService: ConfigService<IConfig>,
+        private readonly logService: LogService,
     ) {
         this.client = new SpotifyClient({
             clientId: configService.get('spotify.clientId'),
             clientSecret: configService.get('spotify.clientSecret'),
             redirectUri: configService.get('spotify.redirectUri'),
         });
-
-        this.initializeClient();
     }
 
     async initializeClient(): Promise<void> {
@@ -37,7 +46,9 @@ export class SpotifyService implements BaseMusicService {
 
         if (!refreshToken) {
             const url = this.client.createAuthorizeURL(scopes, 'spotify-app');
-            console.log(`Please open this URL in your browser: ${url}`);
+            this.logService.warn(
+                `Spotify login required. Please open this URL in your browser: ${url}`,
+            );
             return;
         }
 
@@ -50,6 +61,7 @@ export class SpotifyService implements BaseMusicService {
 
         await this.client.setAccessToken(body.access_token);
         await this.client.setRefreshToken(body.refresh_token);
+        this.isReady = true;
 
         await this.authStore.set({ refreshToken: body.refresh_token });
     }
@@ -58,10 +70,16 @@ export class SpotifyService implements BaseMusicService {
         const { body } = await this.client.refreshAccessToken();
 
         await this.client.setAccessToken(body.access_token);
+        this.isReady = true;
     }
 
     async getPlaylistTracks({ id }: Playlist): Promise<Track[]> {
-        const { body } = await this.client.getPlaylistTracks(id);
+        const { body } = await retry<
+            Response<SpotifyApi.PlaylistTrackResponse>
+        >(
+            () => this.client.getPlaylistTracks(id),
+            () => this.refreshAccess(),
+        );
 
         return body.items.map<Track>(({ track }) => ({
             id: track?.uri,
@@ -74,9 +92,10 @@ export class SpotifyService implements BaseMusicService {
         name: string,
         artist: string,
     ): Promise<Track | null> {
-        const { body } = await this.client.search(
-            `track:${name} artist:${artist}`,
-            ['track'],
+        const { body } = await retry<Response<SpotifyApi.SearchResponse>>(
+            () =>
+                this.client.search(`track:${name} artist:${artist}`, ['track']),
+            () => this.refreshAccess(),
         );
 
         const track = body.tracks?.items[0];
@@ -95,6 +114,9 @@ export class SpotifyService implements BaseMusicService {
         trackIds: string[],
         playlist: Playlist,
     ): Promise<void> {
-        await this.client.addTracksToPlaylist(playlist.id, trackIds);
+        await retry<Response<SpotifyApi.AddTracksToPlaylistResponse>>(
+            () => this.client.addTracksToPlaylist(playlist.id, trackIds),
+            () => this.refreshAccess(),
+        );
     }
 }

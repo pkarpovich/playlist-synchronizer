@@ -1,3 +1,4 @@
+import { mkdir } from 'fs/promises';
 import { join } from 'path';
 import { Low, JSONFile } from 'lowdb';
 import { ConfigService } from './config.service';
@@ -10,9 +11,14 @@ export class LocalDbService<T> {
         private readonly initialData: T,
         private readonly configService: ConfigService<IConfig>,
     ) {
-        const dbPath = configService.get('dbPath');
+        const dbPath = this.configService.get('dbPath');
 
         const file = join(dbPath);
+        const fileFolderPath = file.split('/').slice(0, -1).join('/');
+        if (fileFolderPath) {
+            this.createFolderIfNeeded(fileFolderPath);
+        }
+
         const adapter = new JSONFile<T>(file);
         this.db = new Low(adapter);
     }
@@ -40,5 +46,9 @@ export class LocalDbService<T> {
         await this.save();
 
         return this.db.data;
+    }
+
+    private async createFolderIfNeeded(path: string): Promise<void> {
+        await mkdir(path, { recursive: true });
     }
 }

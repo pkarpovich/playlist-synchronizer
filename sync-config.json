@@ -13,7 +13,25 @@
           "type": "spotify",
           "metadata": {
             "id": "5hawKrDsYBhjPKP88E8avR",
-            "name": "РЗТ Mainstream 2022 Spotify Clone"
+            "name": "Spotify РЗТ Mainstream 2022"
+          }
+        }
+      ]
+    },
+    {
+      "type": "yandex",
+      "metadata": {
+        "id": "1006",
+        "userName": "flomaster-mc",
+        "name": "РЗТ Alternative 2022"
+      },
+      "excludedTrackIds": [],
+      "targetPlaylists": [
+        {
+          "type": "spotify",
+          "metadata": {
+            "id": "7KI9U1VTKdxAKQAEl68hcL",
+            "name": "Spotify РЗТ Alternative 2022"
           }
         }
       ]

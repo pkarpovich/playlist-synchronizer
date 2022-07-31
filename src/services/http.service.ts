@@ -1,4 +1,5 @@
 import express from 'express';
+import helmet from 'helmet';
 
 import { ConfigService } from './config.service';
 import { LogService } from './log.service';
@@ -13,6 +14,7 @@ export class HttpService {
         private readonly apiRouter: express.Router,
     ) {
         this.app = express();
+        this.app.use(helmet());
     }
 
     static newRouter(): express.Router {

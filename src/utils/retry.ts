@@ -6,13 +6,13 @@ function wait(duration: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, duration));
 }
 
-export async function retry(
+export async function retry<T>(
     cb: EmptyFunction,
     beforeRetryCb: EmptyFunction,
     retries: number = 3,
     delay: number = 500,
-): Promise<any> {
-    let result: any;
+): Promise<T> {
+    let result: T;
 
     try {
         result = await cb();

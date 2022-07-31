@@ -1,10 +1,9 @@
-import { YandexMusicService } from './yandex-music.service';
-import { SpotifyService } from './spotify.service';
+import { YandexMusicService } from './music-providers/yandex-music.service';
+import { SpotifyService } from './music-providers/spotify.service';
 import { PlaylistConfig } from '../config';
 import { MusicServiceTypes, Playlist, Track } from '../entities';
-import { BaseMusicService } from './base-music.service';
+import { BaseMusicService } from './music-providers/base-music.service';
 import { LogService } from './log.service';
-import { retry } from '../utils/retry';
 
 export class SyncService {
     constructor(
@@ -13,7 +12,21 @@ export class SyncService {
         private readonly spotifyService: SpotifyService,
     ) {}
 
+    isAllServicesReady(): boolean {
+        return [this.yandexMusicService, this.spotifyService].every(
+            (service) => service.isReady,
+        );
+    }
+
     async sync(syncConfig: PlaylistConfig): Promise<void> {
+        const isAllServicesReady = this.isAllServicesReady();
+        if (!isAllServicesReady) {
+            this.logService.await(
+                `Skip sync. Wait for all services to be ready`,
+            );
+            return;
+        }
+
         const originalPlaylistTracks = await this.getPlaylistTracks(
             syncConfig.type,
             syncConfig.metadata,
@@ -93,9 +106,9 @@ export class SyncService {
         const serviceTracks = [];
 
         for (let track of tracks) {
-            const serviceTrack = await retry(
-                () => service.searchTrackByName(track.name, track.artist),
-                () => service.refreshAccess(),
+            const serviceTrack = await service.searchTrackByName(
+                track.name,
+                track.artist,
             );
 
             if (!serviceTrack) {

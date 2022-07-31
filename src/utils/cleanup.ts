@@ -28,5 +28,8 @@ export function cleanup(beforeExit: () => void, cleanCb?: () => void): void {
     process.on('SIGUSR2', exitHandler.bind(null, { exit: true }));
 
     //catches uncaught exceptions
-    process.on('uncaughtException', exitHandler.bind(null, { exit: true }));
+    process.on('uncaughtException', (err) => {
+        console.error('UncaughtException: ', err);
+        exitHandler.bind(null, { exit: true });
+    });
 }

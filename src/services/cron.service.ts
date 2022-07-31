@@ -16,17 +16,25 @@ export class CronService {
         this.jobs.push(job);
 
         if (options.startNow) {
-            job.fn();
+            this.triggerJob(job);
         }
 
         return job;
     }
 
-    stopJob(job: Cron): void {
+    private stopJob(job: Cron): void {
         job.stop();
+    }
+
+    private triggerJob(job: Cron): void {
+        job.fn();
     }
 
     stopAllJobs(): void {
         this.jobs.forEach((job) => this.stopJob(job));
+    }
+
+    triggerAllJobs(): void {
+        this.jobs.forEach((job) => this.triggerJob(job));
     }
 }
