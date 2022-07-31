@@ -1,0 +1,21 @@
+services:
+  playlist-synchronizer:
+    build: .
+    container_name: playlist-synchronizer
+    restart: unless-stopped
+    ports:
+      - ${HTTP_PORT}:${HTTP_PORT}
+    environment:
+      DB_PATH: ${DB_PATH}
+      HTTP_PORT: ${HTTP_PORT}
+      SYNC_CONFIG_PATH: ${SYNC_CONFIG_PATH}
+      JOB_CRON_TIME: ${JOB_CRON_TIME}
+      SPOTIFY_CLIENT_ID: ${SPOTIFY_CLIENT_ID}
+      SPOTIFY_CLIENT_SECRET: ${SPOTIFY_CLIENT_SECRET}
+      SPOTIFY_REDIRECT_URI: ${SPOTIFY_REDIRECT_URI}
+    volumes:
+      - ./sync-config.json:/usr/app/sync-config.json:ro
+      - auth-store:/usr/app/db
+
+volumes:
+  auth-store:

@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 export interface IConfig {
+    dbPath: string;
     syncConfigPath: string;
 
     jobSettings: {
@@ -22,8 +23,10 @@ export interface IConfig {
 
 const DEFAULT_SYNC_CONFIG_PATH = './config/sync.config.json';
 const DEFAULT_JOB_CRON_PATTERN = '@hourly';
+const DEFAULT_DB_PATH = './db/db.json';
 
 export const Config = {
+    dbPath: process.env.DB_PATH || DEFAULT_DB_PATH,
     syncConfigPath: process.env.SYNC_CONFIG_PATH || DEFAULT_SYNC_CONFIG_PATH,
 
     jobSettings: {
