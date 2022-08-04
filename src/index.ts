@@ -1,6 +1,7 @@
 import { getSyncConfig } from './config';
 import { initContainer } from './container';
 import { cleanup } from './utils/cleanup';
+import { LoggerContext } from './services';
 
 const {
     spotifyService,
@@ -20,11 +21,18 @@ const syncConfigPath: string = configService.get('syncConfigPath');
 const syncConfig = await getSyncConfig(syncConfigPath);
 
 for (let playlistConfig of syncConfig.playlists) {
-    logService.info(`Start sync ${playlistConfig.metadata.name} playlist`);
+    const loggerCtx: LoggerContext = {
+        scope: logService.createScope(playlistConfig.metadata.name),
+    };
+
+    logService.info(
+        `Start sync ${playlistConfig.metadata.name} playlist`,
+        loggerCtx,
+    );
 
     cronService.addJob({
         pattern: configService.get('jobSettings.pattern'),
-        cb: () => syncService.sync(playlistConfig),
+        cb: () => syncService.sync(playlistConfig, loggerCtx),
         startNow: true,
     });
 }
