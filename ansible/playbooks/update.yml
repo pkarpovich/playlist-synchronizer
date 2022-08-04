@@ -1,0 +1,17 @@
+---
+- hosts: all
+  tasks:
+    - name: Stop all containers
+      shell: "docker compose down"
+      args:
+        chdir: "~/playlist-synchronizer"
+
+    - name: Pull changes from remote repository
+      shell: "git pull"
+      args:
+        chdir: "~/playlist-synchronizer"
+
+    - name: Srat all containers
+      command: "docker compose up -d --build"
+      args:
+        chdir: "~/playlist-synchronizer"
