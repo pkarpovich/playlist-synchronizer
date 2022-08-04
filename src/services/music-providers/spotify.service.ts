@@ -9,9 +9,6 @@ import { retry } from '../../utils/retry';
 import { LogService } from '../log.service';
 
 const scopes = [
-    'user-read-playback-state',
-    'user-modify-playback-state',
-    'user-read-currently-playing',
     'playlist-read-private',
     'playlist-modify-private',
     'playlist-modify-public',
@@ -88,13 +85,25 @@ export class SpotifyService implements BaseMusicService {
         }));
     }
 
+    async searchArtistByName(
+        name: string,
+    ): Promise<SpotifyApi.ArtistObjectFull | undefined> {
+        const { body } = await retry<Response<SpotifyApi.SearchResponse>>(
+            () => this.client.searchArtists(name),
+            () => this.refreshAccess(),
+        );
+
+        return body.artists?.items[0];
+    }
+
     async searchTrackByName(
         name: string,
         artist: string,
     ): Promise<Track | null> {
+        const searchQuery = await this.createSearchQuery(name, artist);
+
         const { body } = await retry<Response<SpotifyApi.SearchResponse>>(
-            () =>
-                this.client.search(`track:${name} artist:${artist}`, ['track']),
+            () => this.client.searchTracks(searchQuery),
             () => this.refreshAccess(),
         );
 
@@ -118,5 +127,19 @@ export class SpotifyService implements BaseMusicService {
             () => this.client.addTracksToPlaylist(playlist.id, trackIds),
             () => this.refreshAccess(),
         );
+    }
+
+    private async createSearchQuery(
+        trackName: string,
+        artistName: string,
+    ): Promise<string> {
+        let query = `track:${trackName}`;
+
+        const artist = await this.searchArtistByName(artistName);
+        if (artist) {
+            query += ` artist:${artist.name}`;
+        }
+
+        return query;
     }
 }
