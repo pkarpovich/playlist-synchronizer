@@ -93,7 +93,7 @@ export class SpotifyService implements BaseMusicService {
             () => this.refreshAccess(),
         );
 
-        return body.artists?.items[0];
+        return this.tryToFindMostRelevantArtist(body.artists, name);
     }
 
     async searchTrackByName(
@@ -141,5 +141,17 @@ export class SpotifyService implements BaseMusicService {
         }
 
         return query;
+    }
+
+    private tryToFindMostRelevantArtist(
+        artists:
+            | SpotifyApi.PagingObject<SpotifyApi.ArtistObjectFull>
+            | undefined,
+        originalName: string,
+    ): SpotifyApi.ArtistObjectFull | undefined {
+        return (
+            artists?.items.find((artist) => artist.name === originalName) ||
+            artists?.items[0]
+        );
     }
 }
