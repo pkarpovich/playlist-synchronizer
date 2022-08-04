@@ -124,12 +124,14 @@ export class SyncService {
         for (let track of tracks) {
             const serviceTrack = await service.searchTrackByName(
                 track.name,
-                track.artist,
+                track.artists,
             );
 
             if (!serviceTrack) {
                 this.logService.warn(
-                    `Track ${track.name} by ${track.artist} not found`,
+                    `Track ${track.name} by ${track.artists.join(
+                        ', ',
+                    )} not found`,
                     loggerCtx,
                 );
                 continue;

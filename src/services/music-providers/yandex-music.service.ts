@@ -31,11 +31,11 @@ export class YandexMusicService extends BaseMusicService {
 
         return tracks.map<Track>((track) => ({
             name: track.title,
-            artist: track.artists[0].name,
+            artists: track.artists.map(({ name }) => name),
         }));
     }
 
-    searchTrackByName(name: string, artist: string): Promise<Track> {
+    searchTrackByName(name: string, artists: string[]): Promise<Track> {
         throw new Error('Method not implemented.');
     }
 

@@ -81,7 +81,7 @@ export class SpotifyService implements BaseMusicService {
         return body.items.map<Track>(({ track }) => ({
             id: track?.uri,
             name: track?.name as string,
-            artist: track?.artists[0].name as string,
+            artists: track?.artists.map(({ name }) => name) as string[],
         }));
     }
 
@@ -98,16 +98,24 @@ export class SpotifyService implements BaseMusicService {
 
     async searchTrackByName(
         name: string,
-        artist: string,
+        artists: string[],
     ): Promise<Track | null> {
-        const searchQuery = await this.createSearchQuery(name, artist);
+        let track = null;
 
-        const { body } = await retry<Response<SpotifyApi.SearchResponse>>(
-            () => this.client.searchTracks(searchQuery),
-            () => this.refreshAccess(),
-        );
+        for (const artist of artists) {
+            const searchQuery = `track:${name} artist:${artist}`;
 
-        const track = body.tracks?.items[0];
+            track =
+                (await this.searchTrackByQuery(searchQuery)) ||
+                (await this.searchTrackByQuery(
+                    await this.createAdvancedSearchQuery(name, artist),
+                ));
+
+            if (track) {
+                break;
+            }
+        }
+
         if (!track) {
             return null;
         }
@@ -115,7 +123,7 @@ export class SpotifyService implements BaseMusicService {
         return {
             id: track.uri,
             name: track.name,
-            artist: track.artists[0].name,
+            artists: track.artists.map(({ name }) => name),
         } as Track;
     }
 
@@ -129,7 +137,18 @@ export class SpotifyService implements BaseMusicService {
         );
     }
 
-    private async createSearchQuery(
+    private async searchTrackByQuery(
+        query: string,
+    ): Promise<SpotifyApi.TrackObjectFull | undefined> {
+        const { body } = await retry<Response<SpotifyApi.SearchResponse>>(
+            () => this.client.searchTracks(query),
+            () => this.refreshAccess(),
+        );
+
+        return body.tracks?.items[0];
+    }
+
+    private async createAdvancedSearchQuery(
         trackName: string,
         artistName: string,
     ): Promise<string> {
@@ -149,9 +168,20 @@ export class SpotifyService implements BaseMusicService {
             | undefined,
         originalName: string,
     ): SpotifyApi.ArtistObjectFull | undefined {
-        return (
-            artists?.items.find((artist) => artist.name === originalName) ||
-            artists?.items[0]
+        const mostRelevantBySearch = artists?.items[0];
+        const artistWithSameName = artists?.items.find(
+            (artist) => artist.name === originalName,
         );
+
+        if (mostRelevantBySearch && artistWithSameName) {
+            return mostRelevantBySearch.popularity >
+                artistWithSameName.popularity &&
+                mostRelevantBySearch.followers.total >
+                    artistWithSameName.followers.total
+                ? mostRelevantBySearch
+                : artistWithSameName;
+        }
+
+        return mostRelevantBySearch;
     }
 }
