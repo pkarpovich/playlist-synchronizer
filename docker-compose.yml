@@ -17,5 +17,14 @@ services:
       - ./sync-config.json:/usr/app/sync-config.json:ro
       - auth-store:/usr/app/db
 
+  health-service:
+    image: twinproduction/gatus
+    ports:
+      - 8080:8080
+    volumes:
+      - ./gatus-config.yaml:/config/config.yaml:ro
+    depends_on:
+      - playlist-synchronizer
+
 volumes:
   auth-store:

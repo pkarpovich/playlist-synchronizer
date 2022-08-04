@@ -1,0 +1,9 @@
+endpoints:
+  - name: playlist-synchronizer
+    url: "http://playlist-synchronizer:3200/health"
+    interval: 30m
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY].status == UP"
+      - "[BODY].statistics.notFoundTracks == 0"
+      - "[RESPONSE_TIME] < 300"

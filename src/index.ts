@@ -20,19 +20,27 @@ await spotifyService.initializeClient();
 const syncConfigPath: string = configService.get('syncConfigPath');
 const syncConfig = await getSyncConfig(syncConfigPath);
 
+async function startSync() {
+    syncService.resetStatistics();
+
+    for (let playlistConfig of syncConfig.playlists) {
+        const loggerCtx: LoggerContext = {
+            scope: logService.createScope(playlistConfig.metadata.name),
+        };
+
+        logService.info(
+            `Start sync ${playlistConfig.metadata.name} playlist`,
+            loggerCtx,
+        );
+
+        await syncService.sync(playlistConfig, loggerCtx);
+    }
+}
+
 for (let playlistConfig of syncConfig.playlists) {
-    const loggerCtx: LoggerContext = {
-        scope: logService.createScope(playlistConfig.metadata.name),
-    };
-
-    logService.info(
-        `Start sync ${playlistConfig.metadata.name} playlist`,
-        loggerCtx,
-    );
-
     cronService.addJob({
         pattern: configService.get('jobSettings.pattern'),
-        cb: () => syncService.sync(playlistConfig, loggerCtx),
+        cb: () => startSync(),
         startNow: true,
     });
 }

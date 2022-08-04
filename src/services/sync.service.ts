@@ -4,13 +4,32 @@ import { SpotifyService } from './music-providers/spotify.service';
 import { LoggerContext, LogService } from './log.service';
 import { PlaylistConfig } from '../config';
 import { MusicServiceTypes, Playlist, Track } from '../entities';
+import { SyncStatistics } from '../entities/sync-statistics.entity';
+
+const DefaultStatistics: SyncStatistics = {
+    lastSyncAt: null,
+    newTracks: 0,
+    notFoundTracks: 0,
+};
 
 export class SyncService {
+    private _statistics: SyncStatistics;
+
+    get statistics(): SyncStatistics {
+        return this._statistics;
+    }
+
     constructor(
         private readonly logService: LogService,
         private readonly yandexMusicService: YandexMusicService,
         private readonly spotifyService: SpotifyService,
-    ) {}
+    ) {
+        this._statistics = DefaultStatistics;
+    }
+
+    resetStatistics(): void {
+        this._statistics = DefaultStatistics;
+    }
 
     isAllServicesReady(): boolean {
         return [this.yandexMusicService, this.spotifyService].every(
@@ -73,6 +92,7 @@ export class SyncService {
                 `Added ${trackIdsForAdd.length} tracks to ${target.metadata.name} playlist`,
                 loggerCtx,
             );
+            this._statistics.newTracks += trackIdsForAdd.length;
         }
 
         this.logService.success('Sync completed', loggerCtx);
@@ -128,6 +148,7 @@ export class SyncService {
             );
 
             if (!serviceTrack) {
+                this._statistics.notFoundTracks++;
                 this.logService.warn(
                     `Track ${track.name} by ${track.artists.join(
                         ', ',

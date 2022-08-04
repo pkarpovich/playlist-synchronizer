@@ -5,8 +5,9 @@ import {
     SpotifyService,
 } from '../services';
 import express from 'express';
+import { BaseController } from './base.controller';
 
-export class SpotifyController {
+export class SpotifyController implements BaseController {
     constructor(
         private readonly spotifyService: SpotifyService,
         private readonly cronService: CronService,

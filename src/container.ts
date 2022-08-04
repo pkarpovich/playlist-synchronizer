@@ -19,6 +19,7 @@ import { Config, IConfig } from './config';
 import { AuthStore } from './entities';
 import { initApiController, SpotifyController } from './controllers';
 import express from 'express';
+import { HealthController } from './controllers/health.controller';
 
 const defaultAuthStore: AuthStore = {
     refreshToken: '',
@@ -33,6 +34,7 @@ interface Container {
     yandexMusicService: YandexMusicService;
     spotifyService: SpotifyService;
     spotifyController: SpotifyController;
+    healthController: HealthController;
     apiRouter: express.Router;
     syncService: SyncService;
 }
@@ -54,6 +56,7 @@ export function initContainer(): AwilixContainer<Container> {
         cronService: asClass(CronService).singleton(),
         yandexMusicService: asClass(YandexMusicService).singleton(),
         spotifyService: asClass(SpotifyService).singleton(),
+        healthController: asClass(HealthController).singleton(),
         spotifyController: asClass(SpotifyController).singleton(),
         apiRouter: asFunction(initApiController).singleton(),
         syncService: asClass(SyncService),
