@@ -6,4 +6,5 @@ endpoints:
       - "[STATUS] == 200"
       - "[BODY].status == UP"
       - "[BODY].statistics.notFoundTracks == 0"
+      - "[BODY].statistics.totalTracksInOriginalPlaylists == [BODY].statistics.totalTracksInTargetPlaylists"
       - "[RESPONSE_TIME] < 300"

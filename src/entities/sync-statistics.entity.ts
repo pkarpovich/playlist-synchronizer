@@ -4,4 +4,8 @@ export type SyncStatistics = {
     lastSyncAt?: number | null;
 
     newTracks: number;
+
+    totalTracksInOriginalPlaylists: number;
+
+    totalTracksInTargetPlaylists: number;
 };

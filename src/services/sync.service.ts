@@ -10,6 +10,8 @@ const DefaultStatistics: SyncStatistics = {
     lastSyncAt: null,
     newTracks: 0,
     notFoundTracks: 0,
+    totalTracksInOriginalPlaylists: 0,
+    totalTracksInTargetPlaylists: 0,
 };
 
 export class SyncService {
@@ -66,6 +68,8 @@ export class SyncService {
                 `Found ${tracksForAdding.length} tracks in ${target.type} service`,
                 loggerCtx,
             );
+            this._statistics.totalTracksInOriginalPlaylists +=
+                tracksForAdding.length;
 
             const trackIdsForAdd: string[] = (
                 await this.filterDuplicates(
@@ -93,6 +97,8 @@ export class SyncService {
                 loggerCtx,
             );
             this._statistics.newTracks += trackIdsForAdd.length;
+            this._statistics.totalTracksInTargetPlaylists +=
+                trackIdsForAdd.length;
         }
 
         this.logService.success('Sync completed', loggerCtx);
@@ -175,6 +181,8 @@ export class SyncService {
             playlistMetadata,
             loggerCtx,
         );
+
+        this._statistics.totalTracksInTargetPlaylists += playlistTracks.length;
 
         return tracksToAdding.filter(
             (newTrack) =>

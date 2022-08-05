@@ -37,13 +37,11 @@ async function startSync() {
     }
 }
 
-for (let playlistConfig of syncConfig.playlists) {
-    cronService.addJob({
-        pattern: configService.get('jobSettings.pattern'),
-        cb: () => startSync(),
-        startNow: true,
-    });
-}
+cronService.addJob({
+    pattern: configService.get('jobSettings.pattern'),
+    cb: () => startSync(),
+    startNow: true,
+});
 
 cleanup(() => {
     cronService.stopAllJobs();
