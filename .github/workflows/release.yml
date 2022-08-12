@@ -1,0 +1,49 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency: ${{ github.workflow }}-${{ github.ref }}
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 7.6.0
+
+      - name: setup Node.js 16.x
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+
+      - name: set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: build image
+        env:
+            USERNAME: ${{ github.actor }}
+            GITHUB_SHA: ${{ github.sha}}
+            GITHUB_REF: ${{ github.ref}}
+        run: |
+            ref="$(echo ${GITHUB_REF} | cut -d'/' -f3)"
+            echo GITHUB_REF - $ref
+            docker buildx build -f Dockerfile --no-cache \
+              -t ghcr.io/${USERNAME}/playlist-synchronizer:${ref} . \
+            
+
+      - name: push image to registry
+        id: changesets
+        uses: changesets/action@v1
+        with:
+          publish: docker push ghcr.io/${USERNAME}/playlist-synchronizer:${ref}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
