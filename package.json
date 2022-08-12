@@ -1,7 +1,7 @@
 {
   "name": "playlist-synchronizer",
   "version": "1.0.0",
-  "description": "Synchronize Yandex.Music playlist to Spotify",
+  "description": "The app allows to sync playlists between music services",
   "main": "index.js",
   "type": "module",
   "scripts": {
@@ -13,7 +13,9 @@
     "lint": "eslint 'src/**/*.ts'",
     "lint:fix": "eslint --fix 'src/**/*.ts'",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "changeset": "pnpm exec changeset"
+    "changeset": "changeset",
+    "publish": "changeset tag",
+    "version": "changeset version"
   },
   "keywords": [
     "yandex",
@@ -21,7 +23,7 @@
     "spotify",
     "synchronizer"
   ],
-  "author": "Pavel Karpovich",
+  "author": "Pavel Karpovich <pavel.karpovich@outlook.com>",
   "license": "MIT",
   "devDependencies": {
     "@swc/core": "^1.2.220",
@@ -77,5 +79,12 @@
     "eslint-plugin-jsx-a11y": "^6.5.1",
     "eslint-plugin-react": "^7.28.0",
     "eslint-plugin-react-hooks": "^4.3.0"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "ssh://git@github.com:pkarpovich/playlist-synchronizer.git"
   }
 }
