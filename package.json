@@ -12,7 +12,8 @@
     "format:fix": "prettier --write 'src/**/*.ts'",
     "lint": "eslint 'src/**/*.ts'",
     "lint:fix": "eslint --fix 'src/**/*.ts'",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "changeset": "pnpm exec changeset"
   },
   "keywords": [
     "yandex",
@@ -58,6 +59,7 @@
     ]
   },
   "dependencies": {
+    "@changesets/cli": "^2.24.2",
     "awilix": "^7.0.3",
     "croner": "^4.3.15",
     "dotenv": "^16.0.1",
