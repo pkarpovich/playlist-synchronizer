@@ -1,6 +1,6 @@
 {
   "name": "playlist-synchronizer",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "The app allows to sync playlists between music services",
   "main": "index.js",
   "type": "module",
