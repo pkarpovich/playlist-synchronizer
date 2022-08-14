@@ -3,6 +3,8 @@ name: Publish
 on:
   release:
     types:
+      - created
+      - published
       - released
 
 jobs:
@@ -30,6 +32,7 @@ jobs:
               version="$(echo ${TAG_NAME})"
               image_name="$(echo ${REGISTRY}/${IMAGE_NAME})"
               echo ${GITHUB_PACKAGE_TOKEN} | docker login ghcr.io -u ${USERNAME} --password-stdin
+              echo "IMAGE_NAME=${image_name}, VERSION=${version}"
               docker buildx build --push \
                   --platform linux/amd64,linux/arm/v7,linux/arm64 \
                   -t ${image_name}:${version} -t ${image_name}:latest .
