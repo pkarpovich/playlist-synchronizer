@@ -1,5 +1,11 @@
 # playlist-synchronizer
 
+## 1.1.3
+
+### Patch Changes
+
+-   2e33954: Change trigger event for build image action
+
 ## 1.1.2
 
 ### Patch Changes
