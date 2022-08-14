@@ -1,5 +1,11 @@
 # playlist-synchronizer
 
+## 1.1.5
+
+### Patch Changes
+
+-   d897a9a: Fix on push tags action
+
 ## 1.1.4
 
 ### Patch Changes
