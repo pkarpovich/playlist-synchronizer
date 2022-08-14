@@ -1,11 +1,9 @@
 name: Publish
 
 on:
-  release:
-    types:
-      - created
-      - published
-      - released
+  push:
+    tags:
+      - v*
 
 jobs:
     publish:
@@ -20,6 +18,10 @@ jobs:
         steps:
           - uses: actions/checkout@v3
 
+          - name: Get the version
+            id: get_version
+            run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
+
           - name: Set up QEMU
             uses: docker/setup-qemu-action@v2
 
@@ -28,8 +30,10 @@ jobs:
             uses: docker/setup-buildx-action@v2
 
           - name: build and deploy image to ghcr.io
+            env:
+              VERSION: ${{ steps.get_version.outputs.VERSION }}
             run: |
-              version="$(echo ${TAG_NAME})"
+              version="$(echo ${VERSION})"
               image_name="$(echo ${REGISTRY}/${IMAGE_NAME})"
               echo ${GITHUB_PACKAGE_TOKEN} | docker login ghcr.io -u ${USERNAME} --password-stdin
               echo "IMAGE_NAME=${image_name}, VERSION=${version}"
