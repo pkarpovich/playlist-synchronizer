@@ -1,5 +1,11 @@
 # playlist-synchronizer
 
+## 1.1.2
+
+### Patch Changes
+
+-   083bc14: Add new release types for docker image publish action
+
 ## 1.1.1
 
 ### Patch Changes
