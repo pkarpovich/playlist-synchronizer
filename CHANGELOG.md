@@ -1,5 +1,11 @@
 # playlist-synchronizer
 
+## 1.1.7
+
+### Patch Changes
+
+-   562d915: Change release tag trigger
+
 ## 1.1.6
 
 ### Patch Changes
