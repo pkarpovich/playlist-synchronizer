@@ -36,4 +36,4 @@ jobs:
           title: "chore: update versions"
           commit: "chore: update versions"
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.OWNER_TOKEN }}
