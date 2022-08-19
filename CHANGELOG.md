@@ -1,5 +1,11 @@
 # playlist-synchronizer
 
+## 1.1.6
+
+### Patch Changes
+
+-   3ae5155: Change owner of releases
+
 ## 1.1.5
 
 ### Patch Changes
