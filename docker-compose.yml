@@ -1,6 +1,6 @@
 services:
   playlist-synchronizer:
-    build: .
+    image: ghcr.io/pkarpovich/playlist-synchronizer:latest
     container_name: playlist-synchronizer
     restart: unless-stopped
     ports:
@@ -25,6 +25,22 @@ services:
       - ./gatus-config.yaml:/config/config.yaml:ro
     depends_on:
       - playlist-synchronizer
+
+  updater:
+    image: ghcr.io/umputun/updater:v0.2.0
+    container_name: updater
+    hostname: updater
+    restart: unless-stopped
+    environment:
+      LISTEN: 0.0.0.0:${UPDATER_PORT}
+      KEY: ${UPDATER_KEY}
+      CONF: '/srv/etc/updater.yml'
+    ports:
+      - ${UPDATER_PORT}:${UPDATER_PORT}
+    volumes:
+      - ./updater.yml:/srv/etc/updater.yml:ro
+      - ${UPDATER_SSH_KEY_PATH}:/home/app/.ssh/id_rsa
+      - /var/run/docker.sock:/var/run/docker.sock
 
 volumes:
   auth-store:
