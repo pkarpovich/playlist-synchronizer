@@ -1,8 +1,9 @@
 name: Release
 
 on:
-  release:
-    types: [created, released, published, prereleased]
+  push:
+    branches:
+      - main
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
@@ -11,8 +12,9 @@ jobs:
     name: Release
     runs-on: ubuntu-latest
     env:
-      NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      NODE_AUTH_TOKEN: ${{ secrets.OWNER_TOKEN }}
+      NPM_TOKEN: ${{ secrets.OWNER_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.OWNER_TOKEN }}
     steps:
       - uses: actions/checkout@v3
       - uses: pnpm/action-setup@v2
@@ -34,5 +36,3 @@ jobs:
           version: pnpm run version
           title: "chore: update versions"
           commit: "chore: update versions"
-        env:
-          GITHUB_TOKEN: ${{ secrets.OWNER_TOKEN }}
