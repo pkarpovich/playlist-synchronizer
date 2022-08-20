@@ -1,5 +1,11 @@
 # playlist-synchronizer
 
+## 1.1.9
+
+### Patch Changes
+
+-   c73565b: Fix docker publish script
+
 ## 1.1.8
 
 ### Patch Changes
