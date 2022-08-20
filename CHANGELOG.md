@@ -1,5 +1,12 @@
 # playlist-synchronizer
 
+## 1.1.8
+
+### Patch Changes
+
+-   299e8d4: Change token owner
+-   7f68fcf: Change release trigger
+
 ## 1.1.7
 
 ### Patch Changes
