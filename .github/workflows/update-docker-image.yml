@@ -2,7 +2,7 @@ name: 'Update docker image'
 
 on:
   registry_package:
-    types: [published, updated]
+    types: [published]
 
 jobs:
   deploy:
