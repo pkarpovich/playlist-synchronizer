@@ -1,5 +1,11 @@
 # playlist-synchronizer
 
+## 1.1.13
+
+### Patch Changes
+
+-   2689cfc: Move deploy docker image into build action
+
 ## 1.1.12
 
 ### Patch Changes
