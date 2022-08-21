@@ -1,6 +1,6 @@
 services:
   playlist-synchronizer:
-    build: .
+    image: ghcr.io/pkarpovich/playlist-synchronizer:latest
     container_name: playlist-synchronizer
     restart: unless-stopped
     ports:
