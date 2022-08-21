@@ -1,5 +1,11 @@
 # playlist-synchronizer
 
+## 1.1.10
+
+### Patch Changes
+
+-   251abb8: Add update docker image github action
+
 ## 1.1.9
 
 ### Patch Changes
