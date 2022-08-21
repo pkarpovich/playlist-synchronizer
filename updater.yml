@@ -1,6 +1,0 @@
-tasks:
-
-  - name:   playlist-synchronizer
-    command: |
-      echo "update playlist-synchronizer"
-      ssh app@172.17.42.1 "cd /playlist-synchronizer && docker compose pull playlist-synchronizer && docker compose up -d playlist-synchronizer"

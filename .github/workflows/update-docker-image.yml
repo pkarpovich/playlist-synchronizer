@@ -1,0 +1,19 @@
+name: 'Update docker image'
+
+on:
+  registry_package:
+    types: [published]
+
+jobs:
+  deploy:
+    name: Update docker image
+    runs-on: ubuntu-latest
+    steps:
+      - name: multiple command
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.KEY }}
+          script: |
+            cd ./playlist-synchronizer && docker compose pull playlist-synchronizer && docker compose up -d playlist-synchronizer
