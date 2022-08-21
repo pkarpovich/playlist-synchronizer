@@ -38,3 +38,12 @@ jobs:
               docker buildx build --push \
                   --platform linux/amd64,linux/arm/v7,linux/arm64 \
                   -t ${image_name}:${TAG_NAME} -t ${image_name}:latest .
+
+          - name: multiple command
+            uses: appleboy/ssh-action@master
+            with:
+              host: ${{ secrets.HOST }}
+              username: ${{ secrets.USERNAME }}
+              key: ${{ secrets.KEY }}
+              script: |
+                cd ./playlist-synchronizer && docker compose pull playlist-synchronizer && docker compose up -d playlist-synchronizer
