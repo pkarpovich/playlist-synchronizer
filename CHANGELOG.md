@@ -1,5 +1,11 @@
 # playlist-synchronizer
 
+## 1.1.11
+
+### Patch Changes
+
+-   37cce37: Fix update docker image trigger
+
 ## 1.1.10
 
 ### Patch Changes
