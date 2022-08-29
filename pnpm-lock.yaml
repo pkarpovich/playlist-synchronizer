@@ -23,7 +23,7 @@ specifiers:
   eslint-plugin-react-hooks: ^4.6.0
   express: ^4.18.1
   express-async-errors: ^3.1.1
-  helmet: ^5.1.1
+  helmet: ^6.0.0
   husky: ^8.0.1
   lint-staged: ^13.0.3
   lowdb: ^3.0.0
@@ -43,7 +43,7 @@ dependencies:
   dotenv: 16.0.1
   express: 4.18.1
   express-async-errors: 3.1.1_express@4.18.1
-  helmet: 5.1.1
+  helmet: 6.0.0
   lowdb: 3.0.0
   signale: 1.4.0
   spotify-web-api-node: 5.0.2
@@ -2228,9 +2228,9 @@ packages:
     dependencies:
       function-bind: 1.1.1
 
-  /helmet/5.1.1:
-    resolution: {integrity: sha512-/yX0oVZBggA9cLJh8aw3PPCfedBnbd7J2aowjzsaWwZh7/UFY0nccn/aHAggIgWUFfnykX8GKd3a1pSbrmlcVQ==}
-    engines: {node: '>=12.0.0'}
+  /helmet/6.0.0:
+    resolution: {integrity: sha512-FO9RpR1wNJepH/GbLPQVtkE2eESglXL641p7SdyoT4LngHFJcZheHMoyUcjCZF4qpuMMO1u5q6RK0l9Ux8JBcg==}
+    engines: {node: '>=14.0.0'}
     dev: false
 
   /hosted-git-info/2.8.9:
