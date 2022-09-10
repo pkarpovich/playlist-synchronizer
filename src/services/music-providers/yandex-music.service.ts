@@ -1,13 +1,13 @@
 import { YandexMusicApi } from 'yandex-short-api';
 
-import { Playlist, Track } from '../../entities';
-import { BaseMusicService } from './base-music.service';
-import { LogService } from '../log.service';
+import { Playlist, Track } from '../../entities.js';
+import { BaseMusicService } from './base-music.service.js';
+import { LogService } from '../log.service.js';
 
 export class YandexMusicService extends BaseMusicService {
     private client: YandexMusicApi;
 
-    isReady: boolean = true;
+    isReady = true;
 
     constructor(private readonly logService: LogService) {
         super();
@@ -35,10 +35,12 @@ export class YandexMusicService extends BaseMusicService {
         }));
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     searchTrackByName(name: string, artists: string[]): Promise<Track> {
         throw new Error('Method not implemented.');
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     addTracksToPlaylist(trackIds: string[], playlist: Playlist): Promise<void> {
         throw new Error('Method not implemented.');
     }

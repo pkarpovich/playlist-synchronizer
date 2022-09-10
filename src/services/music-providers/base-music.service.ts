@@ -1,4 +1,4 @@
-import { Playlist, Track } from '../../entities';
+import { Playlist, Track } from '../../entities.js';
 
 interface IBaseMusicService {
     getPlaylistTracks(options: Playlist): Promise<Track[]>;

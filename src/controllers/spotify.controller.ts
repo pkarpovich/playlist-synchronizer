@@ -1,11 +1,11 @@
+import express from 'express';
 import {
     CronService,
     HttpService,
     LogService,
     SpotifyService,
-} from '../services';
-import express from 'express';
-import { BaseController } from './base.controller';
+} from '../services.js';
+import { BaseController } from './base.controller.js';
 
 export class SpotifyController implements BaseController {
     constructor(

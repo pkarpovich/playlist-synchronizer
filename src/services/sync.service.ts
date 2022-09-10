@@ -1,10 +1,14 @@
-import { YandexMusicService } from './music-providers/yandex-music.service';
-import { BaseMusicService } from './music-providers/base-music.service';
-import { SpotifyService } from './music-providers/spotify.service';
-import { LoggerContext, LogService } from './log.service';
-import { PlaylistConfig } from '../config';
-import { MusicServiceTypes, Playlist, Track } from '../entities';
-import { SyncStatistics } from '../entities/sync-statistics.entity';
+import { YandexMusicService } from './music-providers/yandex-music.service.js';
+import { BaseMusicService } from './music-providers/base-music.service.js';
+import { SpotifyService } from './music-providers/spotify.service.js';
+import { LoggerContext, LogService } from './log.service.js';
+import { PlaylistConfig } from '../config.js';
+import {
+    MusicServiceTypes,
+    Playlist,
+    Track,
+    SyncStatistics,
+} from '../entities.js';
 
 const DefaultStatistics: SyncStatistics = {
     lastSyncAt: null,
@@ -57,7 +61,7 @@ export class SyncService {
             loggerCtx,
         );
 
-        for (let target of syncConfig.targetPlaylists) {
+        for (const target of syncConfig.targetPlaylists) {
             const targetMusicService = this.getMusicServiceByType(target.type);
             const tracksForAdding = await this.findTracksInService(
                 originalPlaylistTracks,
@@ -147,7 +151,7 @@ export class SyncService {
         );
         const serviceTracks = [];
 
-        for (let track of tracks) {
+        for (const track of tracks) {
             const serviceTrack = await service.searchTrackByName(
                 track.name,
                 track.artists,

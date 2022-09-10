@@ -1,12 +1,12 @@
 import SpotifyClient from 'spotify-web-api-node';
 
-import { LocalDbService } from '../local-db.service';
-import { AuthStore, Playlist, Track } from '../../entities';
-import { ConfigService } from '../config.service';
-import { IConfig } from '../../config';
-import { BaseMusicService } from './base-music.service';
-import { retry } from '../../utils/retry';
-import { LogService } from '../log.service';
+import { BaseMusicService } from './base-music.service.js';
+import { LocalDbService } from '../local-db.service.js';
+import { ConfigService } from '../config.service.js';
+import { LogService } from '../log.service.js';
+import { AuthStore, Playlist, Track } from '../../entities.js';
+import { IConfig } from '../../config.js';
+import { retry } from '../../utils.js';
 
 const scopes = [
     'playlist-read-private',
@@ -23,7 +23,7 @@ interface Response<T> {
 export class SpotifyService implements BaseMusicService {
     private client: SpotifyClient;
 
-    isReady: boolean = false;
+    isReady = false;
 
     constructor(
         private readonly authStore: LocalDbService<AuthStore>,

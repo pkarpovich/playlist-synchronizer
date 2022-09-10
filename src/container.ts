@@ -5,6 +5,7 @@ import {
     InjectionMode,
     asFunction,
 } from 'awilix';
+import express from 'express';
 import {
     ConfigService,
     CronService,
@@ -14,12 +15,14 @@ import {
     SpotifyService,
     SyncService,
     YandexMusicService,
-} from './services';
-import { Config, IConfig } from './config';
-import { AuthStore } from './entities';
-import { initApiController, SpotifyController } from './controllers';
-import express from 'express';
-import { HealthController } from './controllers/health.controller';
+} from './services.js';
+import { Config, IConfig } from './config.js';
+import { AuthStore } from './entities.js';
+import {
+    initApiController,
+    SpotifyController,
+    HealthController,
+} from './controllers.js';
 
 const defaultAuthStore: AuthStore = {
     refreshToken: '',

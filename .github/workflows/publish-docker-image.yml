@@ -39,7 +39,7 @@ jobs:
                   --platform linux/amd64,linux/arm/v7,linux/arm64 \
                   -t ${image_name}:${TAG_NAME} -t ${image_name}:latest .
 
-          - name: multiple command
+          - name: update docker image on the host
             uses: appleboy/ssh-action@master
             with:
               host: ${{ secrets.HOST }}

@@ -1,7 +1,7 @@
 import { readFile } from 'fs/promises';
 import { object, array, string } from 'yup';
 
-import { Playlist, MusicServiceTypes } from '../entities';
+import { Playlist, MusicServiceTypes } from '../entities.js';
 
 export interface PlaylistConfig {
     type: MusicServiceTypes;
