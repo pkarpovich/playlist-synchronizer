@@ -6,9 +6,15 @@
       "src/@types"
     ],
     "outDir": "dist",
-    "module": "NodeNext",
-    "declaration": false
+    "module": "es2022",
+    "declaration": false,
+    "target": "es2022",
+    "moduleResolution": "node"
   },
   "include": ["src"],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules"],
+  "ts-node": {
+    "transpileOnly": true,
+    "esm": true
+  }
 }
