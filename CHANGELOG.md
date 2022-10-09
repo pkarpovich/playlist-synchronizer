@@ -1,5 +1,16 @@
 # playlist-synchronizer
 
+## 1.2.0
+
+### Minor Changes
+
+-   72c32ff: Remove deleted tracks from target playlist
+-   2dc83e2: Add cache layer for Spotify client
+
+### Patch Changes
+
+-   2dc83e2: Update dependencies
+
 ## 1.1.13
 
 ### Patch Changes
