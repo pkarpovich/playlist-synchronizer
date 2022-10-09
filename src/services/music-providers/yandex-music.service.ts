@@ -32,6 +32,7 @@ export class YandexMusicService extends BaseMusicService {
         return tracks.map<Track>((track) => ({
             name: track.title,
             artists: track.artists.map(({ name }) => name),
+            source: track,
         }));
     }
 
@@ -42,6 +43,15 @@ export class YandexMusicService extends BaseMusicService {
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     addTracksToPlaylist(trackIds: string[], playlist: Playlist): Promise<void> {
+        throw new Error('Method not implemented.');
+    }
+
+    async removeTracksFromPlaylist(
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        tracks: Track[],
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        playlist: Playlist,
+    ): Promise<void> {
         throw new Error('Method not implemented.');
     }
 }

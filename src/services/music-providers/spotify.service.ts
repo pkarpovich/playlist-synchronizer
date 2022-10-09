@@ -82,6 +82,7 @@ export class SpotifyService implements BaseMusicService {
             id: track?.uri,
             name: track?.name as string,
             artists: track?.artists.map(({ name }) => name) as string[],
+            source: track,
         }));
     }
 
@@ -133,6 +134,20 @@ export class SpotifyService implements BaseMusicService {
     ): Promise<void> {
         await retry<Response<SpotifyApi.AddTracksToPlaylistResponse>>(
             () => this.client.addTracksToPlaylist(playlist.id, trackIds),
+            () => this.refreshAccess(),
+        );
+    }
+
+    async removeTracksFromPlaylist(
+        tracks: Track[],
+        playlist: Playlist,
+    ): Promise<void> {
+        await retry(
+            () =>
+                this.client.removeTracksFromPlaylist(
+                    playlist.id,
+                    tracks.map((t) => t.source as SpotifyApi.TrackObjectFull),
+                ),
             () => this.refreshAccess(),
         );
     }

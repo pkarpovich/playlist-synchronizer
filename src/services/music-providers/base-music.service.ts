@@ -16,6 +16,10 @@ export abstract class BaseMusicService implements IBaseMusicService {
         trackIds: string[],
         playlist: Playlist,
     ): Promise<void>;
+    abstract removeTracksFromPlaylist(
+        tracks: Track[],
+        playlist: Playlist,
+    ): Promise<void>;
 
     abstract isReady: boolean;
 }

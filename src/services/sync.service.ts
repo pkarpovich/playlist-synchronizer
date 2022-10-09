@@ -18,6 +18,16 @@ const DefaultStatistics: SyncStatistics = {
     totalTracksInTargetPlaylists: 0,
 };
 
+interface PlaylistSyncContext {
+    targetService?: BaseMusicService;
+    targetPlaylist?: Playlist;
+    targetPlaylistTracks?: Track[];
+    sourceService: BaseMusicService;
+    sourcePlaylist: Playlist;
+    sourcePlaylistTracks: Track[];
+    loggerCtx: LoggerContext;
+}
+
 export class SyncService {
     private _statistics: SyncStatistics;
 
@@ -55,32 +65,49 @@ export class SyncService {
             return;
         }
 
-        const originalPlaylistTracks = await this.getPlaylistTracks(
+        const sourcePlaylistTracks = await this.getPlaylistTracks(
             syncConfig.type,
             syncConfig.metadata,
             loggerCtx,
         );
 
+        const ctx: PlaylistSyncContext = {
+            sourceService: this.getMusicServiceByType(syncConfig.type),
+            sourcePlaylist: syncConfig.metadata,
+            sourcePlaylistTracks,
+            loggerCtx,
+        };
+
         for (const target of syncConfig.targetPlaylists) {
-            const targetMusicService = this.getMusicServiceByType(target.type);
-            const tracksForAdding = await this.findTracksInService(
-                originalPlaylistTracks,
+            ctx.targetService = this.getMusicServiceByType(target.type);
+            ctx.targetPlaylist = target.metadata;
+            ctx.targetPlaylistTracks = await this.getPlaylistTracks(
                 target.type,
+                target.metadata,
                 loggerCtx,
             );
+
+            const tracksForAdd = await this.findTracksInService(
+                ctx,
+                target.type,
+                ctx.sourcePlaylistTracks,
+            );
             this.logService.success(
-                `Found ${tracksForAdding.length} tracks in ${target.type} service`,
+                `Found ${tracksForAdd.length} tracks in ${target.type} service`,
                 loggerCtx,
             );
             this._statistics.totalTracksInOriginalPlaylists +=
-                tracksForAdding.length;
+                tracksForAdd.length;
+
+            this._statistics.totalTracksInTargetPlaylists +=
+                ctx.targetPlaylistTracks.length;
+
+            await this.removeDeletedTracks(ctx, tracksForAdd);
 
             const trackIdsForAdd: string[] = (
                 await this.filterDuplicates(
-                    target.type,
-                    target.metadata,
-                    tracksForAdding,
-                    loggerCtx,
+                    ctx.targetPlaylistTracks,
+                    tracksForAdd,
                 )
             ).map((newTrack) => newTrack.id as string);
 
@@ -92,7 +119,7 @@ export class SyncService {
                 continue;
             }
 
-            await targetMusicService.addTracksToPlaylist(
+            await ctx.targetService.addTracksToPlaylist(
                 trackIdsForAdd,
                 target.metadata,
             );
@@ -140,14 +167,14 @@ export class SyncService {
     }
 
     private async findTracksInService(
-        tracks: Track[],
+        ctx: PlaylistSyncContext,
         serviceType: MusicServiceTypes,
-        loggerCtx: LoggerContext,
+        tracks: Track[],
     ): Promise<Track[]> {
         const service = this.getMusicServiceByType(serviceType);
         this.logService.await(
             `Try to find tracks in ${serviceType} service`,
-            loggerCtx,
+            ctx.loggerCtx,
         );
         const serviceTracks = [];
 
@@ -163,7 +190,7 @@ export class SyncService {
                     `Track ${track.name} by ${track.artists.join(
                         ', ',
                     )} not found`,
-                    loggerCtx,
+                    ctx.loggerCtx,
                 );
                 continue;
             }
@@ -175,24 +202,37 @@ export class SyncService {
     }
 
     private async filterDuplicates(
-        serviceType: MusicServiceTypes,
-        playlistMetadata: Playlist,
-        tracksToAdding: Track[],
-        loggerCtx: LoggerContext,
+        playlistTracks: Track[],
+        tracksToAdd: Track[],
     ): Promise<Track[]> {
-        const playlistTracks = await this.getPlaylistTracks(
-            serviceType,
-            playlistMetadata,
-            loggerCtx,
-        );
-
-        this._statistics.totalTracksInTargetPlaylists += playlistTracks.length;
-
-        return tracksToAdding.filter(
+        return tracksToAdd.filter(
             (newTrack) =>
                 !playlistTracks.some(
                     (playlistTrack) => playlistTrack.id === newTrack.id,
                 ),
+        );
+    }
+
+    private async removeDeletedTracks(
+        ctx: PlaylistSyncContext,
+        tracksToAdd: Track[],
+    ): Promise<void> {
+        if (!ctx.targetService || !ctx.targetPlaylist) {
+            return;
+        }
+
+        const tracksToRemove =
+            ctx.targetPlaylistTracks?.filter(
+                (t) => !tracksToAdd.some((ta) => ta.id === t.id),
+            ) ?? [];
+
+        if (!tracksToRemove.length) {
+            return;
+        }
+
+        await ctx.targetService.removeTracksFromPlaylist(
+            tracksToRemove,
+            ctx.targetPlaylist,
         );
     }
 }
