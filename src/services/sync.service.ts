@@ -71,6 +71,10 @@ export class SyncService {
             loggerCtx,
         );
 
+        if (!sourcePlaylistTracks.length) {
+            return;
+        }
+
         const ctx: PlaylistSyncContext = {
             sourceService: this.getMusicServiceByType(syncConfig.type),
             sourcePlaylist: syncConfig.metadata,

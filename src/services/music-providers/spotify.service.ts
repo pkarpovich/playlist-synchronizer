@@ -23,6 +23,8 @@ interface Response<T> {
 export class SpotifyService implements BaseMusicService {
     private client: SpotifyClient;
 
+    private readonly cache = new Map<string, SpotifyApi.TrackObjectFull>();
+
     isReady = false;
 
     constructor(
@@ -106,6 +108,11 @@ export class SpotifyService implements BaseMusicService {
         for (const artist of artists) {
             const searchQuery = `track:${name} artist:${artist}`;
 
+            if (this.cache.has(searchQuery)) {
+                track = this.cache.get(searchQuery);
+                break;
+            }
+
             track =
                 (await this.searchTrackByQuery(searchQuery)) ||
                 (await this.searchTrackByQuery(
@@ -113,6 +120,7 @@ export class SpotifyService implements BaseMusicService {
                 ));
 
             if (track) {
+                this.cache.set(searchQuery, track);
                 break;
             }
         }
