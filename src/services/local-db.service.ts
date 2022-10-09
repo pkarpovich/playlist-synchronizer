@@ -1,8 +1,8 @@
 import { mkdir } from 'fs/promises';
 import { join } from 'path';
 import { Low, JSONFile } from 'lowdb';
-import { ConfigService } from './config.service';
-import { IConfig } from '../config';
+import { ConfigService } from './config.service.js';
+import { IConfig } from '../config.js';
 
 export class LocalDbService<T> {
     private db: Low<T>;

@@ -1,8 +1,5 @@
 {
-  "ts-node": {
-    "transpileOnly": true,
-    "transpiler": "ts-node/transpilers/swc-experimental"
-  },
+
   "restartable": "rs",
   "ignore": [
     ".git",
@@ -11,7 +8,11 @@
     "db/**/*"
   ],
   "execMap": {
-    "ts": "node --experimental-specifier-resolution=node --loader ts-node/esm"
+    "ts": "ts-node"
   },
-  "ext": "ts,js,json"
+  "ext": "ts,js,json",
+  "ts-node": {
+    "transpileOnly": true,
+    "esm": true
+  }
 }

@@ -9,8 +9,6 @@ export type JobOptions = {
 export class CronService {
     private jobs: Cron[] = [];
 
-    constructor() {}
-
     addJob(options: JobOptions): Cron {
         const job = new Cron(options.pattern, options.cb);
         this.jobs.push(job);

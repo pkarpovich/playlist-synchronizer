@@ -1,10 +1,10 @@
-import express, { NextFunction, Request, Response } from 'express';
+import express, { Router, NextFunction, Request, Response } from 'express';
 import helmet from 'helmet';
 import 'express-async-errors';
 
-import { ConfigService } from './config.service';
-import { LogService } from './log.service';
-import { IConfig } from '../config';
+import { ConfigService } from './config.service.js';
+import { LogService } from './log.service.js';
+import { IConfig } from '../config.js';
 
 export class HttpService {
     private readonly app: express.Application;
@@ -21,13 +21,14 @@ export class HttpService {
     }
 
     static newRouter(): express.Router {
-        return express.Router();
+        return Router();
     }
 
     handleError(
         err: Error,
         req: Request,
         res: Response,
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         next: NextFunction,
     ): void {
         this.logService.error(err);

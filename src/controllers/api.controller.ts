@@ -1,7 +1,7 @@
 import express from 'express';
-import { SpotifyController } from './spotify.controller';
-import { HttpService } from '../services';
-import { HealthController } from './health.controller';
+import { SpotifyController } from './spotify.controller.js';
+import { HealthController } from './health.controller.js';
+import { HttpService } from '../services.js';
 
 export function initApiController(
     spotifyController: SpotifyController,

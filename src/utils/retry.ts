@@ -1,4 +1,5 @@
 interface EmptyFunction {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (): Promise<any>;
 }
 
@@ -9,8 +10,8 @@ function wait(duration: number): Promise<void> {
 export async function retry<T>(
     cb: EmptyFunction,
     beforeRetryCb: EmptyFunction,
-    retries: number = 3,
-    delay: number = 500,
+    retries = 3,
+    delay = 500,
 ): Promise<T> {
     let result: T;
 

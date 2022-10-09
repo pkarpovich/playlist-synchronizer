@@ -1,12 +1,12 @@
 import SpotifyClient from 'spotify-web-api-node';
 
-import { LocalDbService } from '../local-db.service';
-import { AuthStore, Playlist, Track } from '../../entities';
-import { ConfigService } from '../config.service';
-import { IConfig } from '../../config';
-import { BaseMusicService } from './base-music.service';
-import { retry } from '../../utils/retry';
-import { LogService } from '../log.service';
+import { BaseMusicService } from './base-music.service.js';
+import { LocalDbService } from '../local-db.service.js';
+import { ConfigService } from '../config.service.js';
+import { LogService } from '../log.service.js';
+import { AuthStore, Playlist, Track } from '../../entities.js';
+import { IConfig } from '../../config.js';
+import { retry } from '../../utils.js';
 
 const scopes = [
     'playlist-read-private',
@@ -23,7 +23,9 @@ interface Response<T> {
 export class SpotifyService implements BaseMusicService {
     private client: SpotifyClient;
 
-    isReady: boolean = false;
+    private readonly cache = new Map<string, SpotifyApi.TrackObjectFull>();
+
+    isReady = false;
 
     constructor(
         private readonly authStore: LocalDbService<AuthStore>,
@@ -82,6 +84,7 @@ export class SpotifyService implements BaseMusicService {
             id: track?.uri,
             name: track?.name as string,
             artists: track?.artists.map(({ name }) => name) as string[],
+            source: track,
         }));
     }
 
@@ -105,6 +108,11 @@ export class SpotifyService implements BaseMusicService {
         for (const artist of artists) {
             const searchQuery = `track:${name} artist:${artist}`;
 
+            if (this.cache.has(searchQuery)) {
+                track = this.cache.get(searchQuery);
+                break;
+            }
+
             track =
                 (await this.searchTrackByQuery(searchQuery)) ||
                 (await this.searchTrackByQuery(
@@ -112,6 +120,7 @@ export class SpotifyService implements BaseMusicService {
                 ));
 
             if (track) {
+                this.cache.set(searchQuery, track);
                 break;
             }
         }
@@ -133,6 +142,20 @@ export class SpotifyService implements BaseMusicService {
     ): Promise<void> {
         await retry<Response<SpotifyApi.AddTracksToPlaylistResponse>>(
             () => this.client.addTracksToPlaylist(playlist.id, trackIds),
+            () => this.refreshAccess(),
+        );
+    }
+
+    async removeTracksFromPlaylist(
+        tracks: Track[],
+        playlist: Playlist,
+    ): Promise<void> {
+        await retry(
+            () =>
+                this.client.removeTracksFromPlaylist(
+                    playlist.id,
+                    tracks.map((t) => t.source as SpotifyApi.TrackObjectFull),
+                ),
             () => this.refreshAccess(),
         );
     }

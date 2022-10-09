@@ -4,4 +4,6 @@ export type Track = {
     name: string;
 
     artists: string[];
+
+    source?: unknown;
 };

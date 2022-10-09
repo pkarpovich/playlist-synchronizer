@@ -2,14 +2,19 @@
   "extends": "@tsconfig/node16/tsconfig.json",
   "compilerOptions": {
     "typeRoots": [
-      "src/@types", "node_modules/@types"
+      "node_modules/@types",
+      "src/@types"
     ],
     "outDir": "dist",
-    "module": "ES2022",
-    "moduleResolution": "node",
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true
+    "module": "es2022",
+    "declaration": false,
+    "target": "es2022",
+    "moduleResolution": "node"
   },
   "include": ["src"],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules"],
+  "ts-node": {
+    "transpileOnly": true,
+    "esm": true
+  }
 }

@@ -1,4 +1,4 @@
-import { Playlist, Track } from '../../entities';
+import { Playlist, Track } from '../../entities.js';
 
 interface IBaseMusicService {
     getPlaylistTracks(options: Playlist): Promise<Track[]>;
@@ -14,6 +14,10 @@ export abstract class BaseMusicService implements IBaseMusicService {
     ): Promise<Track | null>;
     abstract addTracksToPlaylist(
         trackIds: string[],
+        playlist: Playlist,
+    ): Promise<void>;
+    abstract removeTracksFromPlaylist(
+        tracks: Track[],
         playlist: Playlist,
     ): Promise<void>;
 

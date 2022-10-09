@@ -1,7 +1,7 @@
-import { getSyncConfig } from './config';
-import { initContainer } from './container';
-import { cleanup } from './utils/cleanup';
-import { LoggerContext } from './services';
+import { getSyncConfig } from './config.js';
+import { initContainer } from './container.js';
+import { LoggerContext } from './services.js';
+import { cleanup } from './utils.js';
 
 const {
     spotifyService,
@@ -23,7 +23,7 @@ const syncConfig = await getSyncConfig(syncConfigPath);
 async function startSync() {
     syncService.resetStatistics();
 
-    for (let playlistConfig of syncConfig.playlists) {
+    for (const playlistConfig of syncConfig.playlists) {
         const loggerCtx: LoggerContext = {
             scope: logService.createScope(playlistConfig.metadata.name),
         };

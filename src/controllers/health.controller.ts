@@ -1,7 +1,7 @@
 import express from 'express';
 
-import { BaseController } from './base.controller';
-import { HttpService, SyncService } from '../services';
+import { BaseController } from './base.controller.js';
+import { HttpService, SyncService } from '../services.js';
 
 export class HealthController implements BaseController {
     constructor(private readonly syncService: SyncService) {}
