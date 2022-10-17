@@ -9,7 +9,7 @@ specifiers:
   '@types/spotify-web-api-node': ^5.0.7
   '@typescript-eslint/eslint-plugin': ^5.39.0
   '@typescript-eslint/parser': ^5.39.0
-  awilix: ^7.0.3
+  awilix: ^8.0.0
   croner: ^5.2.1
   dotenv: ^16.0.3
   eslint: ^8.25.0
@@ -34,7 +34,7 @@ specifiers:
 
 dependencies:
   '@changesets/cli': 2.25.0
-  awilix: 7.0.3
+  awilix: 8.0.0
   croner: 5.2.1
   dotenv: 16.0.3
   express: 4.18.2
@@ -785,8 +785,8 @@ packages:
     resolution: {integrity: sha512-Oei9OH4tRh0YqU3GxhX79dM/mwVgvbZJaSNaRk+bshkj0S5cfHcgYakreBjrHwatXKbz+IoIdYLxrKim2MjW0Q==}
     dev: false
 
-  /awilix/7.0.3:
-    resolution: {integrity: sha512-4Nmjyh9qloDwXfDK0DBuWd8WyFApyknoaKbE3leQflGLgNfNsBHy2/VYrlyy/mzMobjJ3J8XtNpbjzG3KRkIFQ==}
+  /awilix/8.0.0:
+    resolution: {integrity: sha512-9y4ejNj2nLu7ET8jtQPiI3Ibvu68iKcLbLy5pGsPy9HWWVyQhTT8YE+Ao7ZawTNXRWjosSy/r4QNmhaUt/ju0A==}
     engines: {node: '>=12.0.0'}
     dependencies:
       camel-case: 4.1.2
