@@ -6,7 +6,13 @@ import { ConfigService } from '../config.service.js';
 import { LogService } from '../log.service.js';
 import { AuthStore, Playlist, Track } from '../../entities.js';
 import { IConfig } from '../../config.js';
-import { retry } from '../../utils.js';
+import {
+    parseUrlToQueryParams,
+    retry,
+    splitArrayIntoChunk,
+} from '../../utils.js';
+
+const TracksPerRequest = 99;
 
 const scopes = [
     'playlist-read-private',
@@ -73,19 +79,41 @@ export class SpotifyService implements BaseMusicService {
     }
 
     async getPlaylistTracks({ id }: Playlist): Promise<Track[]> {
-        const { body } = await retry<
-            Response<SpotifyApi.PlaylistTrackResponse>
-        >(
-            () => this.client.getPlaylistTracks(id),
-            () => this.refreshAccess(),
-        );
+        const items: SpotifyApi.PlaylistTrackObject[] = [];
+        let nextPage: string | null = null;
 
-        return body.items.map<Track>(({ track }) => ({
+        do {
+            const { limit, offset } = nextPage
+                ? parseUrlToQueryParams(nextPage)
+                : { limit: 100, offset: 0 };
+
+            const resp: Response<SpotifyApi.PlaylistTrackResponse> =
+                await retry<Response<SpotifyApi.PlaylistTrackResponse>>(
+                    () =>
+                        this.client.getPlaylistTracks(id, {
+                            limit: Number(limit),
+                            offset: Number(offset),
+                        }),
+                    () => this.refreshAccess(),
+                );
+
+            items.push(...resp.body.items);
+            nextPage = resp.body.next;
+        } while (nextPage);
+
+        const tracks = items.map<Track>(({ track }) => ({
             id: track?.uri,
             name: track?.name as string,
             artists: track?.artists.map(({ name }) => name) as string[],
             source: track,
         }));
+
+        const duplicates = this.findDuplicateTracksInPlaylist(tracks);
+        await this.removeTracksFromPlaylist(duplicates, { id } as Playlist);
+
+        return tracks.filter(
+            (t) => duplicates.findIndex((dt) => dt.id === t.id) === -1,
+        );
     }
 
     async searchArtistByName(
@@ -140,10 +168,17 @@ export class SpotifyService implements BaseMusicService {
         trackIds: string[],
         playlist: Playlist,
     ): Promise<void> {
-        await retry<Response<SpotifyApi.AddTracksToPlaylistResponse>>(
-            () => this.client.addTracksToPlaylist(playlist.id, trackIds),
-            () => this.refreshAccess(),
+        const trackIdChunks = splitArrayIntoChunk<string>(
+            trackIds,
+            TracksPerRequest,
         );
+
+        for (const ids of trackIdChunks) {
+            await retry<Response<SpotifyApi.AddTracksToPlaylistResponse>>(
+                () => this.client.addTracksToPlaylist(playlist.id, ids),
+                () => this.refreshAccess(),
+            );
+        }
     }
 
     async removeTracksFromPlaylist(
@@ -154,7 +189,9 @@ export class SpotifyService implements BaseMusicService {
             () =>
                 this.client.removeTracksFromPlaylist(
                     playlist.id,
-                    tracks.map((t) => t.source as SpotifyApi.TrackObjectFull),
+                    tracks.map(
+                        (t) => ({ uri: t.id } as SpotifyApi.TrackObjectFull),
+                    ),
                 ),
             () => this.refreshAccess(),
         );
@@ -206,5 +243,12 @@ export class SpotifyService implements BaseMusicService {
         }
 
         return mostRelevantBySearch;
+    }
+
+    private findDuplicateTracksInPlaylist(tracks: Track[]): Track[] {
+        return tracks.filter(
+            (track, index) =>
+                tracks.findIndex((t) => t.id === track.id) !== index,
+        );
     }
 }
