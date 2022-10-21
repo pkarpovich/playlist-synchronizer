@@ -6,7 +6,13 @@ import { ConfigService } from '../config.service.js';
 import { LogService } from '../log.service.js';
 import { AuthStore, Playlist, Track } from '../../entities.js';
 import { IConfig } from '../../config.js';
-import { parseUrlToQueryParams, retry } from '../../utils.js';
+import {
+    parseUrlToQueryParams,
+    retry,
+    splitArrayIntoChunk,
+} from '../../utils.js';
+
+const TracksPerRequest = 99;
 
 const scopes = [
     'playlist-read-private',
@@ -155,10 +161,17 @@ export class SpotifyService implements BaseMusicService {
         trackIds: string[],
         playlist: Playlist,
     ): Promise<void> {
-        await retry<Response<SpotifyApi.AddTracksToPlaylistResponse>>(
-            () => this.client.addTracksToPlaylist(playlist.id, trackIds),
-            () => this.refreshAccess(),
+        const trackIdChunks = splitArrayIntoChunk<string>(
+            trackIds,
+            TracksPerRequest,
         );
+
+        for (const ids of trackIdChunks) {
+            await retry<Response<SpotifyApi.AddTracksToPlaylistResponse>>(
+                () => this.client.addTracksToPlaylist(playlist.id, ids),
+                () => this.refreshAccess(),
+            );
+        }
     }
 
     async removeTracksFromPlaylist(
