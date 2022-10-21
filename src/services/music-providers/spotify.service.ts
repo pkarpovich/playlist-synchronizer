@@ -101,12 +101,19 @@ export class SpotifyService implements BaseMusicService {
             nextPage = resp.body.next;
         } while (nextPage);
 
-        return items.map<Track>(({ track }) => ({
+        const tracks = items.map<Track>(({ track }) => ({
             id: track?.uri,
             name: track?.name as string,
             artists: track?.artists.map(({ name }) => name) as string[],
             source: track,
         }));
+
+        const duplicates = this.findDuplicateTracksInPlaylist(tracks);
+        await this.removeTracksFromPlaylist(duplicates, { id } as Playlist);
+
+        return tracks.filter(
+            (t) => duplicates.findIndex((dt) => dt.id === t.id) === -1,
+        );
     }
 
     async searchArtistByName(
@@ -182,7 +189,9 @@ export class SpotifyService implements BaseMusicService {
             () =>
                 this.client.removeTracksFromPlaylist(
                     playlist.id,
-                    tracks.map((t) => t.source as SpotifyApi.TrackObjectFull),
+                    tracks.map(
+                        (t) => ({ uri: t.id } as SpotifyApi.TrackObjectFull),
+                    ),
                 ),
             () => this.refreshAccess(),
         );
@@ -234,5 +243,12 @@ export class SpotifyService implements BaseMusicService {
         }
 
         return mostRelevantBySearch;
+    }
+
+    private findDuplicateTracksInPlaylist(tracks: Track[]): Track[] {
+        return tracks.filter(
+            (track, index) =>
+                tracks.findIndex((t) => t.id === track.id) !== index,
+        );
     }
 }
