@@ -1,5 +1,14 @@
 # playlist-synchronizer
 
+## 1.2.1
+
+### Patch Changes
+
+-   59536ed: Add tracks by chunk to spotify playlist
+-   8ae5514: Add paging support for spotify service
+-   7b49b36: Update all dependencies
+-   7b49b36: Remove duplicates from target playlist
+
 ## 1.2.0
 
 ### Minor Changes
