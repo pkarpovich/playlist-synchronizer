@@ -22,7 +22,7 @@ specifiers:
   helmet: ^6.0.0
   husky: ^8.0.1
   lint-staged: ^13.0.3
-  lowdb: ^4.0.0
+  lowdb: ^5.0.5
   nodemon: ^2.0.20
   prettier: ^2.7.1
   signale: ^1.4.0
@@ -40,7 +40,7 @@ dependencies:
   express: 4.18.2
   express-async-errors: 3.1.1_express@4.18.2
   helmet: 6.0.0
-  lowdb: 4.0.0
+  lowdb: 5.0.5
   signale: 1.4.0
   spotify-web-api-node: 5.0.2
   yandex-short-api: 1.0.0
@@ -2414,8 +2414,8 @@ packages:
       wrap-ansi: 6.2.0
     dev: true
 
-  /lowdb/4.0.0:
-    resolution: {integrity: sha512-wH4WPH2A+doyzd9mluhMQQsdrHNfOXJE5+C5N03QvH+8EoEMB1WWnjkfn1MkPtVdDrONRTojuNAWi6Es3rVtmA==}
+  /lowdb/5.0.5:
+    resolution: {integrity: sha512-7EWKmIMhNKA8TXFhL8t0p6N2LC53l3ZqsWQGSksGhhjrcms9rbKlyrAh2PzSGK5v0KPJ2W5VItBnC3NDRzOnzQ==}
     engines: {node: '>=14.16'}
     dependencies:
       steno: 3.0.0
