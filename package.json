@@ -69,7 +69,7 @@
     "signale": "^1.4.0",
     "spotify-web-api-node": "^5.0.2",
     "yandex-short-api": "^1.0.0",
-    "yup": "^0.32.11"
+    "yup": "^1.0.0"
   },
   "peerDependencies": {
     "eslint-plugin-import": ">=2.25.3 <3.0.0"
