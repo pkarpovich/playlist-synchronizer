@@ -10,7 +10,7 @@ specifiers:
   '@typescript-eslint/eslint-plugin': ^5.40.1
   '@typescript-eslint/parser': ^5.40.1
   awilix: ^8.0.0
-  croner: ^5.3.0
+  croner: ^6.0.0
   dotenv: ^16.0.3
   eslint: ^8.25.0
   eslint-config-prettier: ^8.5.0
@@ -35,7 +35,7 @@ specifiers:
 dependencies:
   '@changesets/cli': 2.25.0
   awilix: 8.0.0
-  croner: 5.3.0
+  croner: 6.0.0
   dotenv: 16.0.3
   express: 4.18.2
   express-async-errors: 3.1.1_express@4.18.2
@@ -1057,8 +1057,8 @@ packages:
     resolution: {integrity: sha512-dcKFX3jn0MpIaXjisoRvexIJVEKzaq7z2rZKxf+MSr9TkdmHmsU4m2lcLojrj/FHl8mk5VxMmYA+ftRkP/3oKQ==}
     dev: true
 
-  /croner/5.3.0:
-    resolution: {integrity: sha512-/rAM8MM7Q1q+qp1jYGWJXZXWV2yfpEKHob5C0BLdkZcBmDz+4Hzn3eUWyY8TofPMyyphz1ur59HqG4iuZIJV/g==}
+  /croner/6.0.0:
+    resolution: {integrity: sha512-4+TeqBIlRqqynl+/Q4gQqQJQXfjzKTfsqdGlm2zI6i+cC1FR3v7pk+MW7yOaZwHUJXQoDOMPOCgeTrxt5djbZQ==}
     engines: {node: '>=6.0'}
     dev: false
 
