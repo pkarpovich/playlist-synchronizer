@@ -134,7 +134,7 @@ export class SpotifyService implements BaseMusicService {
         let track = null;
 
         for (const artist of artists) {
-            const searchQuery = `track:${name} artist:${artist}`;
+            const searchQuery = `${name} ${artist}`;
 
             if (this.cache.has(searchQuery)) {
                 track = this.cache.get(searchQuery);
@@ -212,11 +212,11 @@ export class SpotifyService implements BaseMusicService {
         trackName: string,
         artistName: string,
     ): Promise<string> {
-        let query = `track:${trackName}`;
+        let query = trackName;
 
         const artist = await this.searchArtistByName(artistName);
         if (artist) {
-            query += ` artist:${artist.name}`;
+            query += ` ${artist.name}`;
         }
 
         return query;

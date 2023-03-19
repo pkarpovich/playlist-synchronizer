@@ -1,6 +1,9 @@
 import { mkdir } from 'fs/promises';
-import { join } from 'path';
-import { Low, JSONFile } from 'lowdb';
+import { join } from 'node:path';
+import { Low } from 'lowdb';
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+import { JSONFile } from 'lowdb/node';
 import { ConfigService } from './config.service.js';
 import { IConfig } from '../config.js';
 
