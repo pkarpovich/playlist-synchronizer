@@ -1,5 +1,12 @@
 # playlist-synchronizer
 
+## 1.2.2
+
+### Patch Changes
+
+-   9bf3ad7: Fine-tune spotify search query requests
+-   ca15e1c: Update all dependencies
+
 ## 1.2.1
 
 ### Patch Changes
