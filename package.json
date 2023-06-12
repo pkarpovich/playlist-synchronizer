@@ -61,7 +61,7 @@
     "@changesets/cli": "^2.26.0",
     "awilix": "^8.0.0",
     "croner": "^6.0.2",
-    "dotenv": "^16.0.3",
+    "dotenv": "^16.1.4",
     "express": "^4.18.2",
     "express-async-errors": "^3.1.1",
     "helmet": "^6.0.1",
