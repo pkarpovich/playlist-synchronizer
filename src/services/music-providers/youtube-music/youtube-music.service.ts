@@ -1,4 +1,11 @@
-import { get_option, get_playlist, search, setup } from 'libmuse';
+import {
+    add_playlist_items,
+    get_option,
+    get_playlist,
+    remove_playlist_items,
+    search,
+    setup,
+} from 'libmuse';
 
 import { Playlist, Store, Track } from '../../../entities.js';
 import { BaseMusicService } from '../base-music.service.js';
@@ -84,17 +91,33 @@ export class YoutubeMusicService extends BaseMusicService {
         };
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    addTracksToPlaylist(trackIds: string[], playlist: Playlist): Promise<void> {
-        throw new Error('Method not implemented.');
+    async addTracksToPlaylist(
+        trackIds: string[],
+        playlist: Playlist,
+    ): Promise<void> {
+        await add_playlist_items(playlist.id, trackIds);
     }
 
     async removeTracksFromPlaylist(
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         tracks: Track[],
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         playlist: Playlist,
     ): Promise<void> {
-        throw new Error('Method not implemented.');
+        const trackWithId = tracks.filter((t) => {
+            if (t.id) {
+                return t.id;
+            }
+
+            this.logService.warn(
+                `Track ${t.name} was not removed from the yandex playlist ${playlist.name} because he didn't have an id`,
+            );
+        });
+
+        await remove_playlist_items(
+            playlist.id,
+            trackWithId.map((t) => ({
+                videoId: t.id as string,
+                setVideoId: t.id as string,
+            })),
+        );
     }
 }
