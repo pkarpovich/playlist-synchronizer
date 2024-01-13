@@ -9,6 +9,7 @@ import {
     Track,
     SyncStatistics,
 } from '../entities.js';
+import { YoutubeMusicService } from './music-providers/youtube-music/youtube-music.service.js';
 
 const DefaultStatistics: SyncStatistics = {
     lastSyncAt: null,
@@ -38,6 +39,7 @@ export class SyncService {
     constructor(
         private readonly logService: LogService,
         private readonly yandexMusicService: YandexMusicService,
+        private readonly youtubeMusicService: YoutubeMusicService,
         private readonly spotifyService: SpotifyService,
     ) {
         this._statistics = DefaultStatistics;
@@ -48,9 +50,11 @@ export class SyncService {
     }
 
     isAllServicesReady(): boolean {
-        return [this.yandexMusicService, this.spotifyService].every(
-            (service) => service.isReady,
-        );
+        return [
+            this.yandexMusicService,
+            this.spotifyService,
+            this.youtubeMusicService,
+        ].every((service) => service.isReady);
     }
 
     async sync(
@@ -146,6 +150,9 @@ export class SyncService {
             }
             case MusicServiceTypes.YANDEX_MUSIC: {
                 return this.yandexMusicService;
+            }
+            case MusicServiceTypes.YOUTUBE_MUSIC: {
+                return this.youtubeMusicService;
             }
         }
     }
