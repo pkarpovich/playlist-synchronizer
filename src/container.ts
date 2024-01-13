@@ -17,21 +17,26 @@ import {
     YandexMusicService,
 } from './services.js';
 import { Config, IConfig } from './config.js';
-import { AuthStore } from './entities.js';
+import { Store } from './entities.js';
 import {
     initApiController,
     SpotifyController,
     HealthController,
 } from './controllers.js';
 
-const defaultAuthStore: AuthStore = {
-    refreshToken: '',
+const defaultAuthStore: Store = {
+    youtubeMusic: {
+        token: null,
+    },
+    spotify: {
+        refreshToken: '',
+    },
 };
 
 interface Container {
     logService: LogService;
     configService: ConfigService<IConfig>;
-    authStore: LocalDbService<AuthStore>;
+    store: LocalDbService<Store>;
     httpService: HttpService;
     cronService: CronService;
     yandexMusicService: YandexMusicService;
@@ -52,7 +57,7 @@ export function initContainer(): AwilixContainer<Container> {
         configService: asClass(ConfigService<IConfig>)
             .inject(() => ({ config: Config }))
             .singleton(),
-        authStore: asClass(LocalDbService<AuthStore>)
+        store: asClass(LocalDbService<Store>)
             .inject(() => ({ initialData: defaultAuthStore }))
             .singleton(),
         httpService: asClass(HttpService).singleton(),
