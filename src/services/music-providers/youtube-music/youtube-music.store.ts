@@ -1,10 +1,10 @@
 import { Store } from 'libmuse';
 
-import { LocalDbService } from '../../local-db.service';
+import { LocalDbService } from '../../local-db.service.js';
 import {
     Store as LocalBdStore,
     YoutubeMusic,
-} from '../../../entities/auth-store.entity';
+} from '../../../entities/auth-store.entity.js';
 
 export class YoutubeMusicStore extends Store {
     store: YoutubeMusic;

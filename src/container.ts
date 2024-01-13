@@ -23,6 +23,7 @@ import {
     SpotifyController,
     HealthController,
 } from './controllers.js';
+import { YoutubeMusicService } from './services/music-providers/youtube-music/youtube-music.service.js';
 
 const defaultAuthStore: Store = {
     youtubeMusic: {
@@ -41,6 +42,7 @@ interface Container {
     cronService: CronService;
     yandexMusicService: YandexMusicService;
     spotifyService: SpotifyService;
+    youtubeMusicService: YoutubeMusicService;
     spotifyController: SpotifyController;
     healthController: HealthController;
     apiRouter: express.Router;
@@ -64,6 +66,7 @@ export function initContainer(): AwilixContainer<Container> {
         cronService: asClass(CronService).singleton(),
         yandexMusicService: asClass(YandexMusicService).singleton(),
         spotifyService: asClass(SpotifyService).singleton(),
+        youtubeMusicService: asClass(YoutubeMusicService).singleton(),
         healthController: asClass(HealthController).singleton(),
         spotifyController: asClass(SpotifyController).singleton(),
         apiRouter: asFunction(initApiController).singleton(),

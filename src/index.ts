@@ -5,6 +5,7 @@ import { cleanup } from './utils.js';
 
 const {
     spotifyService,
+    youtubeMusicService,
     configService,
     httpService,
     store,
@@ -16,6 +17,7 @@ const {
 await store.start();
 httpService.start();
 await spotifyService.initializeClient();
+await youtubeMusicService.initializeClient();
 
 const syncConfigPath: string = configService.get('syncConfigPath');
 const syncConfig = await getSyncConfig(syncConfigPath);

@@ -1,24 +1,38 @@
-import { setup } from 'libmuse';
+import { get_option, setup } from 'libmuse';
 
-import { Playlist, Store, Track } from '../../../entities';
-import { BaseMusicService } from '../base-music.service';
-import { LogService } from '../../log.service';
-import { LocalDbService } from '../../local-db.service';
-import { YoutubeMusicStore } from './youtube-music.store';
+import { Playlist, Store, Track } from '../../../entities.js';
+import { BaseMusicService } from '../base-music.service.js';
+import { LogService } from '../../log.service.js';
+import { LocalDbService } from '../../local-db.service.js';
+import { YoutubeMusicStore } from './youtube-music.store.js';
 
 export class YoutubeMusicService extends BaseMusicService {
-    isReady = true;
+    isReady = false;
 
     constructor(
         private readonly store: LocalDbService<Store>,
         private readonly logService: LogService,
     ) {
         super();
-
-        setup({ store: new YoutubeMusicStore(store) });
     }
 
-    async initializeClient(): Promise<void> {}
+    async initializeClient(): Promise<void> {
+        setup({ store: new YoutubeMusicStore(this.store) });
+
+        const isToken = get_option('auth').has_token();
+        if (isToken) {
+            this.isReady = true;
+            return;
+        }
+
+        const loginCode = await get_option('auth').get_login_code();
+        this.logService.warn(
+            `Youtube music login required. Please open this URL in your browser ${loginCode.verification_url} and enter the code: ${loginCode.user_code}`,
+        );
+
+        await get_option('auth').load_token_with_code(loginCode);
+        this.isReady = true;
+    }
 
     async getPlaylistTracks({
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
