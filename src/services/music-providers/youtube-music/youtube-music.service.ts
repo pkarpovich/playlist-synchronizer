@@ -8,12 +8,14 @@ import {
 } from 'libmuse';
 import type { SearchSong } from 'libmuse/types/parsers/search.js';
 import type { Playlist as PlaylistLibmuse } from 'libmuse/types/mixins/playlist.js';
+import type { SongArtist } from 'libmuse/types/parsers/songs';
 
 import { Playlist, Store, Track } from '../../../entities.js';
 import { BaseMusicService } from '../base-music.service.js';
 import { LogService } from '../../log.service.js';
 import { LocalDbService } from '../../local-db.service.js';
 import { YoutubeMusicStore } from './youtube-music.store.js';
+import { checkIfArraysAreEqual } from '../../../utils/array.js';
 
 export class YoutubeMusicService extends BaseMusicService {
     isReady = false;
@@ -73,13 +75,13 @@ export class YoutubeMusicService extends BaseMusicService {
             return null;
         }
 
-        const track = findTracks.find(
-            (track) =>
-                track.title === name &&
-                checkIfArraysAreEqual<string>(
-                    artists,
-                    track.artists.map((a) => a.name),
-                ),
+        const track = findTracks.find((track) =>
+            this.checkThatTrackIsSuitable(
+                name,
+                artists,
+                track.title,
+                this.artistsToNameArray(track.artists),
+            ),
         );
 
         if (!track) {
@@ -92,6 +94,53 @@ export class YoutubeMusicService extends BaseMusicService {
             artists: track.artists.map((a) => a.name),
             source: track,
         };
+    }
+
+    private artistsToNameArray(artists: SongArtist[]) {
+        let result: string[] = [];
+
+        for (const artist of artists) {
+            if (artist.id) {
+                result.push(artist.name);
+                continue;
+            }
+
+            const names = artist.name.replace(/, & | & /g, ', ');
+            result = [...result, ...names.split(', ')];
+        }
+
+        return result;
+    }
+
+    private checkThatTrackIsSuitable(
+        findName: string,
+        findArtist: string[],
+        foundName: string,
+        foundArtists: string[],
+    ) {
+        findName = findName.toLowerCase();
+        findArtist = findArtist.map((a) => a.toLowerCase());
+        foundName = foundName.toLowerCase();
+        foundArtists = foundArtists.map((a) => a.toLowerCase());
+
+        const [foundNameWithoutFeaturing] = findName
+            .split(' (ft.')[0]
+            .split(' (feat.');
+
+        const isNameAppropriate =
+            foundName.indexOf(foundNameWithoutFeaturing) !== -1;
+        if (!isNameAppropriate) {
+            return false;
+        }
+
+        const featuringArtists = findArtist.filter(
+            (a) => foundName.indexOf(a) !== -1,
+        );
+
+        const allFoundArtists = [
+            ...new Set([...foundArtists, ...featuringArtists]),
+        ];
+        return checkIfArraysAreEqual<string>(findArtist, allFoundArtists);
     }
 
     async addTracksToPlaylist(
