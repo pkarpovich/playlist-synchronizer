@@ -13,6 +13,7 @@ import { LogService } from '../../log.service.js';
 import { LocalDbService } from '../../local-db.service.js';
 import { YoutubeMusicStore } from './youtube-music.store.js';
 import type { SearchSong } from 'libmuse/types/parsers/search.js';
+import type { Playlist as PlaylistLibmuse } from 'libmuse/types/mixins/playlist.js';
 import { checkIfArraysAreEqual } from '../../../utils/array.js';
 
 export class YoutubeMusicService extends BaseMusicService {
@@ -102,21 +103,32 @@ export class YoutubeMusicService extends BaseMusicService {
         tracks: Track[],
         playlist: Playlist,
     ): Promise<void> {
-        const trackWithId = tracks.filter((t) => {
-            if (t.id) {
-                return t.id;
+        const playlistFromServer: PlaylistLibmuse = await get_playlist(
+            playlist.id,
+        );
+
+        const trackFromServer = playlistFromServer.tracks.filter(
+            (trackFromServer) =>
+                tracks.some(
+                    (propsTrack) => propsTrack.id === trackFromServer.videoId,
+                ),
+        );
+
+        const trackFromServerWithSetVideoId = trackFromServer.filter((t) => {
+            if (t.setVideoId) {
+                return true;
             }
 
             this.logService.warn(
-                `Track ${t.name} was not removed from the yandex playlist ${playlist.name} because he didn't have an id`,
+                `Track ${t.title} by ${t.artists} was not removed in youtube. Reason setVideoId is absent`,
             );
         });
 
         await remove_playlist_items(
             playlist.id,
-            trackWithId.map((t) => ({
-                videoId: t.id as string,
-                setVideoId: t.id as string,
+            trackFromServerWithSetVideoId.map((t) => ({
+                videoId: t.videoId,
+                setVideoId: t.setVideoId as string,
             })),
         );
     }
