@@ -6,18 +6,18 @@ import {
     search,
     setup,
 } from 'libmuse';
+import type { SearchSong } from 'libmuse/types/parsers/search.js';
+import type { Playlist as PlaylistLibmuse } from 'libmuse/types/mixins/playlist.js';
 
 import { Playlist, Store, Track } from '../../../entities.js';
 import { BaseMusicService } from '../base-music.service.js';
 import { LogService } from '../../log.service.js';
 import { LocalDbService } from '../../local-db.service.js';
 import { YoutubeMusicStore } from './youtube-music.store.js';
-import type { SearchSong } from 'libmuse/types/parsers/search.js';
-import type { Playlist as PlaylistLibmuse } from 'libmuse/types/mixins/playlist.js';
-import { checkIfArraysAreEqual } from '../../../utils/array.js';
 
 export class YoutubeMusicService extends BaseMusicService {
     isReady = false;
+    private getPlaylistTracksLimit = 99999999999;
 
     constructor(
         private readonly store: LocalDbService<Store>,
@@ -45,7 +45,9 @@ export class YoutubeMusicService extends BaseMusicService {
     }
 
     async getPlaylistTracks({ id }: Playlist): Promise<Track[]> {
-        const playlist = await get_playlist(id);
+        const playlist = await get_playlist(id, {
+            limit: this.getPlaylistTracksLimit,
+        });
 
         return playlist.tracks.map((track) => ({
             id: track.videoId,
@@ -105,6 +107,7 @@ export class YoutubeMusicService extends BaseMusicService {
     ): Promise<void> {
         const playlistFromServer: PlaylistLibmuse = await get_playlist(
             playlist.id,
+            { limit: this.getPlaylistTracksLimit },
         );
 
         const trackFromServer = playlistFromServer.tracks.filter(
