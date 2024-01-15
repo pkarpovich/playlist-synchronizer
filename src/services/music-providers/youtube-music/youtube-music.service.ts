@@ -9,6 +9,11 @@ import {
 import type { SearchSong } from 'libmuse/types/parsers/search.js';
 import type { Playlist as PlaylistLibmuse } from 'libmuse/types/mixins/playlist.js';
 import type { SongArtist } from 'libmuse/types/parsers/songs';
+import type { SearchOptions, SearchResults } from 'libmuse/types/mixins/search';
+import type {
+    EditPlaylistResult,
+    GetPlaylistOptions,
+} from 'libmuse/types/mixins/playlist';
 
 import { Playlist, Store, Track } from '../../../entities.js';
 import { BaseMusicService } from '../base-music.service.js';
@@ -16,6 +21,7 @@ import { LogService } from '../../log.service.js';
 import { LocalDbService } from '../../local-db.service.js';
 import { YoutubeMusicStore } from './youtube-music.store.js';
 import { checkIfArraysAreEqual } from '../../../utils/array.js';
+import { retry } from '../../../utils/retry.js';
 
 export class YoutubeMusicService extends BaseMusicService {
     isReady = false;
@@ -47,7 +53,7 @@ export class YoutubeMusicService extends BaseMusicService {
     }
 
     async getPlaylistTracks({ id }: Playlist): Promise<Track[]> {
-        const playlist = await get_playlist(id, {
+        const playlist = await this.getPlaylist(id, {
             limit: this.getPlaylistTracksLimit,
         });
 
@@ -63,7 +69,7 @@ export class YoutubeMusicService extends BaseMusicService {
         name: string,
         artists: string[],
     ): Promise<Track | null> {
-        const searchResult = await search(`${name} ${artists}`, {
+        const searchResult = await this.search(`${name} ${artists}`, {
             filter: 'songs',
         });
 
@@ -94,6 +100,54 @@ export class YoutubeMusicService extends BaseMusicService {
             artists: track.artists.map((a) => a.name),
             source: track,
         };
+    }
+
+    async addTracksToPlaylist(
+        trackIds: string[],
+        playlist: Playlist,
+    ): Promise<void> {
+        await retry<PlaylistLibmuse>(
+            async () => await add_playlist_items(playlist.id, trackIds),
+            async () =>
+                this.notifyThatFunctionCompletedWithError(
+                    'addTracksToPlaylist',
+                ),
+        );
+    }
+
+    async removeTracksFromPlaylist(
+        tracks: Track[],
+        playlist: Playlist,
+    ): Promise<void> {
+        const playlistFromServer: PlaylistLibmuse = await this.getPlaylist(
+            playlist.id,
+            { limit: this.getPlaylistTracksLimit },
+        );
+
+        const trackFromServer = playlistFromServer.tracks.filter(
+            (trackFromServer) =>
+                tracks.some(
+                    (propsTrack) => propsTrack.id === trackFromServer.videoId,
+                ),
+        );
+
+        const trackFromServerWithSetVideoId = trackFromServer.filter((t) => {
+            if (t.setVideoId) {
+                return true;
+            }
+
+            this.logService.warn(
+                `Track ${t.title} by ${t.artists} was not removed in youtube. Reason setVideoId is absent`,
+            );
+        });
+
+        await this.removePlaylistItemsWrapperOverLibmuseMethod(
+            playlist.id,
+            trackFromServerWithSetVideoId.map((t) => ({
+                videoId: t.videoId,
+                setVideoId: t.setVideoId as string,
+            })),
+        );
     }
 
     private artistsToNameArray(artists: SongArtist[]) {
@@ -143,45 +197,46 @@ export class YoutubeMusicService extends BaseMusicService {
         return checkIfArraysAreEqual<string>(findArtist, allFoundArtists);
     }
 
-    async addTracksToPlaylist(
-        trackIds: string[],
-        playlist: Playlist,
-    ): Promise<void> {
-        await add_playlist_items(playlist.id, trackIds);
+    private async getPlaylist(
+        playlistId: string,
+        options?: GetPlaylistOptions,
+    ): Promise<PlaylistLibmuse> {
+        return retry<PlaylistLibmuse>(
+            async () => await get_playlist(playlistId, options),
+            async () =>
+                this.notifyThatFunctionCompletedWithError('getPlaylist'),
+        );
     }
 
-    async removeTracksFromPlaylist(
-        tracks: Track[],
-        playlist: Playlist,
-    ): Promise<void> {
-        const playlistFromServer: PlaylistLibmuse = await get_playlist(
-            playlist.id,
-            { limit: this.getPlaylistTracksLimit },
+    private async search(
+        query: string,
+        options?: SearchOptions,
+    ): Promise<SearchResults> {
+        return retry<SearchResults>(
+            async () => await search(query, options),
+            async () => this.notifyThatFunctionCompletedWithError('search'),
         );
+    }
 
-        const trackFromServer = playlistFromServer.tracks.filter(
-            (trackFromServer) =>
-                tracks.some(
-                    (propsTrack) => propsTrack.id === trackFromServer.videoId,
+    private async removePlaylistItemsWrapperOverLibmuseMethod(
+        playlistId: string,
+        videoIds: {
+            videoId: string;
+            setVideoId: string;
+        }[],
+    ): Promise<EditPlaylistResult> {
+        return retry<EditPlaylistResult>(
+            async () => await remove_playlist_items(playlistId, videoIds),
+            async () =>
+                this.notifyThatFunctionCompletedWithError(
+                    'removePlaylistItemsWrapperOverLibmuseMethod',
                 ),
         );
+    }
 
-        const trackFromServerWithSetVideoId = trackFromServer.filter((t) => {
-            if (t.setVideoId) {
-                return true;
-            }
-
-            this.logService.warn(
-                `Track ${t.title} by ${t.artists} was not removed in youtube. Reason setVideoId is absent`,
-            );
-        });
-
-        await remove_playlist_items(
-            playlist.id,
-            trackFromServerWithSetVideoId.map((t) => ({
-                videoId: t.videoId,
-                setVideoId: t.setVideoId as string,
-            })),
+    private notifyThatFunctionCompletedWithError(functionName: string) {
+        this.logService.warn(
+            `The ${functionName} in the YoutubeMusicService ended with an error. The function will be re-run`,
         );
     }
 }
