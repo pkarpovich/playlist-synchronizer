@@ -177,13 +177,15 @@ export class YoutubeMusicService extends BaseMusicService {
         foundName = foundName.toLowerCase();
         foundArtists = foundArtists.map((a) => a.toLowerCase());
 
-        const [foundNameWithoutFeaturing] = findName
-            .split(' (ft.')[0]
-            .split(' (feat.');
+        const findNameWithoutParticipantDesignations =
+            this.getTrackNameWithoutParticipantDesignations(findName);
+        const foundNameWithoutParticipantDesignations =
+            this.getTrackNameWithoutParticipantDesignations(foundName);
 
-        const isNameAppropriate =
-            foundName.indexOf(foundNameWithoutFeaturing) !== -1;
-        if (!isNameAppropriate) {
+        if (
+            findNameWithoutParticipantDesignations !==
+            foundNameWithoutParticipantDesignations
+        ) {
             return false;
         }
 
@@ -195,6 +197,12 @@ export class YoutubeMusicService extends BaseMusicService {
             ...new Set([...foundArtists, ...featuringArtists]),
         ];
         return checkIfArraysAreEqual<string>(findArtist, allFoundArtists);
+    }
+
+    private getTrackNameWithoutParticipantDesignations(name: string): string {
+        const regex = /\s+\((ft|feat|prod)\./;
+
+        return name.split(regex)[0].trim();
     }
 
     private async getPlaylist(
