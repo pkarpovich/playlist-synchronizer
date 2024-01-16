@@ -29,6 +29,8 @@ export class YoutubeMusicService extends BaseMusicService {
     isReady = false;
     private getPlaylistTracksLimit = 99999999999;
 
+    private readonly cache = new Map<string, Track>();
+
     constructor(
         private readonly store: LocalDbService<Store>,
         private readonly configService: ConfigService<IConfig>,
@@ -76,7 +78,14 @@ export class YoutubeMusicService extends BaseMusicService {
         name: string,
         artists: string[],
     ): Promise<Track | null> {
-        const searchResult = await this.search(`${name} ${artists}`, {
+        const searchQuery = `${name} ${artists}`;
+        const trackInCache = this.cache.get(searchQuery);
+
+        if (trackInCache) {
+            return trackInCache;
+        }
+
+        const searchResult = await this.search(searchQuery, {
             filter: 'songs',
         });
 
@@ -101,12 +110,15 @@ export class YoutubeMusicService extends BaseMusicService {
             return null;
         }
 
-        return {
+        const result = {
             id: track.videoId,
             name: track.title,
             artists: track.artists.map((a) => a.name),
             source: track,
         };
+        this.cache.set(searchQuery, result);
+
+        return result;
     }
 
     async addTracksToPlaylist(
