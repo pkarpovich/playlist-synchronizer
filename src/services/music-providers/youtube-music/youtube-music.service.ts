@@ -178,7 +178,7 @@ export class YoutubeMusicService extends BaseMusicService {
                 continue;
             }
 
-            const names = artist.name.replace(/, & | & /g, ', ');
+            const names = artist.name.replace(/, & | & | and | и /g, ', ');
             result = [...result, ...names.split(', ')];
         }
 
