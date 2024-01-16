@@ -22,6 +22,8 @@ import { LocalDbService } from '../../local-db.service.js';
 import { YoutubeMusicStore } from './youtube-music.store.js';
 import { checkIfArraysAreEqual } from '../../../utils/array.js';
 import { retry } from '../../../utils/retry.js';
+import { ConfigService } from '../../config.service';
+import { IConfig } from '../../../config/config';
 
 export class YoutubeMusicService extends BaseMusicService {
     isReady = false;
@@ -29,13 +31,18 @@ export class YoutubeMusicService extends BaseMusicService {
 
     constructor(
         private readonly store: LocalDbService<Store>,
+        private readonly configService: ConfigService<IConfig>,
         private readonly logService: LogService,
     ) {
         super();
     }
 
     async initializeClient(): Promise<void> {
-        setup({ store: new YoutubeMusicStore(this.store) });
+        setup({
+            store: new YoutubeMusicStore(this.store),
+            location: this.configService.get('location'),
+            language: this.configService.get('language'),
+        });
 
         const isToken = get_option('auth').has_token();
         if (isToken) {
