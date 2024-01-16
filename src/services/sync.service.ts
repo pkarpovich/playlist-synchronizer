@@ -2,7 +2,7 @@ import { YandexMusicService } from './music-providers/yandex-music.service.js';
 import { BaseMusicService } from './music-providers/base-music.service.js';
 import { SpotifyService } from './music-providers/spotify.service.js';
 import { LoggerContext, LogService } from './log.service.js';
-import { PlaylistConfig } from '../config.js';
+import { IConfig, PlaylistConfig } from '../config.js';
 import {
     MusicServiceTypes,
     Playlist,
@@ -10,6 +10,7 @@ import {
     SyncStatistics,
 } from '../entities.js';
 import { YoutubeMusicService } from './music-providers/youtube-music/youtube-music.service.js';
+import { ConfigService } from './config.service';
 
 const DefaultStatistics: SyncStatistics = {
     lastSyncAt: null,
@@ -41,6 +42,7 @@ export class SyncService {
         private readonly yandexMusicService: YandexMusicService,
         private readonly youtubeMusicService: YoutubeMusicService,
         private readonly spotifyService: SpotifyService,
+        private readonly configService: ConfigService<IConfig>,
     ) {
         this._statistics = DefaultStatistics;
     }
@@ -110,7 +112,13 @@ export class SyncService {
             this._statistics.totalTracksInTargetPlaylists +=
                 ctx.targetPlaylistTracks.length;
 
-            await this.removeDeletedTracks(ctx, tracksForAdd);
+            if (
+                this.configService.get(
+                    'isRemoveTracksThatAreNotInOriginalPlaylistAndAreNoLongerAvailable',
+                )
+            ) {
+                await this.removeDeletedTracks(ctx, tracksForAdd);
+            }
 
             const trackIdsForAdd: string[] = (
                 await this.filterDuplicates(
