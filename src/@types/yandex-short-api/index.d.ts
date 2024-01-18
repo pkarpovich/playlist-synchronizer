@@ -19,6 +19,7 @@ declare module 'yandex-short-api' {
         async getPlaylist(
             userName: string,
             playlistId: string,
+            language?: string,
         ): Promise<Playlist>;
     }
 }
