@@ -23,8 +23,6 @@ export interface IConfig {
     http: {
         port: number;
     };
-
-    isRemoveTracksThatAreNotInOriginalPlaylistAndAreNoLongerAvailable: boolean;
 }
 
 const DEFAULT_LANGUAGE = 'ru';
@@ -53,9 +51,4 @@ export const Config = {
     http: {
         port: Number(process.env.HTTP_PORT),
     },
-
-    isRemoveTracksThatAreNotInOriginalPlaylistAndAreNoLongerAvailable:
-        process.env
-            .IS_REMOVE_TRACKS_THAT_ARE_NOT_IN_ORIGINAL_PLAYLIST_AND_ARE_NO_LONGER_AVAILABLE ===
-        'true',
 } as IConfig;

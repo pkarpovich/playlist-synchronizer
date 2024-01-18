@@ -113,9 +113,7 @@ export class SyncService {
                 ctx.targetPlaylistTracks.length;
 
             if (
-                this.configService.get(
-                    'isRemoveTracksThatAreNotInOriginalPlaylistAndAreNoLongerAvailable',
-                )
+                !target?.isNoRemoveTracksThatAreNotInOriginalPlaylistAndAreNoLongerAvailable
             ) {
                 await this.removeDeletedTracks(ctx, tracksForAdd);
             }

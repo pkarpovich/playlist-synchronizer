@@ -3,14 +3,16 @@ import { object, array, string } from 'yup';
 
 import { Playlist, MusicServiceTypes } from '../entities.js';
 
+interface TargetPlaylists
+    extends Omit<PlaylistConfig, 'excludedTrackIds' | 'targetPlaylists'> {
+    isNoRemoveTracksThatAreNotInOriginalPlaylistAndAreNoLongerAvailable?: boolean;
+}
+
 export interface PlaylistConfig {
     type: MusicServiceTypes;
     metadata: Playlist;
     excludedTrackIds: ReadonlyArray<string>;
-    targetPlaylists: Omit<
-        PlaylistConfig,
-        'excludedTrackIds' | 'targetPlaylists'
-    >[];
+    targetPlaylists: TargetPlaylists[];
 }
 
 export interface SyncConfig {
