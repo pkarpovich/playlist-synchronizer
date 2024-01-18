@@ -1,4 +1,4 @@
-import { YandexMusicApi } from 'yandex-short-api';
+import { Artist, YandexMusicApi } from 'yandex-short-api';
 
 import { Playlist, Track } from '../../entities.js';
 import { BaseMusicService } from './base-music.service.js';
@@ -31,9 +31,23 @@ export class YandexMusicService extends BaseMusicService {
 
         return tracks.map<Track>((track) => ({
             name: track.title,
-            artists: track.artists.map(({ name }) => name),
+            artists: track.artists
+                .map((a) => this.getAllArtistsNameFromArtistObject(a))
+                .flat(),
             source: track,
         }));
+    }
+
+    private getAllArtistsNameFromArtistObject(artist: Artist) {
+        if (!artist?.decomposed) {
+            return [artist.name];
+        }
+
+        const artistsInDecomposed = artist.decomposed.filter(
+            (d): d is Artist => typeof d === 'object' && 'name' in d,
+        );
+
+        return [artist.name, ...artistsInDecomposed.map((a) => a.name)];
     }
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars

@@ -2,6 +2,7 @@
 declare module 'yandex-short-api' {
     type Artist = {
         name: string;
+        decomposed?: Array<string | object>;
     };
 
     type Track = {
