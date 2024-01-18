@@ -3,8 +3,8 @@ import { Artist, YandexMusicApi } from 'yandex-short-api';
 import { Playlist, Track } from '../../entities.js';
 import { BaseMusicService } from './base-music.service.js';
 import { LogService } from '../log.service.js';
-import { ConfigService } from '../config.service';
-import { IConfig } from '../../config/config';
+import { ConfigService } from '../config.service.js';
+import { IConfig } from '../../config/config.js';
 
 export class YandexMusicService extends BaseMusicService {
     private client: YandexMusicApi;
@@ -47,18 +47,6 @@ export class YandexMusicService extends BaseMusicService {
         }));
     }
 
-    private getAllArtistsNameFromArtistObject(artist: Artist) {
-        if (!artist?.decomposed) {
-            return [artist.name];
-        }
-
-        const artistsInDecomposed = artist.decomposed.filter(
-            (d): d is Artist => typeof d === 'object' && 'name' in d,
-        );
-
-        return [artist.name, ...artistsInDecomposed.map((a) => a.name)];
-    }
-
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     searchTrackByName(name: string, artists: string[]): Promise<Track> {
         throw new Error('Method not implemented.');
@@ -76,5 +64,17 @@ export class YandexMusicService extends BaseMusicService {
         playlist: Playlist,
     ): Promise<void> {
         throw new Error('Method not implemented.');
+    }
+
+    private getAllArtistsNameFromArtistObject(artist: Artist) {
+        if (!artist?.decomposed) {
+            return [artist.name];
+        }
+
+        const artistsInDecomposed = artist.decomposed.filter(
+            (d): d is Artist => typeof d === 'object' && 'name' in d,
+        );
+
+        return [artist.name, ...artistsInDecomposed.map((a) => a.name)];
     }
 }

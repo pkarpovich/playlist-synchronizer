@@ -6,6 +6,8 @@ services:
     ports:
       - ${HTTP_PORT}:${HTTP_PORT}
     environment:
+      LANGUAGE: ${LANGUAGE}
+      LOCATION: ${LOCATION}
       DB_PATH: ${DB_PATH}
       HTTP_PORT: ${HTTP_PORT}
       SYNC_CONFIG_PATH: ${SYNC_CONFIG_PATH}

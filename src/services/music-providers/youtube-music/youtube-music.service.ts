@@ -7,13 +7,16 @@ import {
     setup,
 } from 'libmuse';
 import type { SearchSong } from 'libmuse/types/parsers/search.js';
-import type { Playlist as PlaylistLibmuse } from 'libmuse/types/mixins/playlist.js';
-import type { SongArtist } from 'libmuse/types/parsers/songs';
-import type { SearchOptions, SearchResults } from 'libmuse/types/mixins/search';
 import type {
+    Playlist as PlaylistLibmuse,
     EditPlaylistResult,
     GetPlaylistOptions,
-} from 'libmuse/types/mixins/playlist';
+} from 'libmuse/types/mixins/playlist.js';
+import type { SongArtist } from 'libmuse/types/parsers/songs.js';
+import type {
+    SearchOptions,
+    SearchResults,
+} from 'libmuse/types/mixins/search.js';
 
 import { Playlist, Store, Track } from '../../../entities.js';
 import { BaseMusicService } from '../base-music.service.js';
@@ -22,8 +25,8 @@ import { LocalDbService } from '../../local-db.service.js';
 import { YoutubeMusicStore } from './youtube-music.store.js';
 import { checkIfArraysAreEqual } from '../../../utils/array.js';
 import { retry } from '../../../utils/retry.js';
-import { ConfigService } from '../../config.service';
-import { IConfig } from '../../../config/config';
+import { ConfigService } from '../../config.service.js';
+import { IConfig } from '../../../config/config.js';
 
 export class YoutubeMusicService extends BaseMusicService {
     isReady = false;
