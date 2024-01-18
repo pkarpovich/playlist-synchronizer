@@ -1,17 +1,17 @@
-import { YMApi } from 'ym-api-meowed';
+import { YandexMusicApi } from 'yandex-short-api';
 
 import { Playlist, Track } from '../../entities.js';
 import { BaseMusicService } from './base-music.service.js';
 import { LogService } from '../log.service.js';
 
 export class YandexMusicService extends BaseMusicService {
-    private client: YMApi;
+    private client: YandexMusicApi;
 
     isReady = true;
 
     constructor(private readonly logService: LogService) {
         super();
-        this.client = new YMApi();
+        this.client = new YandexMusicApi();
     }
 
     async getPlaylistTracks({
@@ -19,7 +19,7 @@ export class YandexMusicService extends BaseMusicService {
         userName,
         name,
     }: Playlist): Promise<Track[]> {
-        const resp = await this.client.getPlaylist(+id, userName as string);
+        const resp = await this.client.getPlaylist(userName as string, id);
         if (!resp || !resp.tracks) {
             this.logService.error(
                 `Failed to get playlist ${name} from yandex.music`,
@@ -29,7 +29,7 @@ export class YandexMusicService extends BaseMusicService {
 
         const { tracks } = resp;
 
-        return tracks.map<Track>(({ track }) => ({
+        return tracks.map<Track>((track) => ({
             name: track.title,
             artists: track.artists.map(({ name }) => name),
             source: track,
