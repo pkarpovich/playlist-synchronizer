@@ -3,13 +3,18 @@ import { Artist, YandexMusicApi } from 'yandex-short-api';
 import { Playlist, Track } from '../../entities.js';
 import { BaseMusicService } from './base-music.service.js';
 import { LogService } from '../log.service.js';
+import { ConfigService } from '../config.service';
+import { IConfig } from '../../config/config';
 
 export class YandexMusicService extends BaseMusicService {
     private client: YandexMusicApi;
 
     isReady = true;
 
-    constructor(private readonly logService: LogService) {
+    constructor(
+        private readonly logService: LogService,
+        private readonly configService: ConfigService<IConfig>,
+    ) {
         super();
         this.client = new YandexMusicApi();
     }
@@ -19,7 +24,11 @@ export class YandexMusicService extends BaseMusicService {
         userName,
         name,
     }: Playlist): Promise<Track[]> {
-        const resp = await this.client.getPlaylist(userName as string, id);
+        const resp = await this.client.getPlaylist(
+            userName as string,
+            id,
+            this.configService.get('language'),
+        );
         if (!resp || !resp.tracks) {
             this.logService.error(
                 `Failed to get playlist ${name} from yandex.music`,
