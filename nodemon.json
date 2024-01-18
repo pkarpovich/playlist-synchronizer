@@ -8,7 +8,7 @@
     "db/**/*"
   ],
   "execMap": {
-    "ts": "ts-node"
+    "ts": "node --import ./register-hooks.js"
   },
   "ext": "ts,js,json",
   "ts-node": {
