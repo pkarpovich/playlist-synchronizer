@@ -143,9 +143,19 @@ export class YoutubeMusicService extends BaseMusicService {
             { limit: this.getPlaylistTracksLimit },
         );
 
+        const trackWithId = tracks.filter((t) => {
+            if (t?.id) {
+                return true;
+            }
+
+            this.logService.warn(
+                `Track ${t.name} by ${t.artists} was not removed in youtube. Reason id is absent`,
+            );
+        });
+
         const trackFromServer = playlistFromServer.tracks.filter(
             (trackFromServer) =>
-                tracks.some(
+                trackWithId.some(
                     (propsTrack) => propsTrack.id === trackFromServer.videoId,
                 ),
         );
@@ -159,6 +169,10 @@ export class YoutubeMusicService extends BaseMusicService {
                 `Track ${t.title} by ${t.artists} was not removed in youtube. Reason setVideoId is absent`,
             );
         });
+
+        if (!trackFromServerWithSetVideoId.length) {
+            return;
+        }
 
         await this.removePlaylistItemsWrapperOverLibmuseMethod(
             playlist.id,
