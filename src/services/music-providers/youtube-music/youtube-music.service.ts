@@ -8,9 +8,9 @@ import {
 } from 'libmuse';
 import type { SearchSong } from 'libmuse/types/parsers/search.js';
 import type {
-    Playlist as PlaylistLibmuse,
     EditPlaylistResult,
     GetPlaylistOptions,
+    Playlist as PlaylistLibmuse,
 } from 'libmuse/types/mixins/playlist.js';
 import type { SongArtist } from 'libmuse/types/parsers/songs.js';
 import type {
@@ -130,10 +130,7 @@ export class YoutubeMusicService extends BaseMusicService {
     ): Promise<void> {
         await retry<PlaylistLibmuse>(
             async () => await add_playlist_items(playlist.id, trackIds),
-            async () =>
-                this.notifyThatFunctionCompletedWithError(
-                    'addTracksToPlaylist',
-                ),
+            async () => this.logApiError(this.addTracksToPlaylist.name),
         );
     }
 
@@ -247,8 +244,7 @@ export class YoutubeMusicService extends BaseMusicService {
     ): Promise<PlaylistLibmuse> {
         return retry<PlaylistLibmuse>(
             async () => await get_playlist(playlistId, options),
-            async () =>
-                this.notifyThatFunctionCompletedWithError('getPlaylist'),
+            async () => this.logApiError(this.getPlaylist.name),
         );
     }
 
@@ -258,7 +254,7 @@ export class YoutubeMusicService extends BaseMusicService {
     ): Promise<SearchResults> {
         return retry<SearchResults>(
             async () => await search(query, options),
-            async () => this.notifyThatFunctionCompletedWithError('search'),
+            async () => this.logApiError(this.search.name),
         );
     }
 
@@ -272,13 +268,13 @@ export class YoutubeMusicService extends BaseMusicService {
         return retry<EditPlaylistResult>(
             async () => await remove_playlist_items(playlistId, videoIds),
             async () =>
-                this.notifyThatFunctionCompletedWithError(
-                    'removePlaylistItemsWrapperOverLibmuseMethod',
+                this.logApiError(
+                    this.removePlaylistItemsWrapperOverLibmuseMethod.name,
                 ),
         );
     }
 
-    private notifyThatFunctionCompletedWithError(functionName: string) {
+    private logApiError(functionName: string) {
         this.logService.warn(
             `The ${functionName} in the YoutubeMusicService ended with an error. The function will be re-run`,
         );
