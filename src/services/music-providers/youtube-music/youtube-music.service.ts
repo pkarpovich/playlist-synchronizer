@@ -2,7 +2,7 @@ import {
     add_playlist_items as addPlaylistItems,
     get_option as getOption,
     get_playlist as getPlaylist,
-    remove_playlist_items as removePlaylistItems,
+    remove_playlist_items as removePlaylistItemsLibmuseMethode,
     search,
     setup,
 } from 'libmuse';
@@ -174,7 +174,7 @@ export class YoutubeMusicService extends BaseMusicService {
             return;
         }
 
-        await this.removePlaylistItemsWrapperOverLibmuseMethod(
+        await this.removePlaylistItemsWrapperOverApiMethod(
             playlist.id,
             trackFromServerWithSetVideoId.map((t) => ({
                 videoId: t.videoId,
@@ -253,7 +253,7 @@ export class YoutubeMusicService extends BaseMusicService {
         );
     }
 
-    private async removePlaylistItemsWrapperOverLibmuseMethod(
+    private async removePlaylistItemsWrapperOverApiMethod(
         playlistId: string,
         videoIds: {
             videoId: string;
@@ -261,10 +261,11 @@ export class YoutubeMusicService extends BaseMusicService {
         }[],
     ): Promise<EditPlaylistResult> {
         return retry<EditPlaylistResult>(
-            async () => await removePlaylistItems(playlistId, videoIds),
+            async () =>
+                await removePlaylistItemsLibmuseMethode(playlistId, videoIds),
             async () =>
                 this.logApiError(
-                    this.removePlaylistItemsWrapperOverLibmuseMethod.name,
+                    this.removePlaylistItemsWrapperOverApiMethod.name,
                 ),
         );
     }
