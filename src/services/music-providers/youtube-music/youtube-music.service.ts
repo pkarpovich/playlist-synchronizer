@@ -1,8 +1,8 @@
 import {
-    add_playlist_items,
-    get_option,
-    get_playlist,
-    remove_playlist_items,
+    add_playlist_items as addPlaylistItems,
+    get_option as getOption,
+    get_playlist as getPlaylist,
+    remove_playlist_items as removePlaylistItems,
     search,
     setup,
 } from 'libmuse';
@@ -49,18 +49,18 @@ export class YoutubeMusicService extends BaseMusicService {
             language: this.configService.get('language'),
         });
 
-        const isToken = get_option('auth').has_token();
+        const isToken = getOption('auth').has_token();
         if (isToken) {
             this.isReady = true;
             return;
         }
 
-        const loginCode = await get_option('auth').get_login_code();
+        const loginCode = await getOption('auth').get_login_code();
         this.logService.warn(
             `Youtube music login required. Please open this URL in your browser ${loginCode.verification_url} and enter the code: ${loginCode.user_code}`,
         );
 
-        await get_option('auth').load_token_with_code(loginCode);
+        await getOption('auth').load_token_with_code(loginCode);
         this.isReady = true;
     }
 
@@ -129,7 +129,7 @@ export class YoutubeMusicService extends BaseMusicService {
         playlist: Playlist,
     ): Promise<void> {
         await retry<PlaylistLibmuse>(
-            async () => await add_playlist_items(playlist.id, trackIds),
+            async () => await addPlaylistItems(playlist.id, trackIds),
             async () => this.logApiError(this.addTracksToPlaylist.name),
         );
     }
@@ -238,7 +238,7 @@ export class YoutubeMusicService extends BaseMusicService {
         options?: GetPlaylistOptions,
     ): Promise<PlaylistLibmuse> {
         return retry<PlaylistLibmuse>(
-            async () => await get_playlist(playlistId, options),
+            async () => await getPlaylist(playlistId, options),
             async () => this.logApiError(this.getPlaylist.name),
         );
     }
@@ -261,7 +261,7 @@ export class YoutubeMusicService extends BaseMusicService {
         }[],
     ): Promise<EditPlaylistResult> {
         return retry<EditPlaylistResult>(
-            async () => await remove_playlist_items(playlistId, videoIds),
+            async () => await removePlaylistItems(playlistId, videoIds),
             async () =>
                 this.logApiError(
                     this.removePlaylistItemsWrapperOverLibmuseMethod.name,
