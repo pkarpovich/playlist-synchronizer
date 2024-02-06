@@ -71,10 +71,10 @@ export class YandexMusicService extends BaseMusicService {
             return [artist.name];
         }
 
-        const artistsInDecomposed = artist.decomposed.filter(
+        const filteredArtists = artist.decomposed.filter(
             (d): d is Artist => typeof d === 'object' && 'name' in d,
         );
 
-        return [artist.name, ...artistsInDecomposed.map((a) => a.name)];
+        return [artist.name, ...filteredArtists.map((a) => a.name)];
     }
 }

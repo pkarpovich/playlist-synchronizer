@@ -30,7 +30,7 @@ import { IConfig } from '../../../config/config.js';
 
 export class YoutubeMusicService extends BaseMusicService {
     isReady = false;
-    private getPlaylistTracksLimit = 99999999999;
+    private getPlaylistTracksLimit = Number.MAX_VALUE;
 
     private readonly cache = new Map<string, Track>();
 
