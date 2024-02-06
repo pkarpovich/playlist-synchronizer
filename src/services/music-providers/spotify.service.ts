@@ -66,8 +66,8 @@ export class SpotifyService implements BaseMusicService {
     async authorizationCodeGrant(code: string): Promise<void> {
         const { body } = await this.client.authorizationCodeGrant(code);
 
-        await this.client.setAccessToken(body.access_token);
-        await this.client.setRefreshToken(body.refresh_token);
+        this.client.setAccessToken(body.access_token);
+        this.client.setRefreshToken(body.refresh_token);
         this.isReady = true;
 
         const store = this.store.get();

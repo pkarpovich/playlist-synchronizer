@@ -1,9 +1,9 @@
 import {
     asClass,
+    asFunction,
     AwilixContainer,
     createContainer,
     InjectionMode,
-    asFunction,
 } from 'awilix';
 import express from 'express';
 import {
@@ -15,15 +15,15 @@ import {
     SpotifyService,
     SyncService,
     YandexMusicService,
+    YoutubeMusicService,
 } from './services.js';
 import { Config, IConfig } from './config.js';
 import { Store } from './entities.js';
 import {
+    HealthController,
     initApiController,
     SpotifyController,
-    HealthController,
 } from './controllers.js';
-import { YoutubeMusicService } from './services/music-providers/youtube-music/youtube-music.service.js';
 
 const defaultAuthStore: Store = {
     youtubeMusic: {
