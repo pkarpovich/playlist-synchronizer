@@ -1,9 +1,9 @@
 import {
     asClass,
+    asFunction,
     AwilixContainer,
     createContainer,
     InjectionMode,
-    asFunction,
 } from 'awilix';
 import express from 'express';
 import {
@@ -15,27 +15,34 @@ import {
     SpotifyService,
     SyncService,
     YandexMusicService,
+    YoutubeMusicService,
 } from './services.js';
 import { Config, IConfig } from './config.js';
-import { AuthStore } from './entities.js';
+import { Store } from './entities.js';
 import {
+    HealthController,
     initApiController,
     SpotifyController,
-    HealthController,
 } from './controllers.js';
 
-const defaultAuthStore: AuthStore = {
-    refreshToken: '',
+const defaultAuthStore: Store = {
+    youtubeMusic: {
+        token: null,
+    },
+    spotify: {
+        refreshToken: '',
+    },
 };
 
 interface Container {
     logService: LogService;
     configService: ConfigService<IConfig>;
-    authStore: LocalDbService<AuthStore>;
+    store: LocalDbService<Store>;
     httpService: HttpService;
     cronService: CronService;
     yandexMusicService: YandexMusicService;
     spotifyService: SpotifyService;
+    youtubeMusicService: YoutubeMusicService;
     spotifyController: SpotifyController;
     healthController: HealthController;
     apiRouter: express.Router;
@@ -52,13 +59,14 @@ export function initContainer(): AwilixContainer<Container> {
         configService: asClass(ConfigService<IConfig>)
             .inject(() => ({ config: Config }))
             .singleton(),
-        authStore: asClass(LocalDbService<AuthStore>)
+        store: asClass(LocalDbService<Store>)
             .inject(() => ({ initialData: defaultAuthStore }))
             .singleton(),
         httpService: asClass(HttpService).singleton(),
         cronService: asClass(CronService).singleton(),
         yandexMusicService: asClass(YandexMusicService).singleton(),
         spotifyService: asClass(SpotifyService).singleton(),
+        youtubeMusicService: asClass(YoutubeMusicService).singleton(),
         healthController: asClass(HealthController).singleton(),
         spotifyController: asClass(SpotifyController).singleton(),
         apiRouter: asFunction(initApiController).singleton(),

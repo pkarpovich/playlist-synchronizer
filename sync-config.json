@@ -15,6 +15,14 @@
             "id": "5hawKrDsYBhjPKP88E8avR",
             "name": "Spotify РЗТ Mainstream 2022"
           }
+        },
+        {
+          "hasUnavailableTracks": true,
+          "type": "youtube",
+          "metadata": {
+            "id": "PLXoHI5Zy8H2Lalvhpi4TzfDDk-9JXq6QP",
+            "name": "Youtube music РЗТ Mainstream 2022"
+          }
         }
       ]
     },

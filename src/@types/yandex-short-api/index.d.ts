@@ -2,6 +2,7 @@
 declare module 'yandex-short-api' {
     type Artist = {
         name: string;
+        decomposed?: Array<string | object>;
     };
 
     type Track = {
@@ -18,6 +19,7 @@ declare module 'yandex-short-api' {
         async getPlaylist(
             userName: string,
             playlistId: string,
+            language?: string,
         ): Promise<Playlist>;
     }
 }

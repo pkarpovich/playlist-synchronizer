@@ -4,7 +4,7 @@ import { BaseMusicService } from './base-music.service.js';
 import { LocalDbService } from '../local-db.service.js';
 import { ConfigService } from '../config.service.js';
 import { LogService } from '../log.service.js';
-import { AuthStore, Playlist, Track } from '../../entities.js';
+import { Store, Playlist, Track } from '../../entities.js';
 import { IConfig } from '../../config.js';
 import {
     parseUrlToQueryParams,
@@ -34,7 +34,7 @@ export class SpotifyService implements BaseMusicService {
     isReady = false;
 
     constructor(
-        private readonly authStore: LocalDbService<AuthStore>,
+        private readonly store: LocalDbService<Store>,
         private readonly configService: ConfigService<IConfig>,
         private readonly logService: LogService,
     ) {
@@ -46,8 +46,10 @@ export class SpotifyService implements BaseMusicService {
     }
 
     async initializeClient(): Promise<void> {
-        await this.authStore.start();
-        const { refreshToken } = this.authStore.get();
+        await this.store.start();
+        const {
+            spotify: { refreshToken },
+        } = this.store.get();
 
         if (!refreshToken) {
             const url = this.client.createAuthorizeURL(scopes, 'spotify-app');
@@ -64,11 +66,15 @@ export class SpotifyService implements BaseMusicService {
     async authorizationCodeGrant(code: string): Promise<void> {
         const { body } = await this.client.authorizationCodeGrant(code);
 
-        await this.client.setAccessToken(body.access_token);
-        await this.client.setRefreshToken(body.refresh_token);
+        this.client.setAccessToken(body.access_token);
+        this.client.setRefreshToken(body.refresh_token);
         this.isReady = true;
 
-        await this.authStore.set({ refreshToken: body.refresh_token });
+        const store = this.store.get();
+        await this.store.set({
+            ...store,
+            spotify: { ...store.spotify, refreshToken: body.refresh_token },
+        });
     }
 
     async refreshAccess(): Promise<void> {

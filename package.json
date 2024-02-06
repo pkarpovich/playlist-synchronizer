@@ -1,11 +1,14 @@
 {
   "name": "playlist-synchronizer",
   "version": "1.2.2",
+  "engines": {
+    "node": ">=21.2.0"
+  },
   "description": "The app allows to sync playlists between music services",
   "type": "module",
   "exports": "./src/index.ts",
   "scripts": {
-    "start": "ts-node src/index.ts",
+    "start": "node --import ./register-hooks.js src/index.ts",
     "dev": "nodemon src/index.ts",
     "build": "tsc",
     "format": "prettier 'src/**/*.ts'",
@@ -27,9 +30,9 @@
   "author": "Pavel Karpovich <pavel.karpovich@outlook.com>",
   "license": "MIT",
   "devDependencies": {
-    "@tsconfig/node16": "^1.0.3",
+    "@tsconfig/node21": "^21.0.1",
     "@types/express": "^4.17.17",
-    "@types/node": "^18.15.3",
+    "@types/node": "^20.11.5",
     "@types/signale": "^1.4.4",
     "@types/spotify-web-api-node": "^5.0.7",
     "@typescript-eslint/eslint-plugin": "^5.55.0",
@@ -65,6 +68,7 @@
     "express": "^4.18.2",
     "express-async-errors": "^3.1.1",
     "helmet": "^6.0.1",
+    "libmuse": "^0.0.87",
     "lowdb": "^5.1.0",
     "signale": "^1.4.0",
     "spotify-web-api-node": "^5.0.2",

@@ -1,15 +1,20 @@
-import { YandexMusicApi } from 'yandex-short-api';
+import { Artist, YandexMusicApi } from 'yandex-short-api';
 
 import { Playlist, Track } from '../../entities.js';
 import { BaseMusicService } from './base-music.service.js';
 import { LogService } from '../log.service.js';
+import { ConfigService } from '../config.service.js';
+import { IConfig } from '../../config/config.js';
 
 export class YandexMusicService extends BaseMusicService {
     private client: YandexMusicApi;
 
     isReady = true;
 
-    constructor(private readonly logService: LogService) {
+    constructor(
+        private readonly logService: LogService,
+        private readonly configService: ConfigService<IConfig>,
+    ) {
         super();
         this.client = new YandexMusicApi();
     }
@@ -19,7 +24,11 @@ export class YandexMusicService extends BaseMusicService {
         userName,
         name,
     }: Playlist): Promise<Track[]> {
-        const resp = await this.client.getPlaylist(userName as string, id);
+        const resp = await this.client.getPlaylist(
+            userName as string,
+            id,
+            this.configService.get('language'),
+        );
         if (!resp || !resp.tracks) {
             this.logService.error(
                 `Failed to get playlist ${name} from yandex.music`,
@@ -31,7 +40,9 @@ export class YandexMusicService extends BaseMusicService {
 
         return tracks.map<Track>((track) => ({
             name: track.title,
-            artists: track.artists.map(({ name }) => name),
+            artists: track.artists
+                .map((a) => this.getAllArtistsNameFromArtistObject(a))
+                .flat(),
             source: track,
         }));
     }
@@ -53,5 +64,17 @@ export class YandexMusicService extends BaseMusicService {
         playlist: Playlist,
     ): Promise<void> {
         throw new Error('Method not implemented.');
+    }
+
+    private getAllArtistsNameFromArtistObject(artist: Artist) {
+        if (!artist?.decomposed) {
+            return [artist.name];
+        }
+
+        const filteredArtists = artist.decomposed.filter(
+            (d): d is Artist => typeof d === 'object' && 'name' in d,
+        );
+
+        return [artist.name, ...filteredArtists.map((a) => a.name)];
     }
 }

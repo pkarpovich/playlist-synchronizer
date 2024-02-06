@@ -5,17 +5,19 @@ import { cleanup } from './utils.js';
 
 const {
     spotifyService,
+    youtubeMusicService,
     configService,
     httpService,
-    authStore,
+    store,
     syncService,
     cronService,
     logService,
 } = initContainer().cradle;
 
-await authStore.start();
+await store.start();
 httpService.start();
 await spotifyService.initializeClient();
+await youtubeMusicService.initializeClient();
 
 const syncConfigPath: string = configService.get('syncConfigPath');
 const syncConfig = await getSyncConfig(syncConfigPath);
