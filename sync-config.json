@@ -17,7 +17,7 @@
           }
         },
         {
-          "isNoRemoveTracksThatAreNotInOriginalPlaylistAndAreNoLongerAvailable": true,
+          "hasUnavailableTracks": true,
           "type": "youtube",
           "metadata": {
             "id": "PLXoHI5Zy8H2Lalvhpi4TzfDDk-9JXq6QP",

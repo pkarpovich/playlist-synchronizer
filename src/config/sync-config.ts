@@ -5,7 +5,7 @@ import { Playlist, MusicServiceTypes } from '../entities.js';
 
 interface TargetPlaylists
     extends Omit<PlaylistConfig, 'excludedTrackIds' | 'targetPlaylists'> {
-    isNoRemoveTracksThatAreNotInOriginalPlaylistAndAreNoLongerAvailable?: boolean;
+    hasUnavailableTracks?: boolean;
 }
 
 export interface PlaylistConfig {

@@ -110,9 +110,7 @@ export class SyncService {
             this._statistics.totalTracksInTargetPlaylists +=
                 ctx.targetPlaylistTracks.length;
 
-            if (
-                !target?.isNoRemoveTracksThatAreNotInOriginalPlaylistAndAreNoLongerAvailable
-            ) {
+            if (!target?.hasUnavailableTracks) {
                 await this.removeDeletedTracks(ctx, tracksForAdd);
             }
 
