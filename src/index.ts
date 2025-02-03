@@ -3,6 +3,7 @@ import { initContainer } from './container.js';
 import { LoggerContext } from './services.js';
 import { cleanup } from './utils.js';
 
+const container = await initContainer();
 const {
     spotifyService,
     configService,
@@ -10,7 +11,7 @@ const {
     syncService,
     cronService,
     logService,
-} = (await initContainer()).cradle;
+} = container.cradle;
 
 httpService.start();
 await spotifyService.initializeClient();

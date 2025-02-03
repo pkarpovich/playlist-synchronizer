@@ -18,8 +18,8 @@ importers:
         specifier: ^2.26.0
         version: 2.27.12
       awilix:
-        specifier: ^8.0.0
-        version: 8.0.1
+        specifier: ^12.0.4
+        version: 12.0.4
       croner:
         specifier: ^6.0.2
         version: 6.0.7
@@ -575,9 +575,9 @@ packages:
     resolution: {integrity: sha512-wvUjBtSGN7+7SjNpq/9M2Tg350UZD3q62IFZLbRAR1bSMlCo1ZaeW+BJ+D090e4hIIZLBcTDWe4Mh4jvUDajzQ==}
     engines: {node: '>= 0.4'}
 
-  awilix@8.0.1:
-    resolution: {integrity: sha512-zDSp4R204scvQIDb2GMoWigzXemn0+3AKKIAt543T9v2h7lmoypvkmcx1W/Jet/nm27R1N1AsqrsYVviAR9KrA==}
-    engines: {node: '>=12.0.0'}
+  awilix@12.0.4:
+    resolution: {integrity: sha512-P6bd20vqMiUyjgBAVl+4WixM/MR9O9zsTzd9vS5lTd1eLpFEn6Re4+GeeYzDDE8U1DXL8cO/nTOHofKDEJUfAQ==}
+    engines: {node: '>=16.3.0'}
 
   axios@1.7.9:
     resolution: {integrity: sha512-LhLcE7Hbiryz8oMDdDptSrWowmB4Bl6RCt6sIJKpRB4XtVf0iEgewX3au/pJqm+Py1kCASkb/FFKjxQaLtxJvw==}
@@ -2714,7 +2714,7 @@ snapshots:
     dependencies:
       possible-typed-array-names: 1.0.0
 
-  awilix@8.0.1:
+  awilix@12.0.4:
     dependencies:
       camel-case: 4.1.2
       fast-glob: 3.3.3
