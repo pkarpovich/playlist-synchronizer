@@ -21,10 +21,10 @@ jobs:
         with:
           version: ${{ secrets.PNPM_VERSION }}
 
-      - name: setup Node.js 16.x
-        uses: actions/setup-node@v3
+      - name: setup Node.js 22.x
+        uses: actions/setup-node@v4
         with:
-          node-version: 16
+          node-version: 22
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
 
