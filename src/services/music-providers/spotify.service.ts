@@ -46,7 +46,6 @@ export class SpotifyService implements BaseMusicService {
     }
 
     async initializeClient(): Promise<void> {
-        await this.authStore.start();
         const { refreshToken } = this.authStore.get();
 
         if (!refreshToken) {

@@ -7,13 +7,11 @@ const {
     spotifyService,
     configService,
     httpService,
-    authStore,
     syncService,
     cronService,
     logService,
-} = initContainer().cradle;
+} = (await initContainer()).cradle;
 
-await authStore.start();
 httpService.start();
 await spotifyService.initializeClient();
 
