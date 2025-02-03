@@ -42,7 +42,7 @@ interface Container {
     syncService: SyncService;
 }
 
-export function initContainer(): AwilixContainer<Container> {
+export async function initContainer(): Promise<AwilixContainer<Container>> {
     const container = createContainer<Container>({
         injectionMode: InjectionMode.CLASSIC,
     });
@@ -52,9 +52,6 @@ export function initContainer(): AwilixContainer<Container> {
         configService: asClass(ConfigService<IConfig>)
             .inject(() => ({ config: Config }))
             .singleton(),
-        authStore: asClass(LocalDbService<AuthStore>)
-            .inject(() => ({ initialData: defaultAuthStore }))
-            .singleton(),
         httpService: asClass(HttpService).singleton(),
         cronService: asClass(CronService).singleton(),
         yandexMusicService: asClass(YandexMusicService).singleton(),
@@ -63,6 +60,15 @@ export function initContainer(): AwilixContainer<Container> {
         spotifyController: asClass(SpotifyController).singleton(),
         apiRouter: asFunction(initApiController).singleton(),
         syncService: asClass(SyncService),
+    });
+
+    const dbPath = container.cradle.configService.get('dbPath');
+    const authStoreDb = await LocalDbService.create(defaultAuthStore, dbPath);
+
+    container.register({
+        authStore: asFunction(
+            () => new LocalDbService<AuthStore>(authStoreDb),
+        ).singleton(),
     });
 
     return container;

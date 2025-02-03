@@ -46,7 +46,6 @@ export class SpotifyService implements BaseMusicService {
     }
 
     async initializeClient(): Promise<void> {
-        await this.authStore.start();
         const { refreshToken } = this.authStore.get();
 
         if (!refreshToken) {
@@ -109,8 +108,11 @@ export class SpotifyService implements BaseMusicService {
         }));
 
         const duplicates = this.findDuplicateTracksInPlaylist(tracks);
-        await this.removeTracksFromPlaylist(duplicates, { id } as Playlist);
+        if (duplicates.length === 0) {
+            return tracks;
+        }
 
+        await this.removeTracksFromPlaylist(duplicates, { id } as Playlist);
         return tracks.filter(
             (t) => duplicates.findIndex((dt) => dt.id === t.id) === -1,
         );

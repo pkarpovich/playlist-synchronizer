@@ -1,47 +1,27 @@
-import { mkdir } from 'fs/promises';
+import { mkdir, access, constants } from 'fs/promises';
 import { join } from 'node:path';
-import { Low } from 'lowdb';
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-import { JSONFile } from 'lowdb/node';
-import { ConfigService } from './config.service.js';
-import { IConfig } from '../config.js';
+import { JSONFilePreset } from 'lowdb/node';
+import { type Low } from 'lowdb';
 
 export class LocalDbService<T> {
-    private db: Low<T>;
+    constructor(private readonly db: Low<T>) {}
 
-    constructor(
-        private readonly initialData: T,
-        private readonly configService: ConfigService<IConfig>,
-    ) {
-        const dbPath = this.configService.get('dbPath');
+    static async create<T>(
+        initialData: T,
+        dbFolderPath: string,
+    ): Promise<Low<T>> {
+        await LocalDbService.ensureFolderExists(dbFolderPath);
+        const file = join(dbFolderPath, 'db.json');
 
-        const file = join(dbPath);
-        const fileFolderPath = file.split('/').slice(0, -1).join('/');
-        if (fileFolderPath) {
-            this.createFolderIfNeeded(fileFolderPath);
-        }
-
-        const adapter = new JSONFile<T>(file);
-        this.db = new Low(adapter);
-    }
-
-    async start(): Promise<void> {
-        await this.load();
-
-        this.db.data ||= this.initialData;
+        return await JSONFilePreset<T>(file, initialData);
     }
 
     async save(): Promise<void> {
         return this.db.write();
     }
 
-    async load(): Promise<void> {
-        return this.db.read();
-    }
-
     get(): T {
-        return this.db.data || this.initialData;
+        return this.db.data;
     }
 
     async set(newValue: T): Promise<T | null> {
@@ -51,7 +31,11 @@ export class LocalDbService<T> {
         return this.db.data;
     }
 
-    private async createFolderIfNeeded(path: string): Promise<void> {
-        await mkdir(path, { recursive: true });
+    private static async ensureFolderExists(folderPath: string): Promise<void> {
+        try {
+            await access(folderPath, constants.F_OK);
+        } catch {
+            await mkdir(folderPath, { recursive: true });
+        }
     }
 }
