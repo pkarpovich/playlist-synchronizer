@@ -1,32 +1,42 @@
-FROM node:lts-bullseye-slim AS pnpm
+ARG NODE_VERSION=22.13
 
-ARG PNPM_VERSION=7.6.0
-RUN corepack enable && corepack prepare pnpm@${PNPM_VERSION} --activate
+FROM node:${NODE_VERSION}-alpine as base
 
-FROM pnpm AS builder
-WORKDIR /usr/app
-COPY pnpm-lock.yaml ./
-RUN --mount=type=cache,id=pnpm-store,target=/root/.pnpm-store\
-     pnpm fetch
-COPY . ./
-RUN --mount=type=cache,id=pnpm-store,target=/root/.pnpm-store \
-     pnpm install --frozen-lockfile
-RUN pnpm run build
+ARG PNPM_VERSION=10.2
+
+WORKDIR /app
+RUN npm install -g pnpm@${PNPM_VERSION}
+
+FROM base as deps
+
+COPY pnpm-lock.yaml .
+RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
+    pnpm fetch
+
+COPY package.json .
+RUN pnpm install --offline --frozen-lockfile
+
+
+FROM deps as build
+COPY . .
+COPY --from=deps /app/node_modules ./node_modules
+RUN pnpm build
 RUN pnpm prune --prod
+RUN ( wget -q -O /dev/stdout https://gobinaries.com/tj/node-prune | sh ) \
+ && node-prune
 
-# --------------> The production image
-FROM node:16.16-alpine3.15
+FROM node:${NODE_VERSION}-alpine as final
+
+RUN apk add dumb-init
 
 ENV NODE_ENV production
-WORKDIR /usr/app
-
-RUN apk add dumb-init && mkdir db && chown node db
-
+RUN mkdir -p /app/dist/db && chown -R node:node /app/db
 USER node
 
-COPY package.json ./
-COPY --chown=node:node --from=builder /usr/app/dist ./
-COPY --chown=node:node --from=builder /usr/app/node_modules ./node_modules
+COPY package.json .
+COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/dist ./dist
 
-ENTRYPOINT ["dumb-init"]
-CMD ["node", "--experimental-specifier-resolution=node", "/usr/app/index.js"]
+EXPOSE 3200
+
+CMD ["dumb-init", "node", "/app/dist/index.js"]

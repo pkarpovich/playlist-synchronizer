@@ -3,35 +3,17 @@
     {
       "type": "yandex",
       "metadata": {
-        "id": "1004",
+        "id": "1045",
         "userName": "flomaster-mc",
-        "name": "РЗТ Mainstream 2022"
+        "name": "Хит Риса за Творчество 2025"
       },
       "excludedTrackIds": [],
       "targetPlaylists": [
         {
           "type": "spotify",
           "metadata": {
-            "id": "5hawKrDsYBhjPKP88E8avR",
-            "name": "Spotify РЗТ Mainstream 2022"
-          }
-        }
-      ]
-    },
-    {
-      "type": "yandex",
-      "metadata": {
-        "id": "1006",
-        "userName": "flomaster-mc",
-        "name": "РЗТ Alternative 2022"
-      },
-      "excludedTrackIds": [],
-      "targetPlaylists": [
-        {
-          "type": "spotify",
-          "metadata": {
-            "id": "7KI9U1VTKdxAKQAEl68hcL",
-            "name": "Spotify РЗТ Alternative 2022"
+            "id": "7qqAU3xa2efU4T06IvcY2W",
+            "name": "Spotify Хит Риса за Творчество 2025"
           }
         }
       ]
