@@ -25,7 +25,7 @@ export class CronService {
     }
 
     private triggerJob(job: Cron): void {
-        (job.fn as () => void)();
+        job.trigger();
     }
 
     stopAllJobs(): void {

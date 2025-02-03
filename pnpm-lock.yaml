@@ -21,8 +21,8 @@ importers:
         specifier: ^12.0.4
         version: 12.0.4
       croner:
-        specifier: ^6.0.2
-        version: 6.0.7
+        specifier: ^9.0.0
+        version: 9.0.0
       dotenv:
         specifier: ^16.0.3
         version: 16.4.7
@@ -33,8 +33,8 @@ importers:
         specifier: ^3.1.1
         version: 3.1.1(express@4.21.2)
       helmet:
-        specifier: ^6.0.1
-        version: 6.2.0
+        specifier: ^8.0.0
+        version: 8.0.0
       lowdb:
         specifier: ^7.0.1
         version: 7.0.1
@@ -698,9 +698,9 @@ packages:
   cookiejar@2.1.4:
     resolution: {integrity: sha512-LDx6oHrK+PhzLKJU9j5S7/Y3jM/mUHvD/DeI1WQmJn652iPC5Y4TBzC9l+5OMOXlyTTA+SmVUPm0HQUwpD5Jqw==}
 
-  croner@6.0.7:
-    resolution: {integrity: sha512-k3Xx3Rcclfr60Yx4TmvsF3Yscuiql8LSvYLaphTsaq5Hk8La4Z/udmUANMOTKpgGGroI2F6/XOr9cU9OFkYluQ==}
-    engines: {node: '>=6.0'}
+  croner@9.0.0:
+    resolution: {integrity: sha512-onMB0OkDjkXunhdW9htFjEhqrD54+M94i6ackoUkjHKbRnXdyEyKRelp4nJ1kAz32+s27jP1FsebpJCVl0BsvA==}
+    engines: {node: '>=18.0'}
 
   cross-spawn@7.0.6:
     resolution: {integrity: sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==}
@@ -1208,9 +1208,9 @@ packages:
     resolution: {integrity: sha512-0hJU9SCPvmMzIBdZFqNPXWa6dqh7WdH0cII9y+CyS8rG3nL48Bclra9HmKhVVUHyPWNH5Y7xDwAB7bfgSjkUMQ==}
     engines: {node: '>= 0.4'}
 
-  helmet@6.2.0:
-    resolution: {integrity: sha512-DWlwuXLLqbrIOltR6tFQXShj/+7Cyp0gLi6uAb8qMdFh/YBBFbKSgQ6nbXmScYd8emMctuthmgIa7tUfo9Rtyg==}
-    engines: {node: '>=14.0.0'}
+  helmet@8.0.0:
+    resolution: {integrity: sha512-VyusHLEIIO5mjQPUI1wpOAEu+wl6Q0998jzTxqUYGE45xCIcAxy3MsbEK/yyJUJ3ADeMoB6MornPH6GMWAf+Pw==}
+    engines: {node: '>=18.0.0'}
 
   http-errors@2.0.0:
     resolution: {integrity: sha512-FtwrG/euBzaEjYeRqOgly7G0qviiXoJWnvEH2Z1plBdXgbyjv34pHTSb9zoeHMyDy33+DWy5Wt9Wo+TURtOYSQ==}
@@ -2847,7 +2847,7 @@ snapshots:
 
   cookiejar@2.1.4: {}
 
-  croner@6.0.7: {}
+  croner@9.0.0: {}
 
   cross-spawn@7.0.6:
     dependencies:
@@ -3501,7 +3501,7 @@ snapshots:
     dependencies:
       function-bind: 1.1.2
 
-  helmet@6.2.0: {}
+  helmet@8.0.0: {}
 
   http-errors@2.0.0:
     dependencies:

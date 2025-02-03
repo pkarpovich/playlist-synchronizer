@@ -27,16 +27,17 @@ RUN ( wget -q -O /dev/stdout https://gobinaries.com/tj/node-prune | sh ) \
 
 FROM node:${NODE_VERSION}-alpine as final
 
+WORKDIR /app
+
 RUN apk add dumb-init
 
 ENV NODE_ENV production
-RUN mkdir -p /app/dist/db && chown -R node:node /app/db
 USER node
 
 COPY package.json .
 COPY --from=build /app/node_modules ./node_modules
-COPY --from=build /app/dist ./dist
+COPY --from=build /app/dist .
 
 EXPOSE 3200
 
-CMD ["dumb-init", "node", "/app/dist/index.js"]
+CMD ["dumb-init", "node", "/app/index.js"]
