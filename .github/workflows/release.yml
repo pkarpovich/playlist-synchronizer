@@ -16,8 +16,8 @@ jobs:
       NPM_TOKEN: ${{ secrets.OWNER_TOKEN }}
       GITHUB_TOKEN: ${{ secrets.OWNER_TOKEN }}
     steps:
-      - uses: actions/checkout@v3
-      - uses: pnpm/action-setup@v2
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
         with:
           version: ${{ secrets.PNPM_VERSION }}
 
