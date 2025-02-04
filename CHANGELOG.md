@@ -1,5 +1,11 @@
 # playlist-synchronizer
 
+## 1.3.0
+
+### Minor Changes
+
+-   126b27d: upgrade Node.js to v22 and pnpm to v10
+
 ## 1.2.2
 
 ### Patch Changes
