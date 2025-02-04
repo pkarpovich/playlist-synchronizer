@@ -16,21 +16,27 @@ jobs:
           REGISTRY: ghcr.io
           IMAGE_NAME: ${{ github.repository }}
         steps:
-          - uses: actions/checkout@v3
+          - uses: actions/checkout@v4
 
           - name: Set up QEMU
-            uses: docker/setup-qemu-action@v2
+            uses: docker/setup-qemu-action@v3
 
           - name: set up Docker Buildx
             id: buildx
-            uses: docker/setup-buildx-action@v2
+            uses: docker/setup-buildx-action@v3
 
           - name: login to GitHub Container Registry
-            uses: docker/login-action@v2
+            uses: docker/login-action@v3
             with:
-              registry: ghcr.io
+              registry: ${{ env.REGISTRY }}
               username: ${{ github.actor }}
-              password: ${{ secrets.OWNER_TOKEN }}
+              password: ${{ secrets.GITHUB_TOKEN }}
+
+          - name: extract Docker metadata
+            id: meta
+            uses: docker/metadata-action@v5
+            with:
+              images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
           - name: build and deploy image to ghcr.io
             run: |
@@ -39,12 +45,3 @@ jobs:
               docker buildx build --push \
                   --platform linux/amd64,linux/arm/v7,linux/arm64 \
                   -t ${image_name}:${TAG_NAME} -t ${image_name}:latest .
-
-          - name: update docker image on the host
-            uses: appleboy/ssh-action@master
-            with:
-              host: ${{ secrets.HOST }}
-              username: ${{ secrets.USERNAME }}
-              key: ${{ secrets.KEY }}
-              script: |
-                cd ./playlist-synchronizer && docker compose pull playlist-synchronizer && docker compose up -d playlist-synchronizer
