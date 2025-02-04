@@ -30,11 +30,13 @@ jobs:
         with:
           node-version: 22
           cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+
       - name: create release pull request / publish
         id: changesets
         uses: changesets/action@v1
         with:
-          publish: pnpm install --frozen-lockfile && pnpm run build && pnpm run publish
-          version: pnpm install --frozen-lockfile && pnpm run build && pnpm run version
+          publish: pnpm run publish
+          version: pnpm run version
           title: "chore: update versions"
           commit: "chore: update versions"
