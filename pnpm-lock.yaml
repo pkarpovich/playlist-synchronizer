@@ -15,7 +15,7 @@ importers:
   .:
     dependencies:
       '@changesets/cli':
-        specifier: ^2.26.0
+        specifier: ^2.27.12
         version: 2.27.12
       awilix:
         specifier: ^12.0.4
