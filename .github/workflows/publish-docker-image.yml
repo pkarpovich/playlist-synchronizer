@@ -5,6 +5,10 @@ on:
     types: [published]
   workflow_dispatch:
 
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
 jobs:
     publish:
         name: Publish
