@@ -15,6 +15,9 @@ jobs:
       NODE_AUTH_TOKEN: ${{ secrets.OWNER_TOKEN }}
       NPM_TOKEN: ${{ secrets.OWNER_TOKEN }}
       GITHUB_TOKEN: ${{ secrets.OWNER_TOKEN }}
+    permissions:
+      id-token: write
+      contents: write
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
