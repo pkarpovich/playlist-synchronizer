@@ -49,5 +49,5 @@ jobs:
               image_name="$(echo ${REGISTRY}/${IMAGE_NAME})"
               echo "IMAGE_NAME=${image_name}, VERSION=${TAG_NAME}"
               docker buildx build --push \
-                  --platform linux/amd64,linux/arm/v7,linux/arm64 \
+                  --platform linux/amd64,linux/arm64 \
                   -t ${image_name}:${TAG_NAME} -t ${image_name}:latest .
