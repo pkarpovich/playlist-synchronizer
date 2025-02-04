@@ -6,8 +6,12 @@ on:
   workflow_dispatch:
 
 env:
+  GITHUB_PACKAGE_TOKEN: ${{ secrets.PKG_TOKEN }}
+  USERNAME: ${{ github.actor }}
+  TAG_NAME: ${{ github.event.release.tag_name }}
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+
 
 jobs:
     publish:
