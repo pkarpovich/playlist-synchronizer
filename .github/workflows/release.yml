@@ -16,7 +16,6 @@ jobs:
       NPM_TOKEN: ${{ secrets.OWNER_TOKEN }}
       GITHUB_TOKEN: ${{ secrets.OWNER_TOKEN }}
     permissions:
-      id-token: write
       contents: write
       pull-requests: write
     steps:
