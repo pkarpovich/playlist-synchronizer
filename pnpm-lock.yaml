@@ -21,8 +21,8 @@ importers:
         specifier: ^12.0.4
         version: 12.0.4
       croner:
-        specifier: ^9.0.0
-        version: 9.0.0
+        specifier: ^9.1.0
+        version: 9.1.0
       dotenv:
         specifier: ^16.0.3
         version: 16.4.7
@@ -698,8 +698,8 @@ packages:
   cookiejar@2.1.4:
     resolution: {integrity: sha512-LDx6oHrK+PhzLKJU9j5S7/Y3jM/mUHvD/DeI1WQmJn652iPC5Y4TBzC9l+5OMOXlyTTA+SmVUPm0HQUwpD5Jqw==}
 
-  croner@9.0.0:
-    resolution: {integrity: sha512-onMB0OkDjkXunhdW9htFjEhqrD54+M94i6ackoUkjHKbRnXdyEyKRelp4nJ1kAz32+s27jP1FsebpJCVl0BsvA==}
+  croner@9.1.0:
+    resolution: {integrity: sha512-p9nwwR4qyT5W996vBZhdvBCnMhicY5ytZkR4D1Xj0wuTDEiMnjwR57Q3RXYY/s0EpX6Ay3vgIcfaR+ewGHsi+g==}
     engines: {node: '>=18.0'}
 
   cross-spawn@7.0.6:
@@ -2847,7 +2847,7 @@ snapshots:
 
   cookiejar@2.1.4: {}
 
-  croner@9.0.0: {}
+  croner@9.1.0: {}
 
   cross-spawn@7.0.6:
     dependencies:
