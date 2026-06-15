@@ -14,6 +14,7 @@
     "lint:fix": "eslint --fix 'src/**/*.ts'",
     "check-types": "tsc --noemit",
     "test": "tsx --test 'src/**/*.test.ts'",
+    "prepare": "husky",
     "changeset": "changeset",
     "publish": "changeset tag",
     "version": "changeset version"
@@ -39,21 +40,15 @@
     "eslint-import-resolver-typescript": "^3.5.3",
     "eslint-plugin-import": "^2.27.5",
     "eslint-plugin-prettier": "^5.5.4",
-    "husky": "^8.0.3",
-    "lint-staged": "^13.2.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.7",
     "prettier": "^3.6.2",
     "tsx": "^4.22",
     "typescript": "^5.9.3"
   },
-  "husky": {
-    "hooks": {
-      "pre-commit": "pnpm lint-staged"
-    }
-  },
   "lint-staged": {
     "src/**/*.ts": [
-      "eslint --fix",
-      "git add"
+      "eslint --fix"
     ]
   },
   "dependencies": {

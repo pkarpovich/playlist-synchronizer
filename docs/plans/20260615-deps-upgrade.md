@@ -109,12 +109,22 @@ can execute it.
       eslint-plugin-prettier moved, forced by the prettier 3 bump.
 
 ### Task 5: husky 9 + lint-staged 17
-- [ ] bump `husky` ^9 and `lint-staged` ^17
-- [ ] remove the dead husky v4-style `"husky": { "hooks": ... }` block from
-      `package.json`; ensure `.husky/pre-commit` runs `pnpm lint-staged`
-- [ ] drop the now-redundant `git add` from the `lint-staged` config (auto-staged)
-- [ ] verify a test commit triggers the pre-commit hook (lint-staged runs)
-- [ ] regression gate green
+- [x] bump `husky` ^9 and `lint-staged` ^17 (husky 9.1.7, lint-staged 17.0.7)
+- [x] remove the dead husky v4-style `"husky": { "hooks": ... }` block from
+      `package.json`; ensure `.husky/pre-commit` runs `pnpm lint-staged` (husky was
+      never actually wired - no `.husky/` dir, no `prepare` script; husky 8 ignored
+      the v4 block. Added `"prepare": "husky"`, ran `husky` to set
+      `core.hooksPath=.husky/_`, created `.husky/pre-commit` with just
+      `pnpm lint-staged` per v9 - no shebang/sourcing needed; `.husky/_` is
+      self-gitignored so only `.husky/pre-commit` is tracked)
+- [x] drop the now-redundant `git add` from the `lint-staged` config (auto-staged)
+- [x] verify a test commit triggers the pre-commit hook (lint-staged runs) (probe
+      commit of a fixable `src/*.ts` confirmed: hook fired, lint-staged ran
+      `eslint --fix`, reformatted `=    "x" ;` -> `= 'x';`, and auto-staged the fix
+      with no `git add` - then probe reverted)
+- [x] regression gate green (build, check-types, 32 tests, lint all green; the lone
+      lint output is a pre-existing `import/no-named-as-default-member` warning, 0
+      errors)
 
 ### Task 6: typescript 5.9 -> 6.0 (isolated, last)
 - [ ] bump `typescript` ^6; `pnpm install`
