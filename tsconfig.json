@@ -5,11 +5,9 @@
       "node_modules/@types",
       "src/@types"
     ],
+    "rootDir": "src",
     "outDir": "dist",
-    "module": "es2022",
-    "declaration": false,
-    "target": "es2022",
-    "moduleResolution": "node"
+    "declaration": false
   },
   "include": ["src"],
 }

@@ -192,7 +192,7 @@ export class SpotifyService implements BaseMusicService {
                 this.client.removeTracksFromPlaylist(
                     playlist.id,
                     tracks.map(
-                        (t) => ({ uri: t.id } as SpotifyApi.TrackObjectFull),
+                        (t) => ({ uri: t.id }) as SpotifyApi.TrackObjectFull,
                     ),
                 ),
             () => this.refreshAccess(),
