@@ -112,13 +112,15 @@ Yandex client gets unit tests (the project currently has none).
 - [x] run tests - must pass before next task
 
 ### Task 5: Fail-loud source errors in the sync flow
-- [ ] ensure a failed source fetch propagates (no silent `[]`); wrap per-playlist
+- [x] ensure a failed source fetch propagates (no silent `[]`); wrap per-playlist
       sync in `src/index.ts` `startSync` (and/or `SyncService.sync`) in try/catch so a
       failure logs a clear error and skips that playlist, the run continues, and it is
-      not reported as `success Found 0 tracks`
-- [ ] write tests for `SyncService`: when the source service throws, that playlist is
+      not reported as `success Found 0 tracks` (loop moved into `SyncService.syncAll`,
+      which wraps each playlist in try/catch; `index.ts` delegates to it; also fixed
+      `resetStatistics` to clone `DefaultStatistics` so stats truly reset)
+- [x] write tests for `SyncService`: when the source service throws, that playlist is
       skipped, other playlists still process, and no false success is recorded
-- [ ] run tests - must pass before next task
+- [x] run tests - must pass before next task
 
 ### Task 6: docker-compose.yml + env wiring
 - [ ] collapse `docker-compose.yml` to the single (latest) traefik-fronted service;

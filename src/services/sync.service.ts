@@ -2,7 +2,7 @@ import { YandexMusicService } from './music-providers/yandex-music.service.js';
 import { BaseMusicService } from './music-providers/base-music.service.js';
 import { SpotifyService } from './music-providers/spotify.service.js';
 import { LoggerContext, LogService } from './log.service.js';
-import { PlaylistConfig } from '../config.js';
+import { PlaylistConfig, SyncConfig } from '../config.js';
 import {
     MusicServiceTypes,
     Playlist,
@@ -40,11 +40,39 @@ export class SyncService {
         private readonly yandexMusicService: YandexMusicService,
         private readonly spotifyService: SpotifyService,
     ) {
-        this._statistics = DefaultStatistics;
+        this._statistics = { ...DefaultStatistics };
     }
 
     resetStatistics(): void {
-        this._statistics = DefaultStatistics;
+        this._statistics = { ...DefaultStatistics };
+    }
+
+    async syncAll(syncConfig: SyncConfig): Promise<void> {
+        this.resetStatistics();
+
+        for (const playlistConfig of syncConfig.playlists) {
+            const loggerCtx: LoggerContext = {
+                scope: this.logService.createScope(
+                    playlistConfig.metadata.name,
+                ),
+            };
+
+            this.logService.info(
+                `Start sync ${playlistConfig.metadata.name} playlist`,
+                loggerCtx,
+            );
+
+            try {
+                await this.sync(playlistConfig, loggerCtx);
+            } catch (error) {
+                const reason =
+                    error instanceof Error ? error.message : String(error);
+                this.logService.error(
+                    `Failed to sync ${playlistConfig.metadata.name} playlist: ${reason}`,
+                    loggerCtx,
+                );
+            }
+        }
     }
 
     isAllServicesReady(): boolean {
