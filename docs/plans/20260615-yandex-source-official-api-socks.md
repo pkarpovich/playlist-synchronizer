@@ -132,9 +132,13 @@ Yandex client gets unit tests (the project currently has none).
 - [x] update `.env.example` with `YANDEX_API_PROXY` (commented example, no real node)
 
 ### Task 7: Verify acceptance criteria
-- [ ] no remaining references to `yandex-short-api` in the repo
-- [ ] `pnpm build`, `pnpm check-types`, `pnpm lint`, `pnpm test` all green
-- [ ] confirm the Yandex client and sync skip-on-failure are covered by tests
+- [x] no remaining references to `yandex-short-api` in the repo (only the plan doc
+      mentions it as documentation; no source/config references)
+- [x] `pnpm build`, `pnpm check-types`, `pnpm lint`, `pnpm test` all green (lint exits
+      0 with one pre-existing dotenv import warning; test: 23 pass, 0 fail)
+- [x] confirm the Yandex client and sync skip-on-failure are covered by tests
+      (`yandex-music.helpers.test.ts`, `yandex-music.service.test.ts`,
+      `sync.service.test.ts`)
 
 ## Technical Details
 - Client: `fetch(url, { dispatcher: socksDispatcher({ type: 5, host, port }) })` when
