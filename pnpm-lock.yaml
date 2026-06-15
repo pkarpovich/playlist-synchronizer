@@ -9,6 +9,7 @@ overrides:
   follow-redirects@<1.14.8: '>=1.14.8'
   follow-redirects@<1.14.7: '>=1.14.7'
   axios@<0.21.2: '>=0.21.2'
+  undici: ^7.0.0
 
 importers:
 
@@ -2100,9 +2101,9 @@ packages:
   undici-types@7.18.2:
     resolution: {integrity: sha512-AsuCzffGHJybSaRrmr5eHr81mwJU3kjw6M+uprWvCXiNeN9SOGwQ3Jn8jb8m3Z6izVgknn1R0FTCEAP2QrLY/w==}
 
-  undici@8.5.0:
-    resolution: {integrity: sha512-xamtWoB1EshgjpmlXd7GGm2VfdDtw1+rD8uhry8pSNW3If6S8E0m2T2+orSKeZXEn/aPJMviCpDBA65WJt8zhg==}
-    engines: {node: '>=22.19.0'}
+  undici@7.28.0:
+    resolution: {integrity: sha512-cRZYrTDwWznlnRiPjggAGxZXanty6M8RV1ff8Wm4LWXBp7/IG8v5DnOm74DtUBp9OONpK75YlPnIjQqX0dBDtA==}
+    engines: {node: '>=20.18.1'}
 
   universalify@0.1.2:
     resolution: {integrity: sha512-rBJeI5CXAlmy1pV+617WB9J63U6XcazHHF2f2dbJix4XzpUF0RS3Zbj0FGIOCAva5P/d/GBOYaACQ1w+0azUkg==}
@@ -3298,7 +3299,7 @@ snapshots:
   fetch-socks@1.3.3:
     dependencies:
       socks: 2.8.9
-      undici: 8.5.0
+      undici: 7.28.0
 
   figures@2.0.0:
     dependencies:
@@ -4413,7 +4414,7 @@ snapshots:
 
   undici-types@7.18.2: {}
 
-  undici@8.5.0: {}
+  undici@7.28.0: {}
 
   universalify@0.1.2: {}
 

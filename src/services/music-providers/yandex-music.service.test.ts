@@ -1,13 +1,17 @@
 import { strict as assert } from 'node:assert';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
+import { socksDispatcher } from 'fetch-socks';
 
 import { IConfig } from '../../config.js';
 import { Playlist } from '../../entities.js';
 import { ConfigService } from '../config.service.js';
 import { LogService } from '../log.service.js';
 import { FetchFn, YandexMusicService } from './yandex-music.service.js';
-import { YandexPlaylistResponse } from './yandex-music.helpers.js';
+import {
+    parseSocksProxy,
+    YandexPlaylistResponse,
+} from './yandex-music.helpers.js';
 
 const fixture = JSON.parse(
     readFileSync(
@@ -139,4 +143,23 @@ test('getPlaylistTracks fetches directly when no proxy is set', async () => {
     await makeService(fetchFn).getPlaylistTracks(playlist);
 
     assert.equal(capturedInit, undefined);
+});
+
+test('socksDispatcher is compatible with the runtime fetch (guards undici version skew)', async () => {
+    const dispatcher = socksDispatcher(
+        parseSocksProxy('socks5h://127.0.0.1:1'),
+    );
+
+    try {
+        await fetch(
+            'https://api.music.yandex.net/users/flomaster-mc/playlists/1054',
+            { dispatcher } as unknown as RequestInit,
+        );
+        assert.fail('fetch through an unreachable proxy should reject');
+    } catch (err) {
+        const cause = (err as { cause?: { code?: string } }).cause;
+        assert.notEqual(cause?.code, 'UND_ERR_INVALID_ARG');
+    } finally {
+        await dispatcher.close();
+    }
 });

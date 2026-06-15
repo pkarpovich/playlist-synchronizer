@@ -12,7 +12,7 @@ export type YandexTrack = {
 
 export type YandexPlaylistResponse = {
     result?: {
-        tracks?: { track: YandexTrack }[];
+        tracks?: { track: YandexTrack | null }[];
     };
 };
 
@@ -43,9 +43,11 @@ export function parseSocksProxy(proxyUrl: string): SocksProxyConfig {
 export function mapPlaylistTracks(json: YandexPlaylistResponse): Track[] {
     const tracks = json.result?.tracks ?? [];
 
-    return tracks.map<Track>(({ track }) => ({
-        name: track.title,
-        artists: track.artists.map(({ name }) => name),
-        source: track,
-    }));
+    return tracks
+        .filter((item): item is { track: YandexTrack } => item.track != null)
+        .map<Track>(({ track }) => ({
+            name: track.title,
+            artists: track.artists.map(({ name }) => name),
+            source: track,
+        }));
 }

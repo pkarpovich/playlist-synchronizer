@@ -50,6 +50,30 @@ test('mapPlaylistTracks keeps the raw track as the track source', () => {
     assert.deepEqual(tracks[0].source, fixture.result?.tracks?.[0].track);
 });
 
+test('mapPlaylistTracks skips unavailable tracks with a null track body', () => {
+    const tracks = mapPlaylistTracks({
+        result: {
+            tracks: [
+                { track: null },
+                {
+                    track: {
+                        title: 'Numb',
+                        artists: [{ name: 'Linkin Park' }],
+                    },
+                },
+            ],
+        },
+    });
+
+    assert.deepEqual(tracks, [
+        {
+            name: 'Numb',
+            artists: ['Linkin Park'],
+            source: { title: 'Numb', artists: [{ name: 'Linkin Park' }] },
+        },
+    ]);
+});
+
 test('mapPlaylistTracks returns [] for an empty playlist', () => {
     assert.deepEqual(mapPlaylistTracks({ result: { tracks: [] } }), []);
 });
