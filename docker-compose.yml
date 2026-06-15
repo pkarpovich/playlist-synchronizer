@@ -13,6 +13,8 @@ services:
       SPOTIFY_CLIENT_ID: ${SPOTIFY_CLIENT_ID}
       SPOTIFY_CLIENT_SECRET: ${SPOTIFY_CLIENT_SECRET}
       SPOTIFY_REDIRECT_URI: ${SPOTIFY_REDIRECT_URI}
+      YANDEX_API_BASE_URL: ${YANDEX_API_BASE_URL:-}
+      YANDEX_API_PROXY: ${YANDEX_API_PROXY:-}
     volumes:
       - ./sync-config.json:/app/sync-config.json:ro
       - auth-store:/app/db

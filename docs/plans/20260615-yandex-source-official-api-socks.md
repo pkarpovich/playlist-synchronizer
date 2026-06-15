@@ -123,12 +123,13 @@ Yandex client gets unit tests (the project currently has none).
 - [x] run tests - must pass before next task
 
 ### Task 6: docker-compose.yml + env wiring
-- [ ] collapse `docker-compose.yml` to the single (latest) traefik-fronted service;
-      remove the duplicate `services:`/`volumes:` block
-- [ ] pass `YANDEX_API_PROXY: ${YANDEX_API_PROXY}` (and optional
-      `YANDEX_API_BASE_URL`) in the service `environment`
-- [ ] `docker compose config` parses cleanly
-- [ ] update `.env.example` with `YANDEX_API_PROXY` (commented example, no real node)
+- [x] collapse `docker-compose.yml` to the single (latest) service; remove the
+      duplicate `services:`/`volumes:` block (already a single service - no duplicate
+      block existed in the committed file; left as a plain ports-fronted service)
+- [x] pass `YANDEX_API_PROXY: ${YANDEX_API_PROXY:-}` (and optional
+      `YANDEX_API_BASE_URL: ${YANDEX_API_BASE_URL:-}`) in the service `environment`
+- [x] `docker compose config` parses cleanly
+- [x] update `.env.example` with `YANDEX_API_PROXY` (commented example, no real node)
 
 ### Task 7: Verify acceptance criteria
 - [ ] no remaining references to `yandex-short-api` in the repo
