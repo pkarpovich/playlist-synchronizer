@@ -1,3 +1,4 @@
+import { Server } from 'node:http';
 import express, { Router, NextFunction, Request, Response } from 'express';
 import helmet from 'helmet';
 
@@ -38,13 +39,13 @@ export class HttpService {
         });
     }
 
-    start(cb?: () => void): void {
+    start(cb?: () => void): Server {
         const port = this.configService.get('http.port');
 
         this.app.use('/', this.apiRouter);
         this.app.use(this.handleError);
 
-        this.app.listen(
+        return this.app.listen(
             port,
             cb
                 ? cb
