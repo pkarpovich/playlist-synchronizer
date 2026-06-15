@@ -151,14 +151,18 @@ test('socksDispatcher is compatible with the runtime fetch (guards undici versio
     );
 
     try {
-        await fetch(
-            'https://api.music.yandex.net/users/flomaster-mc/playlists/1054',
-            { dispatcher } as unknown as RequestInit,
+        await assert.rejects(
+            () =>
+                fetch(
+                    'https://api.music.yandex.net/users/flomaster-mc/playlists/1054',
+                    { dispatcher } as unknown as RequestInit,
+                ),
+            (err: unknown) => {
+                const cause = (err as { cause?: { code?: string } }).cause;
+                assert.notEqual(cause?.code, 'UND_ERR_INVALID_ARG');
+                return true;
+            },
         );
-        assert.fail('fetch through an unreachable proxy should reject');
-    } catch (err) {
-        const cause = (err as { cause?: { code?: string } }).cause;
-        assert.notEqual(cause?.code, 'UND_ERR_INVALID_ARG');
     } finally {
         await dispatcher.close();
     }

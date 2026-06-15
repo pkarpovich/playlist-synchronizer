@@ -63,7 +63,7 @@ export async function initContainer(): Promise<AwilixContainer<Container>> {
         healthController: asClass(HealthController).singleton(),
         spotifyController: asClass(SpotifyController).singleton(),
         apiRouter: asFunction(initApiController).singleton(),
-        syncService: asClass(SyncService),
+        syncService: asClass(SyncService).singleton(),
     });
 
     const dbPath = container.cradle.configService.get('dbPath');

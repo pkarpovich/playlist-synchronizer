@@ -12,7 +12,7 @@ export type YandexTrack = {
 
 export type YandexPlaylistResponse = {
     result?: {
-        tracks?: { track: YandexTrack | null }[];
+        tracks?: { track?: YandexTrack | null }[];
     };
 };
 
@@ -46,17 +46,55 @@ export function parseSocksProxy(proxyUrl: string): SocksProxyConfig {
 }
 
 export function mapPlaylistTracks(json: YandexPlaylistResponse): Track[] {
-    const tracks = json.result?.tracks ?? [];
+    const tracks = json.result?.tracks;
 
-    return tracks
-        .map((item) => item.track)
-        .filter(
-            (track): track is YandexTrack & { title: string } =>
-                track != null && typeof track.title === 'string',
-        )
-        .map<Track>((track) => ({
-            name: track.title,
-            artists: (track.artists ?? []).map(({ name }) => name),
-            source: track,
-        }));
+    if (!Array.isArray(tracks)) {
+        throw new Error(
+            'Unexpected Yandex playlist response: "result.tracks" is missing or not an array',
+        );
+    }
+
+    return tracks.flatMap<Track>((item) => {
+        const track = item.track;
+
+        if (track === null) {
+            return [];
+        }
+
+        if (track === undefined) {
+            throw new Error(
+                'Unexpected Yandex playlist response: a track entry is missing its "track" body',
+            );
+        }
+
+        if (
+            typeof track.title !== 'string' ||
+            track.title.trim().length === 0
+        ) {
+            throw new Error(
+                'Unexpected Yandex playlist response: track body is missing a non-empty "title"',
+            );
+        }
+
+        const artists = track.artists ?? [];
+        if (
+            artists.length === 0 ||
+            artists.some(
+                ({ name }) =>
+                    typeof name !== 'string' || name.trim().length === 0,
+            )
+        ) {
+            throw new Error(
+                'Unexpected Yandex playlist response: track is missing non-empty artist names',
+            );
+        }
+
+        return [
+            {
+                name: track.title,
+                artists: artists.map(({ name }) => name),
+                source: track,
+            },
+        ];
+    });
 }

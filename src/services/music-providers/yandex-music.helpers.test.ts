@@ -74,52 +74,106 @@ test('mapPlaylistTracks skips unavailable tracks with a null track body', () => 
     ]);
 });
 
-test('mapPlaylistTracks defaults artists to [] when the track has none', () => {
-    const tracks = mapPlaylistTracks({
-        result: {
-            tracks: [{ track: { title: 'Untitled Instrumental' } }],
-        },
-    });
-
-    assert.deepEqual(tracks, [
-        {
-            name: 'Untitled Instrumental',
-            artists: [],
-            source: { title: 'Untitled Instrumental' },
-        },
-    ]);
+test('mapPlaylistTracks throws when a track has no artists', () => {
+    assert.throws(
+        () =>
+            mapPlaylistTracks({
+                result: {
+                    tracks: [{ track: { title: 'Untitled Instrumental' } }],
+                },
+            }),
+        /artist/,
+    );
 });
 
-test('mapPlaylistTracks skips track bodies that are missing a title', () => {
-    const tracks = mapPlaylistTracks({
-        result: {
-            tracks: [
-                { track: { artists: [{ name: 'Linkin Park' }] } },
-                {
-                    track: {
-                        title: 'Numb',
-                        artists: [{ name: 'Linkin Park' }],
-                    },
+test('mapPlaylistTracks throws when a track entry is missing its track body', () => {
+    assert.throws(
+        () =>
+            mapPlaylistTracks({
+                result: {
+                    tracks: [
+                        {},
+                        {
+                            track: {
+                                title: 'Numb',
+                                artists: [{ name: 'Linkin Park' }],
+                            },
+                        },
+                    ],
                 },
-            ],
-        },
-    });
+            }),
+        /track/,
+    );
+});
 
-    assert.deepEqual(tracks, [
-        {
-            name: 'Numb',
-            artists: ['Linkin Park'],
-            source: { title: 'Numb', artists: [{ name: 'Linkin Park' }] },
-        },
-    ]);
+test('mapPlaylistTracks throws when a non-null track body is missing a title', () => {
+    assert.throws(
+        () =>
+            mapPlaylistTracks({
+                result: {
+                    tracks: [
+                        { track: { artists: [{ name: 'Linkin Park' }] } },
+                        {
+                            track: {
+                                title: 'Numb',
+                                artists: [{ name: 'Linkin Park' }],
+                            },
+                        },
+                    ],
+                },
+            }),
+        /title/,
+    );
+});
+
+test('mapPlaylistTracks throws when a title is empty or whitespace-only', () => {
+    for (const title of ['', '   ']) {
+        assert.throws(
+            () =>
+                mapPlaylistTracks({
+                    result: {
+                        tracks: [
+                            {
+                                track: {
+                                    title,
+                                    artists: [{ name: 'Linkin Park' }],
+                                },
+                            },
+                        ],
+                    },
+                }),
+            /title/,
+        );
+    }
+});
+
+test('mapPlaylistTracks throws when an artist name is empty or whitespace-only', () => {
+    for (const name of ['', '   ']) {
+        assert.throws(
+            () =>
+                mapPlaylistTracks({
+                    result: {
+                        tracks: [
+                            {
+                                track: {
+                                    title: 'Numb',
+                                    artists: [{ name }],
+                                },
+                            },
+                        ],
+                    },
+                }),
+            /artist/,
+        );
+    }
 });
 
 test('mapPlaylistTracks returns [] for an empty playlist', () => {
     assert.deepEqual(mapPlaylistTracks({ result: { tracks: [] } }), []);
 });
 
-test('mapPlaylistTracks returns [] when result is missing', () => {
-    assert.deepEqual(mapPlaylistTracks({}), []);
+test('mapPlaylistTracks throws when result is missing', () => {
+    assert.throws(() => mapPlaylistTracks({}), /result\.tracks/);
 });
 
 test('parseSocksProxy extracts host and port from a socks5h url', () => {
