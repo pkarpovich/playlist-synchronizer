@@ -1,6 +1,6 @@
 import * as process from 'process';
 import dotenv from 'dotenv';
-dotenv.config();
+dotenv.config({ quiet: true });
 
 export interface IConfig {
     dbPath: string;

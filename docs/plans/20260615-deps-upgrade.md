@@ -81,13 +81,20 @@ can execute it.
 - [x] if a code change was needed, add a test covering it
 
 ### Task 3: awilix 13 + croner 10 + dotenv 17
-- [ ] bump `awilix` ^13, `croner` ^10, `dotenv` ^17; `pnpm install`
-- [ ] croner: confirm the configured `JOB_CRON_PATTERN` (default `@hourly`) parses
+- [x] bump `awilix` ^13, `croner` ^10, `dotenv` ^17; `pnpm install`
+- [x] croner: confirm the configured `JOB_CRON_PATTERN` (default `@hourly`) parses
       under strict v10 rules; add `{ sloppyRanges: true }` only if a non-standard
-      pattern is in use
-- [ ] awilix: typecheck the `createContainer<Container>()` usage in `src/container.ts`
-- [ ] regression gate green; smoke: cron job schedules and the app boots
-- [ ] add/adjust tests if any code change was required
+      pattern is in use (default `@hourly` + standard `0 * * * *` both schedule under
+      v10; no non-standard pattern in use, so `sloppyRanges` not added)
+- [x] awilix: typecheck the `createContainer<Container>()` usage in `src/container.ts`
+      (`pnpm check-types` clean; awilix 13 changes are TS-only, explicit generic still
+      resolves)
+- [x] regression gate green; smoke: cron job schedules and the app boots (build,
+      check-types, 32 tests, lint all green; temp smoke booted the real container +
+      HTTP layer: `/health` -> 200, `@hourly` job scheduled and `startNow` fired once)
+- [x] add/adjust tests if any code change was required (the only code change was
+      `dotenv.config({ quiet: true })` to silence dotenv 17's new promotional boot
+      banner - a config flag with no testable logic; existing suite stays green)
 
 ### Task 4: prettier 2 -> 3 (isolated reformat)
 - [ ] bump `prettier` ^3; run `pnpm format:fix`
