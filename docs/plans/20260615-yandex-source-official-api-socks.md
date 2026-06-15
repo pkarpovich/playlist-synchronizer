@@ -80,13 +80,13 @@ Yandex client gets unit tests (the project currently has none).
 - [x] run `pnpm install`, `pnpm build`, `pnpm check-types`, `pnpm test` - all pass
 
 ### Task 2: Config for Yandex base URL + proxy
-- [ ] extend `IConfig` and `Config` in `src/config/config.ts` with
+- [x] extend `IConfig` and `Config` in `src/config/config.ts` with
       `yandexMusic: { baseUrl, proxyUrl }` from `YANDEX_API_BASE_URL`
       (default `https://api.music.yandex.net`) and `YANDEX_API_PROXY` (default empty)
-- [ ] keep the proxy/base URL out of code (env only)
-- [ ] write tests for the config mapping (default base URL, empty proxy) via a small
+- [x] keep the proxy/base URL out of code (env only)
+- [x] write tests for the config mapping (default base URL, empty proxy) via a small
       pure reader/helper
-- [ ] run tests - must pass before next task
+- [x] run tests - must pass before next task
 
 ### Task 3: Pure Yandex helpers + fixture
 - [ ] add `buildPlaylistUrl(baseUrl, owner, kind)` and

@@ -19,11 +19,26 @@ export interface IConfig {
     http: {
         port: number;
     };
+
+    yandexMusic: {
+        baseUrl: string;
+        proxyUrl: string;
+    };
 }
 
 const DEFAULT_SYNC_CONFIG_PATH = './config/sync.config.json';
 const DEFAULT_JOB_CRON_PATTERN = '@hourly';
 const DEFAULT_DB_PATH = './db/db.json';
+const DEFAULT_YANDEX_API_BASE_URL = 'https://api.music.yandex.net';
+
+export function readYandexMusicConfig(
+    env: NodeJS.ProcessEnv,
+): IConfig['yandexMusic'] {
+    return {
+        baseUrl: env.YANDEX_API_BASE_URL || DEFAULT_YANDEX_API_BASE_URL,
+        proxyUrl: env.YANDEX_API_PROXY || '',
+    };
+}
 
 export const Config = {
     dbPath: process.env.DB_PATH || DEFAULT_DB_PATH,
@@ -42,4 +57,6 @@ export const Config = {
     http: {
         port: Number(process.env.HTTP_PORT),
     },
+
+    yandexMusic: readYandexMusicConfig(process.env),
 } as IConfig;
