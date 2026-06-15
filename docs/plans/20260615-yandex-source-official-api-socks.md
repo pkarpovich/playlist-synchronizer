@@ -89,14 +89,14 @@ Yandex client gets unit tests (the project currently has none).
 - [x] run tests - must pass before next task
 
 ### Task 3: Pure Yandex helpers + fixture
-- [ ] add `buildPlaylistUrl(baseUrl, owner, kind)` and
+- [x] add `buildPlaylistUrl(baseUrl, owner, kind)` and
       `mapPlaylistTracks(json): Track[]` (map `result.tracks[].track` ->
       `{ name: title, artists: artists.map(a => a.name), source }`)
-- [ ] add trimmed real fixture `src/services/music-providers/__fixtures__/yandex-playlist.json`
+- [x] add trimmed real fixture `src/services/music-providers/__fixtures__/yandex-playlist.json`
       (2-3 tracks, incl. a multi-artist track)
-- [ ] write tests: mapping from fixture (names + multi-artist), URL building,
+- [x] write tests: mapping from fixture (names + multi-artist), URL building,
       empty `result.tracks` -> `[]`
-- [ ] run tests - must pass before next task
+- [x] run tests - must pass before next task
 
 ### Task 4: Rewrite YandexMusicService on official API (fetch + fetch-socks)
 - [ ] add dependency `fetch-socks`; remove `yandex-short-api` from `package.json`
