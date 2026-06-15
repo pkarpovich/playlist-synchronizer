@@ -169,13 +169,24 @@ can execute it.
       `workflow_dispatch` trigger, optional `tag` input, 5 steps, structure clean
 
 ### Task 8: Verify acceptance criteria
-- [ ] no references to removed deps remain (`express-async-errors`, `@changesets/cli`,
-      `.changeset`)
-- [ ] `.github/workflows/` contains only `publish.yml` (old workflows gone); it has
-      no automatic triggers (only `workflow_dispatch`)
-- [ ] eslint cluster untouched (versions unchanged); `@types/node` still `^24`
-- [ ] `pnpm build`, `pnpm check-types`, `pnpm test`, `pnpm lint` all green
-- [ ] app boots; `/health` responds
+- [x] no references to removed deps remain (`express-async-errors`, `@changesets/cli`,
+      `.changeset`) - grep across `*.ts/*.js/*.json/*.yml/*.yaml` (excluding node_modules
+      + pnpm-lock) found none; no `.changeset/` dir; no `dependabot.yml`
+- [x] `.github/workflows/` contains only `publish.yml` (old workflows gone); it has
+      no automatic triggers (only `workflow_dispatch`) - dir holds just `publish.yml`;
+      its `on:` block is `workflow_dispatch` only (optional `tag` input), no push/release
+- [x] eslint cluster untouched (versions unchanged); `@types/node` still `^24` -
+      eslint ^8.36, @typescript-eslint/* ^5.55, eslint-config-prettier ^8.7,
+      eslint-import-resolver-typescript ^3.5, eslint-plugin-import ^2.27 all unchanged;
+      `@types/node` `^24`. Lone exception is `eslint-plugin-prettier` ^5.5.4, the
+      documented Task 4 ➕ bump forced by prettier 3 (v5 still supports eslint 8, so the
+      freeze's no-flat-config intent is preserved)
+- [x] `pnpm build`, `pnpm check-types`, `pnpm test`, `pnpm lint` all green - build emits
+      cleanly, check-types clean, 32/32 tests pass, lint 0 errors (lone warning is the
+      pre-existing `import/no-named-as-default-member` in config.ts)
+- [x] app boots; `/health` responds - temp smoke booted the real container + HTTP layer:
+      `/health` -> 200 `{"status":"UP",...}`; `@hourly` parsed under croner 10 (next run
+      scheduled), `startNow` fired once
 
 ## Technical Details
 - express 5 auto-catches rejected promises in middleware/handlers, so
