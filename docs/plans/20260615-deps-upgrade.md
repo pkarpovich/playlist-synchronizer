@@ -72,13 +72,13 @@ can execute it.
 - [x] smoke: app boots and `/health` responds
 
 ### Task 2: express 4 -> 5
-- [ ] bump `express` ^5 and `@types/express` ^5; remove `express-async-errors`
+- [x] bump `express` ^5 and `@types/express` ^5; remove `express-async-errors`
       (dep + its `import 'express-async-errors'` in `src/services/http.service.ts`)
-- [ ] verify the error handler `(err,req,res,next)` still catches a thrown error in
+- [x] verify the error handler `(err,req,res,next)` still catches a thrown error in
       an async route (Spotify callback path)
-- [ ] adjust any express-5 fallout (none expected: no wildcard routes, no `req.body`)
-- [ ] regression gate green; smoke: `/health` + `/spotify/callback` work
-- [ ] if a code change was needed, add a test covering it
+- [x] adjust any express-5 fallout (none expected: no wildcard routes, no `req.body`)
+- [x] regression gate green; smoke: `/health` + `/spotify/callback` work
+- [x] if a code change was needed, add a test covering it
 
 ### Task 3: awilix 13 + croner 10 + dotenv 17
 - [ ] bump `awilix` ^13, `croner` ^10, `dotenv` ^17; `pnpm install`

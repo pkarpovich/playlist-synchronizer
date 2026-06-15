@@ -1,6 +1,5 @@
 import express, { Router, NextFunction, Request, Response } from 'express';
 import helmet from 'helmet';
-import 'express-async-errors';
 
 import { ConfigService } from './config.service.js';
 import { LogService } from './log.service.js';
