@@ -127,12 +127,21 @@ can execute it.
       errors)
 
 ### Task 6: typescript 5.9 -> 6.0 (isolated, last)
-- [ ] bump `typescript` ^6; `pnpm install`
-- [ ] resolve TS 6 fallout: ensure `tsconfig.json` (via `@tsconfig/node24`) sets a
-      valid `target`/`module` and includes `types: ["node"]` so node globals resolve
-      under the new `types: []` default; fix any new type errors
-- [ ] run `pnpm build` and `pnpm check-types` - must be clean
-- [ ] regression gate green
+- [x] bump `typescript` ^6; `pnpm install` (5.9.3 -> 6.0.3)
+- [x] resolve TS 6 fallout: dropped the stale `module: es2022` / `target: es2022` /
+      `moduleResolution: node` overrides in `tsconfig.json` and inherited
+      `@tsconfig/node24`'s `module: nodenext` / `moduleResolution: node16` /
+      `target: es2024` instead (TS 6 errors on the deprecated `node10` resolution via
+      TS5107; the source already uses `.js` import extensions everywhere, so nodenext
+      is the correct mode). Node globals (`process`, `Buffer`) resolve fine without an
+      explicit `types: ["node"]` (check-types clean under `strict`), so per the plan's
+      conditional guidance it was NOT added. Also added explicit `rootDir: "src"` -
+      TS 6 no longer infers the common source dir for emit (TS5011), and this preserves
+      the existing `src/index.ts -> dist/index.js` layout
+- [x] run `pnpm build` and `pnpm check-types` - must be clean (both green; build emits
+      `dist/index.js` at top level with `.js`-extensioned nodenext imports)
+- [x] regression gate green (build, check-types, 32 tests, lint - 0 errors; the lone
+      lint output is the pre-existing `import/no-named-as-default-member` warning)
 
 ### Task 7: Rewrite GitHub Actions (manual deploy) + remove changesets
 - [ ] delete all existing workflows: `.github/workflows/release.yml`,
