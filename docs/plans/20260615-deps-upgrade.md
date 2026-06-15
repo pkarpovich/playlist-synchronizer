@@ -97,9 +97,16 @@ can execute it.
       banner - a config flag with no testable logic; existing suite stays green)
 
 ### Task 4: prettier 2 -> 3 (isolated reformat)
-- [ ] bump `prettier` ^3; run `pnpm format:fix`
-- [ ] commit the reformat as its own commit (no logic changes)
-- [ ] regression gate green (`pnpm lint`, `pnpm format`, build)
+- [x] bump `prettier` ^3; run `pnpm format:fix` (prettier ^3.6.2 -> 3.8.4; only
+      `spotify.service.ts` reformatted: arrow-body cast parens moved per prettier 3)
+- [x] commit the reformat as its own commit (no logic changes)
+- [x] regression gate green (`pnpm lint`, `pnpm format`, build)
+- ➕ required: bump `eslint-plugin-prettier` ^4.2.1 -> ^5 (now 5.5.6). prettier 3
+      removed `prettier.resolveConfig.sync`, which v4 calls, so `pnpm lint` crashes
+      under prettier 3. v5 supports eslint 8 and does NOT need flat config / eslint 9+,
+      so the freeze's intent (no eslint-10 flat-config migration) is preserved. This
+      makes the Task 8 "eslint cluster versions unchanged" check inexact: only
+      eslint-plugin-prettier moved, forced by the prettier 3 bump.
 
 ### Task 5: husky 9 + lint-staged 17
 - [ ] bump `husky` ^9 and `lint-staged` ^17
