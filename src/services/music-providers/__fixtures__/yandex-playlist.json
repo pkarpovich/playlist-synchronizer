@@ -1,0 +1,33 @@
+{
+  "result": {
+    "revision": 14,
+    "kind": 1054,
+    "trackCount": 3,
+    "tracks": [
+      {
+        "id": "10994777",
+        "track": {
+          "id": "10994777",
+          "title": "Smells Like Teen Spirit",
+          "artists": [{ "name": "Nirvana" }]
+        }
+      },
+      {
+        "id": "20580170",
+        "track": {
+          "id": "20580170",
+          "title": "Numb / Encore",
+          "artists": [{ "name": "Linkin Park" }, { "name": "Jay-Z" }]
+        }
+      },
+      {
+        "id": "31163",
+        "track": {
+          "id": "31163",
+          "title": "Bohemian Rhapsody",
+          "artists": [{ "name": "Queen" }]
+        }
+      }
+    ]
+  }
+}
