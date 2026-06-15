@@ -1,5 +1,12 @@
 # playlist-synchronizer
 
+## 1.4.0
+
+### Minor Changes
+
+-   #67: restore Yandex source via the official `api.music.yandex.net` over a SOCKS proxy (public playlists, no token); fail-loud source errors so a failing playlist is skipped instead of reported as a false success
+-   #68: upgrade major dependencies and Node 24.16 (express 5, awilix 13, croner 10, dotenv 17, prettier 3, TypeScript 6, husky 9, lint-staged 17); rewrite GitHub Actions into a single manual publish workflow; remove changesets
+
 ## 1.3.0
 
 ### Minor Changes
