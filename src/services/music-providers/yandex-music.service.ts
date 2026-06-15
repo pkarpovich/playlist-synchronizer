@@ -22,6 +22,8 @@ export type FetchFn = (
 export class YandexMusicService extends BaseMusicService {
     isReady = true;
 
+    private dispatcher?: ReturnType<typeof socksDispatcher>;
+
     constructor(
         private readonly logService: LogService,
         private readonly configService: ConfigService<IConfig>,
@@ -35,9 +37,10 @@ export class YandexMusicService extends BaseMusicService {
         const proxyUrl = this.configService.get('yandexMusic.proxyUrl');
         const url = buildPlaylistUrl(baseUrl, userName, id);
 
-        const resp = proxyUrl
+        const dispatcher = this.getDispatcher(proxyUrl);
+        const resp = dispatcher
             ? await this.fetchFn(url, {
-                  dispatcher: socksDispatcher(parseSocksProxy(proxyUrl)),
+                  dispatcher,
               } as unknown as RequestInit)
             : await this.fetchFn(url);
 
@@ -50,6 +53,20 @@ export class YandexMusicService extends BaseMusicService {
         const json = (await resp.json()) as YandexPlaylistResponse;
 
         return mapPlaylistTracks(json);
+    }
+
+    private getDispatcher(
+        proxyUrl: string,
+    ): ReturnType<typeof socksDispatcher> | undefined {
+        if (!proxyUrl) {
+            return undefined;
+        }
+
+        if (!this.dispatcher) {
+            this.dispatcher = socksDispatcher(parseSocksProxy(proxyUrl));
+        }
+
+        return this.dispatcher;
     }
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
