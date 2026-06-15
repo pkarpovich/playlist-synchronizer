@@ -69,14 +69,15 @@ Yandex client gets unit tests (the project currently has none).
 ## Implementation Steps
 
 ### Task 1: Test harness + Node 24.16 bump
-- [ ] set Node to `24.16` via mise in `mise.toml` (`node = "24.16"`) and remove the
+- [x] set Node to `24.16` via mise in `mise.toml` (`node = "24.16"`) and remove the
       stale `.nvmrc`; `Dockerfile` `ARG NODE_VERSION=24.16`;
       `.github/workflows/release.yml` `node-version: 24`
-- [ ] devDeps: `@tsconfig/node22` -> `@tsconfig/node24`, `@types/node` -> `^24`;
-      update `tsconfig.json` extends
-- [ ] change `package.json` `test` script to `tsx --test 'src/**/*.test.ts'`
-- [ ] add a trivial `src/sanity.test.ts` asserting the runner works
-- [ ] run `pnpm install`, `pnpm build`, `pnpm check-types`, `pnpm test` - all pass
+- [x] devDeps: `@tsconfig/node22` -> `@tsconfig/node24`, `@types/node` -> `^24`;
+      update `tsconfig.json` extends (also bumped `typescript` `^5.7.3` -> `^5.9.3`,
+      required for the node24 base `esnext.*` libs to typecheck)
+- [x] change `package.json` `test` script to `tsx --test 'src/**/*.test.ts'`
+- [x] add a trivial `src/sanity.test.ts` asserting the runner works
+- [x] run `pnpm install`, `pnpm build`, `pnpm check-types`, `pnpm test` - all pass
 
 ### Task 2: Config for Yandex base URL + proxy
 - [ ] extend `IConfig` and `Config` in `src/config/config.ts` with
