@@ -144,18 +144,29 @@ can execute it.
       lint output is the pre-existing `import/no-named-as-default-member` warning)
 
 ### Task 7: Rewrite GitHub Actions (manual deploy) + remove changesets
-- [ ] delete all existing workflows: `.github/workflows/release.yml`,
-      `publish-docker-image.yml`, `update-lockfile.yml`
-- [ ] remove changesets: `@changesets/cli` dep, the `.changeset/` directory, and the
+- [x] delete all existing workflows: `.github/workflows/release.yml`,
+      `publish-docker-image.yml`, `update-lockfile.yml` (all three `git rm`'d)
+- [x] remove changesets: `@changesets/cli` dep, the `.changeset/` directory, and the
       `changeset`/`version`/`publish` scripts + `publishConfig` in `package.json`
-- [ ] add `.github/workflows/publish.yml`: `on: workflow_dispatch` only (manual, with
+      (`pnpm install` pruned 63 packages; CHANGELOG.md left as-is - its lone "First
+      changeset" line is historical changelog text, not a dep reference)
+- [x] add `.github/workflows/publish.yml`: `on: workflow_dispatch` only (manual, with
       an optional `tag` input), build + push to `ghcr.io/${{ github.repository }}`
       tagged `:latest` + short-sha (+ the optional tag), `platforms: linux/amd64`
       (deploy target is amd64), auth via `GITHUB_TOKEN`, using `docker/login-action`,
       `docker/metadata-action`, `docker/build-push-action`; no hardcoded version
-- [ ] decide dependabot: keep `dependabot.yml` (security alerts) or remove it; the
-      orphaned lockfile workflow is removed regardless
-- [ ] `pnpm install`; regression gate green; `actionlint` / YAML sanity if available
+      (short-sha via metadata-action `type=sha` -> `sha-<7char>`; optional tag via
+      `type=raw,value=${{ inputs.tag }},enable=${{ inputs.tag != '' }}`; build via
+      `docker/build-push-action@v6` with `setup-buildx-action` - no QEMU since single
+      arch; `permissions: contents:read, packages:write`)
+- [x] decide dependabot: REMOVED `dependabot.yml`. Its companion lockfile-fixer
+      (`update-lockfile.yml`) is deleted, so dependabot's pnpm version-update PRs would
+      carry broken lockfiles; native GitHub Dependabot security alerts don't need this
+      file and remain available via repo settings. Matches the manual/simplify theme
+- [x] `pnpm install`; regression gate green (build, check-types, 32 tests pass, lint 0
+      errors - lone warning is the pre-existing `import/no-named-as-default-member`);
+      YAML sanity: actionlint not installed, validated via ruby psych - only
+      `workflow_dispatch` trigger, optional `tag` input, 5 steps, structure clean
 
 ### Task 8: Verify acceptance criteria
 - [ ] no references to removed deps remain (`express-async-errors`, `@changesets/cli`,

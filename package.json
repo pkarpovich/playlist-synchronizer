@@ -14,10 +14,7 @@
     "lint:fix": "eslint --fix 'src/**/*.ts'",
     "check-types": "tsc --noemit",
     "test": "tsx --test 'src/**/*.test.ts'",
-    "prepare": "husky",
-    "changeset": "changeset",
-    "publish": "changeset tag",
-    "version": "changeset version"
+    "prepare": "husky"
   },
   "keywords": [
     "yandex",
@@ -52,7 +49,6 @@
     ]
   },
   "dependencies": {
-    "@changesets/cli": "^2.27.12",
     "awilix": "^13.0.5",
     "croner": "^10.0.1",
     "dotenv": "^17.4.2",
@@ -66,9 +62,6 @@
   },
   "peerDependencies": {
     "eslint-plugin-import": ">=2.25.3 <3.0.0"
-  },
-  "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
   },
   "repository": {
     "type": "git",
