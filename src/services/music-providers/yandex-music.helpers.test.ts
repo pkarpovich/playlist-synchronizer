@@ -74,6 +74,46 @@ test('mapPlaylistTracks skips unavailable tracks with a null track body', () => 
     ]);
 });
 
+test('mapPlaylistTracks defaults artists to [] when the track has none', () => {
+    const tracks = mapPlaylistTracks({
+        result: {
+            tracks: [{ track: { title: 'Untitled Instrumental' } }],
+        },
+    });
+
+    assert.deepEqual(tracks, [
+        {
+            name: 'Untitled Instrumental',
+            artists: [],
+            source: { title: 'Untitled Instrumental' },
+        },
+    ]);
+});
+
+test('mapPlaylistTracks skips track bodies that are missing a title', () => {
+    const tracks = mapPlaylistTracks({
+        result: {
+            tracks: [
+                { track: { artists: [{ name: 'Linkin Park' }] } },
+                {
+                    track: {
+                        title: 'Numb',
+                        artists: [{ name: 'Linkin Park' }],
+                    },
+                },
+            ],
+        },
+    });
+
+    assert.deepEqual(tracks, [
+        {
+            name: 'Numb',
+            artists: ['Linkin Park'],
+            source: { title: 'Numb', artists: [{ name: 'Linkin Park' }] },
+        },
+    ]);
+});
+
 test('mapPlaylistTracks returns [] for an empty playlist', () => {
     assert.deepEqual(mapPlaylistTracks({ result: { tracks: [] } }), []);
 });

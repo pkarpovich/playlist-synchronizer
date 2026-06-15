@@ -6,8 +6,8 @@ export type YandexArtist = {
 
 export type YandexTrack = {
     id?: string;
-    title: string;
-    artists: YandexArtist[];
+    title?: string;
+    artists?: YandexArtist[];
 };
 
 export type YandexPlaylistResponse = {
@@ -49,10 +49,14 @@ export function mapPlaylistTracks(json: YandexPlaylistResponse): Track[] {
     const tracks = json.result?.tracks ?? [];
 
     return tracks
-        .filter((item): item is { track: YandexTrack } => item.track != null)
-        .map<Track>(({ track }) => ({
+        .map((item) => item.track)
+        .filter(
+            (track): track is YandexTrack & { title: string } =>
+                track != null && typeof track.title === 'string',
+        )
+        .map<Track>((track) => ({
             name: track.title,
-            artists: track.artists.map(({ name }) => name),
+            artists: (track.artists ?? []).map(({ name }) => name),
             source: track,
         }));
 }
