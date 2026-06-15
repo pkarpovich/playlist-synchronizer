@@ -67,9 +67,9 @@ can execute it.
 ## Implementation Steps
 
 ### Task 1: Safe minor bumps
-- [ ] bump `helmet` ^8.2, `yup` ^1.7, `tsx` ^4.22 in `package.json`; `pnpm install`
-- [ ] run `pnpm build`, `pnpm check-types`, `pnpm test`, `pnpm lint` - all green
-- [ ] smoke: app boots and `/health` responds
+- [x] bump `helmet` ^8.2, `yup` ^1.7, `tsx` ^4.22 in `package.json`; `pnpm install`
+- [x] run `pnpm build`, `pnpm check-types`, `pnpm test`, `pnpm lint` - all green
+- [x] smoke: app boots and `/health` responds
 
 ### Task 2: express 4 -> 5
 - [ ] bump `express` ^5 and `@types/express` ^5; remove `express-async-errors`
