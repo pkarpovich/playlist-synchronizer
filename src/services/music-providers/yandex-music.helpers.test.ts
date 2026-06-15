@@ -5,6 +5,7 @@ import { test } from 'node:test';
 import {
     buildPlaylistUrl,
     mapPlaylistTracks,
+    parseSocksProxy,
     YandexPlaylistResponse,
 } from './yandex-music.helpers.js';
 
@@ -55,4 +56,12 @@ test('mapPlaylistTracks returns [] for an empty playlist', () => {
 
 test('mapPlaylistTracks returns [] when result is missing', () => {
     assert.deepEqual(mapPlaylistTracks({}), []);
+});
+
+test('parseSocksProxy extracts host and port from a socks5h url', () => {
+    assert.deepEqual(parseSocksProxy('socks5h://100.121.175.96:1080'), {
+        type: 5,
+        host: '100.121.175.96',
+        port: 1080,
+    });
 });

@@ -16,12 +16,28 @@ export type YandexPlaylistResponse = {
     };
 };
 
+export type SocksProxyConfig = {
+    type: 5;
+    host: string;
+    port: number;
+};
+
 export function buildPlaylistUrl(
     baseUrl: string,
     owner: string,
     kind: string,
 ): string {
     return `${baseUrl}/users/${owner}/playlists/${kind}`;
+}
+
+export function parseSocksProxy(proxyUrl: string): SocksProxyConfig {
+    const { hostname, port } = new URL(proxyUrl);
+
+    return {
+        type: 5,
+        host: hostname,
+        port: Number(port),
+    };
 }
 
 export function mapPlaylistTracks(json: YandexPlaylistResponse): Track[] {

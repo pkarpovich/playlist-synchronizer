@@ -99,16 +99,17 @@ Yandex client gets unit tests (the project currently has none).
 - [x] run tests - must pass before next task
 
 ### Task 4: Rewrite YandexMusicService on official API (fetch + fetch-socks)
-- [ ] add dependency `fetch-socks`; remove `yandex-short-api` from `package.json`
+- [x] add dependency `fetch-socks`; remove `yandex-short-api` from `package.json`
       and delete `src/@types/yandex-short-api/`
-- [ ] register an injectable `fetchFn` (default `globalThis.fetch`) in
+- [x] register an injectable `fetchFn` (default `globalThis.fetch`) in
       `src/container.ts`; inject `configService` + `fetchFn` into `YandexMusicService`
-- [ ] implement `getPlaylistTracks`: build URL, build `socksDispatcher` from
+- [x] implement `getPlaylistTracks`: build URL, build `socksDispatcher` from
       `proxyUrl` when set, `fetch` with that dispatcher, throw on non-2xx, map via
       `mapPlaylistTracks`; keep `isReady = true`; keep unimplemented write methods
-- [ ] write tests with a stub `fetchFn`: 200 -> mapped tracks; non-2xx (404/451) ->
+      (proxy parsing extracted to pure `parseSocksProxy` helper)
+- [x] write tests with a stub `fetchFn`: 200 -> mapped tracks; non-2xx (404/451) ->
       throws; rejected fetch -> throws; empty playlist -> `[]`
-- [ ] run tests - must pass before next task
+- [x] run tests - must pass before next task
 
 ### Task 5: Fail-loud source errors in the sync flow
 - [ ] ensure a failed source fetch propagates (no silent `[]`); wrap per-playlist

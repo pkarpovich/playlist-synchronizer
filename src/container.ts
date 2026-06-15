@@ -4,11 +4,13 @@ import {
     createContainer,
     InjectionMode,
     asFunction,
+    asValue,
 } from 'awilix';
 import express from 'express';
 import {
     ConfigService,
     CronService,
+    FetchFn,
     HttpService,
     LocalDbService,
     LogService,
@@ -34,6 +36,7 @@ interface Container {
     authStore: LocalDbService<AuthStore>;
     httpService: HttpService;
     cronService: CronService;
+    fetchFn: FetchFn;
     yandexMusicService: YandexMusicService;
     spotifyService: SpotifyService;
     spotifyController: SpotifyController;
@@ -54,6 +57,7 @@ export async function initContainer(): Promise<AwilixContainer<Container>> {
             .singleton(),
         httpService: asClass(HttpService).singleton(),
         cronService: asClass(CronService).singleton(),
+        fetchFn: asValue<FetchFn>(globalThis.fetch),
         yandexMusicService: asClass(YandexMusicService).singleton(),
         spotifyService: asClass(SpotifyService).singleton(),
         healthController: asClass(HealthController).singleton(),

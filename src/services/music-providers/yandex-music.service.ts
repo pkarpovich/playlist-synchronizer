@@ -1,39 +1,55 @@
-import { YandexMusicApi } from 'yandex-short-api';
+import { socksDispatcher } from 'fetch-socks';
 
 import { Playlist, Track } from '../../entities.js';
+import { IConfig } from '../../config.js';
 import { BaseMusicService } from './base-music.service.js';
+import { ConfigService } from '../config.service.js';
 import { LogService } from '../log.service.js';
+import {
+    buildPlaylistUrl,
+    mapPlaylistTracks,
+    parseSocksProxy,
+    YandexPlaylistResponse,
+} from './yandex-music.helpers.js';
+
+export type YandexFetchResponse = Pick<Response, 'ok' | 'status' | 'json'>;
+
+export type FetchFn = (
+    url: string,
+    init?: RequestInit,
+) => Promise<YandexFetchResponse>;
 
 export class YandexMusicService extends BaseMusicService {
-    private client: YandexMusicApi;
-
     isReady = true;
 
-    constructor(private readonly logService: LogService) {
+    constructor(
+        private readonly logService: LogService,
+        private readonly configService: ConfigService<IConfig>,
+        private readonly fetchFn: FetchFn,
+    ) {
         super();
-        this.client = new YandexMusicApi();
     }
 
-    async getPlaylistTracks({
-        id,
-        userName,
-        name,
-    }: Playlist): Promise<Track[]> {
-        const resp = await this.client.getPlaylist(userName as string, id);
-        if (!resp || !resp.tracks) {
-            this.logService.error(
-                `Failed to get playlist ${name} from yandex.music`,
+    async getPlaylistTracks({ id, userName }: Playlist): Promise<Track[]> {
+        const baseUrl = this.configService.get('yandexMusic.baseUrl');
+        const proxyUrl = this.configService.get('yandexMusic.proxyUrl');
+        const url = buildPlaylistUrl(baseUrl, userName, id);
+
+        const resp = proxyUrl
+            ? await this.fetchFn(url, {
+                  dispatcher: socksDispatcher(parseSocksProxy(proxyUrl)),
+              } as unknown as RequestInit)
+            : await this.fetchFn(url);
+
+        if (!resp.ok) {
+            throw new Error(
+                `Failed to fetch Yandex playlist ${userName}/${id} (HTTP ${resp.status})`,
             );
-            return [];
         }
 
-        const { tracks } = resp;
+        const json = (await resp.json()) as YandexPlaylistResponse;
 
-        return tracks.map<Track>((track) => ({
-            name: track.title,
-            artists: track.artists.map(({ name }) => name),
-            source: track,
-        }));
+        return mapPlaylistTracks(json);
     }
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
