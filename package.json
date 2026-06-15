@@ -14,7 +14,7 @@
     "lint:fix": "eslint --fix 'src/**/*.ts'",
     "check-types": "tsc --noemit",
     "test": "tsx --test 'src/**/*.test.ts'",
-    "prepare": "husky"
+    "prepare": "husky || true"
   },
   "keywords": [
     "yandex",
