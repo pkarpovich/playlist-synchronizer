@@ -32,11 +32,16 @@ export function buildPlaylistUrl(
 
 export function parseSocksProxy(proxyUrl: string): SocksProxyConfig {
     const { hostname, port } = new URL(proxyUrl);
+    const portNumber = Number(port);
+
+    if (!hostname || !Number.isInteger(portNumber) || portNumber <= 0) {
+        throw new Error(`Invalid YANDEX_API_PROXY: ${proxyUrl}`);
+    }
 
     return {
         type: 5,
         host: hostname,
-        port: Number(port),
+        port: portNumber,
     };
 }
 

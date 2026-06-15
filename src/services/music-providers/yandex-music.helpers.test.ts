@@ -89,3 +89,10 @@ test('parseSocksProxy extracts host and port from a socks5h url', () => {
         port: 1080,
     });
 });
+
+test('parseSocksProxy throws when the proxy url has no port', () => {
+    assert.throws(
+        () => parseSocksProxy('socks5h://100.121.175.96'),
+        /Invalid YANDEX_API_PROXY/,
+    );
+});
