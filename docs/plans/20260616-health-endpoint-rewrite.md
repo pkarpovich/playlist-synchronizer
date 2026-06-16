@@ -118,11 +118,17 @@ follow-up after this lands.
 - [x] grep confirms no leftover `SyncStatistics` / `resetStatistics` references
 
 ### Task 6: Verify acceptance criteria
-- [ ] `/health` always returns 200 with `{status, lastSyncAt, ageSeconds,
-      spotifyReady, lastRun:{...,playlists:[...]}}`
-- [ ] a failed or empty-source playlist is reflected in `lastRun` (not swallowed)
-- [ ] `lastSyncAt`/`ageSeconds` populate after a run; `no-run` state before any run
-- [ ] full unit suite + lint + build green
+- [x] `/health` always returns 200 with `{status, lastSyncAt, ageSeconds,
+      spotifyReady, lastRun:{...,playlists:[...]}}` (verified: health.controller.ts
+      always `res.status(200).json(snapshot())`; HealthSnapshot matches the shape;
+      covered by health.controller.test.ts)
+- [x] a failed or empty-source playlist is reflected in `lastRun` (not swallowed)
+      (verified: sync.service.ts catch records `status:'failed', error`, empty source
+      returns `status:'empty-source'`; covered by sync.service.test.ts)
+- [x] `lastSyncAt`/`ageSeconds` populate after a run; `no-run` state before any run
+      (verified: health.service.ts; covered by health.service.test.ts)
+- [x] full unit suite + lint + build green (verified: build, check-types, lint pass;
+      tests 43 pass / 0 fail)
 
 ## Technical Details
 - `now` injection: `() => number` epoch ms; default `() => Date.now()`; tests pass a
