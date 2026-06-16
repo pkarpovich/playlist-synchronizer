@@ -65,16 +65,16 @@ follow-up after this lands.
 ## Implementation Steps
 
 ### Task 1: Run-result types + computeRunStatus helper
-- [ ] in `src/entities/` add `PlaylistRunResult` (`{ name, status:
+- [x] in `src/entities/` add `PlaylistRunResult` (`{ name, status:
       'ok'|'failed'|'empty-source', sourceTracks, matched, added, notFound, error? }`)
       and `LastRun` (`{ startedAt, finishedAt, durationMs, status:
       'ok'|'partial'|'failed', playlists: PlaylistRunResult[] }`); export via
       `src/entities.ts`
-- [ ] remove the old `SyncStatistics` type
-- [ ] add a pure `computeRunStatus(playlists: PlaylistRunResult[]): 'ok'|'partial'|'failed'`
+- [x] remove the old `SyncStatistics` type
+- [x] add a pure `computeRunStatus(playlists: PlaylistRunResult[]): 'ok'|'partial'|'failed'`
       (all ok -> ok; some ok & some not -> partial; none ok -> failed)
-- [ ] write tests for `computeRunStatus` (all ok, mixed, all failed, empty list)
-- [ ] run tests - must pass before next task
+- [x] write tests for `computeRunStatus` (all ok, mixed, all failed, empty list)
+- [x] run tests - must pass before next task
 
 ### Task 2: SyncService records the last run
 - [ ] change `sync()` to return a `PlaylistRunResult` (counts: sourceTracks,
