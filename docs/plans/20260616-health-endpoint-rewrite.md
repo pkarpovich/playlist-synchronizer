@@ -103,11 +103,13 @@ follow-up after this lands.
 - [x] run tests - must pass before next task
 
 ### Task 4: HealthController returns facts, always 200
-- [ ] update `src/controllers/health.controller.ts` to inject `HealthService` and
+- [x] update `src/controllers/health.controller.ts` to inject `HealthService` and
       respond `res.status(200).json(healthService.snapshot())`
-- [ ] update `src/container.ts` wiring for the controller
-- [ ] write a test for the handler (returns 200 and the snapshot shape)
-- [ ] run tests - must pass before next task
+- [x] update `src/container.ts` wiring for the controller (no edit needed - awilix
+      CLASSIC resolves the new `healthService` param by name; `healthService` is
+      already registered; verified by green build)
+- [x] write a test for the handler (returns 200 and the snapshot shape)
+- [x] run tests - must pass before next task
 
 ### Task 5: Cleanup + integration
 - [ ] remove all references to the removed `SyncStatistics`/`statistics` (e.g. in
