@@ -7,16 +7,10 @@ import {
     MusicServiceTypes,
     Playlist,
     Track,
-    SyncStatistics,
+    PlaylistRunResult,
+    LastRun,
+    computeRunStatus,
 } from '../entities.js';
-
-const DefaultStatistics: SyncStatistics = {
-    lastSyncAt: null,
-    newTracks: 0,
-    notFoundTracks: 0,
-    totalTracksInOriginalPlaylists: 0,
-    totalTracksInTargetPlaylists: 0,
-};
 
 interface PlaylistSyncContext {
     targetService?: BaseMusicService;
@@ -29,26 +23,21 @@ interface PlaylistSyncContext {
 }
 
 export class SyncService {
-    private _statistics: SyncStatistics;
+    private _lastRun: LastRun | null = null;
 
-    get statistics(): SyncStatistics {
-        return this._statistics;
+    get lastRun(): LastRun | null {
+        return this._lastRun;
     }
 
     constructor(
         private readonly logService: LogService,
         private readonly yandexMusicService: YandexMusicService,
         private readonly spotifyService: SpotifyService,
-    ) {
-        this._statistics = { ...DefaultStatistics };
-    }
-
-    resetStatistics(): void {
-        this._statistics = { ...DefaultStatistics };
-    }
+    ) {}
 
     async syncAll(syncConfig: SyncConfig): Promise<void> {
-        this.resetStatistics();
+        const startedAt = Date.now();
+        const playlists: PlaylistRunResult[] = [];
 
         for (const playlistConfig of syncConfig.playlists) {
             const loggerCtx: LoggerContext = {
@@ -63,7 +52,7 @@ export class SyncService {
             );
 
             try {
-                await this.sync(playlistConfig, loggerCtx);
+                playlists.push(await this.sync(playlistConfig, loggerCtx));
             } catch (error) {
                 const reason =
                     error instanceof Error ? error.message : String(error);
@@ -71,8 +60,26 @@ export class SyncService {
                     `Failed to sync ${playlistConfig.metadata.name} playlist: ${reason}`,
                     loggerCtx,
                 );
+                playlists.push({
+                    name: playlistConfig.metadata.name,
+                    status: 'failed',
+                    sourceTracks: 0,
+                    matched: 0,
+                    added: 0,
+                    notFound: 0,
+                    error: reason,
+                });
             }
         }
+
+        const finishedAt = Date.now();
+        this._lastRun = {
+            startedAt,
+            finishedAt,
+            durationMs: finishedAt - startedAt,
+            status: computeRunStatus(playlists),
+            playlists,
+        };
     }
 
     isAllServicesReady(): boolean {
@@ -84,13 +91,26 @@ export class SyncService {
     async sync(
         syncConfig: PlaylistConfig,
         loggerCtx: LoggerContext,
-    ): Promise<void> {
+    ): Promise<PlaylistRunResult> {
+        const result: PlaylistRunResult = {
+            name: syncConfig.metadata.name,
+            status: 'ok',
+            sourceTracks: 0,
+            matched: 0,
+            added: 0,
+            notFound: 0,
+        };
+
         const isAllServicesReady = this.isAllServicesReady();
         if (!isAllServicesReady) {
             this.logService.await(
                 `Skip sync. Wait for all services to be ready`,
             );
-            return;
+            return {
+                ...result,
+                status: 'failed',
+                error: 'services not ready',
+            };
         }
 
         const sourcePlaylistTracks = await this.getPlaylistTracks(
@@ -98,9 +118,10 @@ export class SyncService {
             syncConfig.metadata,
             loggerCtx,
         );
+        result.sourceTracks = sourcePlaylistTracks.length;
 
         if (!sourcePlaylistTracks.length) {
-            return;
+            return { ...result, status: 'empty-source' };
         }
 
         const ctx: PlaylistSyncContext = {
@@ -128,11 +149,9 @@ export class SyncService {
                 `Found ${tracksForAdd.length} tracks in ${target.type} service`,
                 loggerCtx,
             );
-            this._statistics.totalTracksInOriginalPlaylists +=
-                tracksForAdd.length;
-
-            this._statistics.totalTracksInTargetPlaylists +=
-                ctx.targetPlaylistTracks.length;
+            result.matched += tracksForAdd.length;
+            result.notFound +=
+                ctx.sourcePlaylistTracks.length - tracksForAdd.length;
 
             await this.removeDeletedTracks(ctx, tracksForAdd);
 
@@ -159,12 +178,11 @@ export class SyncService {
                 `Added ${trackIdsForAdd.length} tracks to ${target.metadata.name} playlist`,
                 loggerCtx,
             );
-            this._statistics.newTracks += trackIdsForAdd.length;
-            this._statistics.totalTracksInTargetPlaylists +=
-                trackIdsForAdd.length;
+            result.added += trackIdsForAdd.length;
         }
 
         this.logService.success('Sync completed', loggerCtx);
+        return result;
     }
 
     private getMusicServiceByType(type: MusicServiceTypes): BaseMusicService {
@@ -217,7 +235,6 @@ export class SyncService {
             );
 
             if (!serviceTrack) {
-                this._statistics.notFoundTracks++;
                 this.logService.warn(
                     `Track ${track.name} by ${track.artists.join(
                         ', ',

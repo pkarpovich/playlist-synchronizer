@@ -144,7 +144,7 @@ test('syncAll logs a clear error for the failed playlist', async () => {
     assert.match(errors[0].message, /source unavailable/);
 });
 
-test('syncAll records no false success when the source throws', async () => {
+test('syncAll records run facts without false success when the source throws', async () => {
     const { logs, syncService } = makeHarness();
 
     await syncService.syncAll(makeSyncConfig());
@@ -157,8 +157,67 @@ test('syncAll records no false success when the source throws', async () => {
     );
     assert.equal(falseSuccess.length, 0);
 
-    assert.equal(syncService.statistics.newTracks, 1);
-    assert.equal(syncService.statistics.totalTracksInOriginalPlaylists, 1);
+    const lastRun = syncService.lastRun;
+    assert.ok(lastRun);
+    assert.equal(lastRun.status, 'partial');
+
+    const bad = lastRun.playlists.find((p) => p.name === 'Bad Source');
+    assert.equal(bad?.status, 'failed');
+    assert.match(bad?.error ?? '', /source unavailable/);
+
+    const good = lastRun.playlists.find((p) => p.name === 'Good Source');
+    assert.equal(good?.status, 'ok');
+    assert.equal(good?.sourceTracks, 1);
+    assert.equal(good?.matched, 1);
+    assert.equal(good?.added, 1);
+    assert.equal(good?.notFound, 0);
+});
+
+test('lastRun is null before any run', () => {
+    const { syncService } = makeHarness();
+
+    assert.equal(syncService.lastRun, null);
+});
+
+test('syncAll records ok for every playlist when all succeed', async () => {
+    const logs: LogEntry[] = [];
+    const source = new StubMusicService(async () => [
+        { name: 'Song', artists: ['Artist'] },
+    ]);
+    const target = new StubMusicService(async () => []);
+    const syncService = new SyncService(
+        makeLogStub(logs),
+        source as unknown as YandexMusicService,
+        target as unknown as SpotifyService,
+    );
+
+    await syncService.syncAll(makeSyncConfig());
+
+    const lastRun = syncService.lastRun;
+    assert.ok(lastRun);
+    assert.equal(lastRun.status, 'ok');
+    assert.equal(lastRun.playlists.length, 2);
+    assert.ok(lastRun.playlists.every((p) => p.status === 'ok'));
+    assert.ok(lastRun.finishedAt >= lastRun.startedAt);
+    assert.equal(lastRun.durationMs, lastRun.finishedAt - lastRun.startedAt);
+});
+
+test('syncAll records empty-source when the source has no tracks', async () => {
+    const logs: LogEntry[] = [];
+    const source = new StubMusicService(async () => []);
+    const target = new StubMusicService(async () => []);
+    const syncService = new SyncService(
+        makeLogStub(logs),
+        source as unknown as YandexMusicService,
+        target as unknown as SpotifyService,
+    );
+
+    await syncService.syncAll(makeSyncConfig());
+
+    const lastRun = syncService.lastRun;
+    assert.ok(lastRun);
+    assert.ok(lastRun.playlists.every((p) => p.status === 'empty-source'));
+    assert.equal(lastRun.playlists[0].sourceTracks, 0);
 });
 
 test('syncAll does not throw when every playlist source fails', async () => {

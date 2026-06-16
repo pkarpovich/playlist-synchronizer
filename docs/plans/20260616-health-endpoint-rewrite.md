@@ -77,18 +77,18 @@ follow-up after this lands.
 - [x] run tests - must pass before next task
 
 ### Task 2: SyncService records the last run
-- [ ] change `sync()` to return a `PlaylistRunResult` (counts: sourceTracks,
+- [x] change `sync()` to return a `PlaylistRunResult` (counts: sourceTracks,
       matched, added, notFound); return `status:'empty-source'` instead of the
       silent early return on an empty source; `status:'ok'` otherwise
-- [ ] `syncAll`: capture startedAt/finishedAt/durationMs, collect each playlist's
+- [x] `syncAll`: capture startedAt/finishedAt/durationMs, collect each playlist's
       result (the per-playlist try/catch now records `status:'failed', error` rather
       than only logging), set `_lastRun: LastRun` via `computeRunStatus`
-- [ ] add `get lastRun(): LastRun | null` (null = no run yet); remove the old
+- [x] add `get lastRun(): LastRun | null` (null = no run yet); remove the old
       `_statistics` / `resetStatistics` / `statistics` getter
-- [ ] write tests: all-ok -> `status:'ok'`; a throwing playlist -> that result
+- [x] write tests: all-ok -> `status:'ok'`; a throwing playlist -> that result
       `failed` and overall `partial`/`failed`; empty source -> `'empty-source'`;
       no run yet -> `lastRun === null`
-- [ ] run tests - must pass before next task
+- [x] run tests - must pass before next task
 
 ### Task 3: HealthService (facts snapshot)
 - [ ] add `src/services/health.service.ts` with a `HealthService` that takes
