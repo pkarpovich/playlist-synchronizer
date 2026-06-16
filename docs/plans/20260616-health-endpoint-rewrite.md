@@ -112,10 +112,10 @@ follow-up after this lands.
 - [x] run tests - must pass before next task
 
 ### Task 5: Cleanup + integration
-- [ ] remove all references to the removed `SyncStatistics`/`statistics` (e.g. in
+- [x] remove all references to the removed `SyncStatistics`/`statistics` (e.g. in
       `src/index.ts`); ensure `syncAll` is the single entry the cron calls
-- [ ] `pnpm build`, `pnpm check-types`, `pnpm lint`, `pnpm test` - all green
-- [ ] grep confirms no leftover `SyncStatistics` / `resetStatistics` references
+- [x] `pnpm build`, `pnpm check-types`, `pnpm lint`, `pnpm test` - all green
+- [x] grep confirms no leftover `SyncStatistics` / `resetStatistics` references
 
 ### Task 6: Verify acceptance criteria
 - [ ] `/health` always returns 200 with `{status, lastSyncAt, ageSeconds,
