@@ -11,6 +11,7 @@ import {
     ConfigService,
     CronService,
     FetchFn,
+    HealthService,
     HttpService,
     LocalDbService,
     LogService,
@@ -37,8 +38,10 @@ interface Container {
     httpService: HttpService;
     cronService: CronService;
     fetchFn: FetchFn;
+    now: () => number;
     yandexMusicService: YandexMusicService;
     spotifyService: SpotifyService;
+    healthService: HealthService;
     spotifyController: SpotifyController;
     healthController: HealthController;
     apiRouter: express.Router;
@@ -58,8 +61,10 @@ export async function initContainer(): Promise<AwilixContainer<Container>> {
         httpService: asClass(HttpService).singleton(),
         cronService: asClass(CronService).singleton(),
         fetchFn: asValue<FetchFn>(globalThis.fetch),
+        now: asValue<() => number>(() => Date.now()),
         yandexMusicService: asClass(YandexMusicService).singleton(),
         spotifyService: asClass(SpotifyService).singleton(),
+        healthService: asClass(HealthService).singleton(),
         healthController: asClass(HealthController).singleton(),
         spotifyController: asClass(SpotifyController).singleton(),
         apiRouter: asFunction(initApiController).singleton(),

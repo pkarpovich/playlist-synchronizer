@@ -33,14 +33,18 @@ const SyncConfigSchema = object({
                 type: MusicServiceTypeSchema,
                 metadata: MetadataSchema,
                 excludedTrackIds: array().of(string()).optional(),
-                targetPlaylists: array().of(
-                    object({
-                        type: MusicServiceTypeSchema,
-                        metadata: MetadataSchema,
-                    }),
-                ),
+                targetPlaylists: array()
+                    .of(
+                        object({
+                            type: MusicServiceTypeSchema,
+                            metadata: MetadataSchema,
+                        }),
+                    )
+                    .min(1)
+                    .required(),
             }),
         )
+        .min(1)
         .required(),
 });
 
