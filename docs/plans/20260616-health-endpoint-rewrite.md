@@ -91,16 +91,16 @@ follow-up after this lands.
 - [x] run tests - must pass before next task
 
 ### Task 3: HealthService (facts snapshot)
-- [ ] add `src/services/health.service.ts` with a `HealthService` that takes
+- [x] add `src/services/health.service.ts` with a `HealthService` that takes
       `syncService`, `spotifyService`, and an injectable `now: () => number`
-- [ ] `snapshot()` returns `{ status: lastRun?.status ?? 'no-run', lastSyncAt:
+- [x] `snapshot()` returns `{ status: lastRun?.status ?? 'no-run', lastSyncAt:
       <ISO|null>, ageSeconds: <number|null>, spotifyReady: spotifyService.isReady,
       lastRun }` (ageSeconds computed from `now()` and finishedAt)
-- [ ] register `HealthService` and a `now` provider (default `() => Date.now()`) in
+- [x] register `HealthService` and a `now` provider (default `() => Date.now()`) in
       `src/container.ts`; export via `src/services.ts`
-- [ ] write tests: mapping a `LastRun` with a fixed `now` (assert `ageSeconds`,
+- [x] write tests: mapping a `LastRun` with a fixed `now` (assert `ageSeconds`,
       `lastSyncAt`, `status`, `spotifyReady`); no-run -> `status:'no-run'`, nulls
-- [ ] run tests - must pass before next task
+- [x] run tests - must pass before next task
 
 ### Task 4: HealthController returns facts, always 200
 - [ ] update `src/controllers/health.controller.ts` to inject `HealthService` and
