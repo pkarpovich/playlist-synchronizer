@@ -131,6 +131,8 @@ export class SyncService {
             loggerCtx,
         };
 
+        const matchedSourceTracks = new Set<Track>();
+
         for (const target of syncConfig.targetPlaylists) {
             ctx.targetService = this.getMusicServiceByType(target.type);
             ctx.targetPlaylist = target.metadata;
@@ -140,18 +142,19 @@ export class SyncService {
                 loggerCtx,
             );
 
-            const tracksForAdd = await this.findTracksInService(
-                ctx,
-                target.type,
-                ctx.sourcePlaylistTracks,
-            );
+            const { found: tracksForAdd, matchedSource } =
+                await this.findTracksInService(
+                    ctx,
+                    target.type,
+                    ctx.sourcePlaylistTracks,
+                );
             this.logService.success(
                 `Found ${tracksForAdd.length} tracks in ${target.type} service`,
                 loggerCtx,
             );
-            result.matched += tracksForAdd.length;
-            result.notFound +=
-                ctx.sourcePlaylistTracks.length - tracksForAdd.length;
+            for (const track of matchedSource) {
+                matchedSourceTracks.add(track);
+            }
 
             await this.removeDeletedTracks(ctx, tracksForAdd);
 
@@ -180,6 +183,9 @@ export class SyncService {
             );
             result.added += trackIdsForAdd.length;
         }
+
+        result.matched = matchedSourceTracks.size;
+        result.notFound = result.sourceTracks - matchedSourceTracks.size;
 
         this.logService.success('Sync completed', loggerCtx);
         return result;
@@ -220,13 +226,14 @@ export class SyncService {
         ctx: PlaylistSyncContext,
         serviceType: MusicServiceTypes,
         tracks: Track[],
-    ): Promise<Track[]> {
+    ): Promise<{ found: Track[]; matchedSource: Track[] }> {
         const service = this.getMusicServiceByType(serviceType);
         this.logService.await(
             `Try to find tracks in ${serviceType} service`,
             ctx.loggerCtx,
         );
-        const serviceTracks = [];
+        const found: Track[] = [];
+        const matchedSource: Track[] = [];
 
         for (const track of tracks) {
             const serviceTrack = await service.searchTrackByName(
@@ -244,10 +251,11 @@ export class SyncService {
                 continue;
             }
 
-            serviceTracks.push(serviceTrack);
+            found.push(serviceTrack);
+            matchedSource.push(track);
         }
 
-        return serviceTracks;
+        return { found, matchedSource };
     }
 
     private async filterDuplicates(

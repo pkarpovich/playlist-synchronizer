@@ -277,6 +277,58 @@ test('syncAll counts source tracks the target cannot match as notFound', async (
     assert.equal(good?.notFound, 1);
 });
 
+test('sync counts matched as distinct source tracks across multiple targets', async () => {
+    const logs: LogEntry[] = [];
+    const source = new StubMusicService(async () => [
+        { name: 'A', artists: ['Artist'] },
+        { name: 'B', artists: ['Artist'] },
+    ]);
+    const target = new StubMusicService(async () => []);
+    const syncService = new SyncService(
+        makeLogStub(logs),
+        source as unknown as YandexMusicService,
+        target as unknown as SpotifyService,
+    );
+
+    const config: SyncConfig = {
+        playlists: [
+            {
+                type: MusicServiceTypes.YANDEX_MUSIC,
+                metadata: { id: 'src', userName: 'u', name: 'Source' },
+                excludedTrackIds: [],
+                targetPlaylists: [
+                    {
+                        type: MusicServiceTypes.SPOTIFY,
+                        metadata: {
+                            id: 'sp-1',
+                            userName: 'u',
+                            name: 'Target 1',
+                        },
+                    },
+                    {
+                        type: MusicServiceTypes.SPOTIFY,
+                        metadata: {
+                            id: 'sp-2',
+                            userName: 'u',
+                            name: 'Target 2',
+                        },
+                    },
+                ],
+            },
+        ],
+    };
+
+    await syncService.syncAll(config);
+
+    const lastRun = syncService.lastRun;
+    assert.ok(lastRun);
+    const playlist = lastRun.playlists[0];
+    assert.equal(playlist.sourceTracks, 2);
+    assert.equal(playlist.matched, 2);
+    assert.equal(playlist.notFound, 0);
+    assert.equal(playlist.matched + playlist.notFound, playlist.sourceTracks);
+});
+
 test('syncAll does not throw when every playlist source fails', async () => {
     const logs: LogEntry[] = [];
     const source = new StubMusicService(async () => {
