@@ -377,9 +377,9 @@ Telegram `sendRichMessage` (no escaping). Prod relay: `https://relay.pkarpovich.
 - Modify: `README.md`
 - Modify: `.env.example` (if present; otherwise document in README)
 
-- [ ] document `NOTIFY_URL` / `NOTIFY_SECRET` (notifications off when `NOTIFY_URL`
+- [x] document `NOTIFY_URL` / `NOTIFY_SECRET` (notifications off when `NOTIFY_URL`
       is empty; sends a per-run md status card to a tg-relay `/send`)
-- [ ] move this plan to `docs/plans/completed/`
+- [x] move this plan to `docs/plans/completed/`
 
 ## Post-Completion
 
