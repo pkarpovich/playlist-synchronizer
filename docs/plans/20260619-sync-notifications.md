@@ -285,12 +285,12 @@ Telegram `sendRichMessage` (no escaping). Prod relay: `https://relay.pkarpovich.
 - Modify: `src/config/config.ts`
 - Modify: `src/config/config.test.ts`
 
-- [ ] add `notify: { url: string; secret: string }` to the `IConfig` interface
-- [ ] add `readNotifyConfig(env: NodeJS.ProcessEnv): IConfig['notify']` returning
+- [x] add `notify: { url: string; secret: string }` to the `IConfig` interface
+- [x] add `readNotifyConfig(env: NodeJS.ProcessEnv): IConfig['notify']` returning
       `{ url: env.NOTIFY_URL || '', secret: env.NOTIFY_SECRET || '' }`
-- [ ] set `notify: readNotifyConfig(process.env)` on the `Config` object
-- [ ] write tests for `readNotifyConfig` (both env vars set; both absent -> empty strings)
-- [ ] run `npm test` - must pass before next task
+- [x] set `notify: readNotifyConfig(process.env)` on the `Config` object
+- [x] write tests for `readNotifyConfig` (both env vars set; both absent -> empty strings)
+- [x] run `npm test` - must pass before next task
 
 ### Task 2: Pure `summarizeRun`
 
