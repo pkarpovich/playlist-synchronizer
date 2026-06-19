@@ -359,15 +359,17 @@ Telegram `sendRichMessage` (no escaping). Prod relay: `https://relay.pkarpovich.
 
 ### Task 6: Verify acceptance criteria
 
-- [ ] verify all Overview requirements are implemented (one digest per run,
+- [x] verify all Overview requirements are implemented (one digest per run,
       verdict line, per-playlist lines, notFound suffix, silent on no-op,
       best-effort, `parse_mode:"md"`, config-gated, English copy)
-- [ ] verify edge cases: empty `NOTIFY_URL` -> `NoopNotifier`; relay down ->
+- [x] verify edge cases: empty `NOTIFY_URL` -> `NoopNotifier`; relay down ->
       sync still completes and records `LastRun`; `ok` run with only unmatched
       tracks -> silent
-- [ ] run full suite: `npm test`
-- [ ] run `npm run lint` and `npm run check-types` - fix all issues
-- [ ] verify changed-package coverage is reasonable (pure functions + notifier paths covered)
+- [x] run full suite: `npm test`
+- [x] run `npm run lint` and `npm run check-types` - fix all issues
+      (added `"root": true` to `.eslintrc.json` so lint stops cascading into a
+      parent-dir config; 0 errors, 1 pre-existing dotenv warning; check-types clean)
+- [x] verify changed-package coverage is reasonable (pure functions + notifier paths covered)
 
 ### Task 7: Update documentation
 
