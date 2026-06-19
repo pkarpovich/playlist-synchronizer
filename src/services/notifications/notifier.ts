@@ -30,16 +30,16 @@ export class RelayNotifier implements Notifier {
     ) {}
 
     async notify(lastRun: LastRun | null): Promise<void> {
-        const summary = summarizeRun(lastRun);
-
-        if (summary === null) {
-            return;
-        }
-
-        const url = this.configService.get('notify.url');
-        const secret = this.configService.get('notify.secret');
-
         try {
+            const summary = summarizeRun(lastRun);
+
+            if (summary === null) {
+                return;
+            }
+
+            const url = this.configService.get('notify.url');
+            const secret = this.configService.get('notify.secret');
+
             const resp = await this.fetchFn(url, {
                 method: 'POST',
                 headers: {

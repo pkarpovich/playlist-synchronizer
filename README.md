@@ -18,7 +18,7 @@ Copy `.env.example` to `.env` and fill in the values.
 | `SPOTIFY_CLIENT_ID` / `SPOTIFY_CLIENT_SECRET` / `SPOTIFY_REDIRECT_URI` | yes | Spotify OAuth app credentials (sync target). |
 | `YANDEX_API_PROXY` | recommended | SOCKS5 proxy URL (e.g. `socks5h://host:port`) egressing from a RU/CIS box. `api.music.yandex.net` is geo-blocked elsewhere, so leaving this empty fetches directly and fails outside RU/CIS. |
 | `YANDEX_API_BASE_URL` | no | Override the Yandex API base URL. Defaults to `https://api.music.yandex.net`. |
-| `NOTIFY_URL` | no | tg-relay `/send` endpoint (e.g. `https://relay.pkarpovich.space/send`). When set, each sync run posts a Markdown status card summarizing what changed. Leave empty to disable notifications. |
+| `NOTIFY_URL` | no | tg-relay `/send` endpoint (e.g. `https://relay.pkarpovich.space/send`). When set, each sync run that has something to report (tracks added, a failed playlist, or an empty source) posts a Markdown status card; runs with nothing notable stay silent. Leave empty to disable notifications. |
 | `NOTIFY_SECRET` | no | `X-Secret` header value sent with the notification POST. Only used when `NOTIFY_URL` is set. |
 
 ## Config example

@@ -150,6 +150,20 @@ test('RelayNotifier logs an error and does not throw when fetch rejects', async 
     assert.deepEqual(errors, ['notify failed: network down']);
 });
 
+test('RelayNotifier swallows a config read failure instead of throwing', async () => {
+    const { logService, errors } = makeLog();
+    const { fetchFn, calls } = recordingFetch({ ok: true, status: 200 });
+    const brokenConfig = new ConfigService<IConfig>({} as IConfig);
+
+    await assert.doesNotReject(() =>
+        new RelayNotifier(logService, brokenConfig, fetchFn).notify(notableRun),
+    );
+
+    assert.equal(calls.length, 0);
+    assert.equal(errors.length, 1);
+    assert.match(errors[0], /^notify failed: /);
+});
+
 test('NoopNotifier resolves without sending anything', async () => {
     const notifier: Notifier = new NoopNotifier();
     const result = await notifier.notify(notableRun);
