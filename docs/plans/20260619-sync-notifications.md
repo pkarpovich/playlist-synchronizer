@@ -298,13 +298,13 @@ Telegram `sendRichMessage` (no escaping). Prod relay: `https://relay.pkarpovich.
 - Create: `src/services/notifications/sync-summary.ts`
 - Create: `src/services/notifications/sync-summary.test.ts`
 
-- [ ] add `PlaylistLine`, `RunSummary` types and `summarizeRun(lastRun: LastRun | null): RunSummary | null` per the rules in Technical Details
-- [ ] import `LastRun` / `PlaylistRunResult` / `RunStatus` from `../../entities.js`
-- [ ] write table-driven tests: `null` input; `ok` with added>0 (+notFound); `ok`
+- [x] add `PlaylistLine`, `RunSummary` types and `summarizeRun(lastRun: LastRun | null): RunSummary | null` per the rules in Technical Details
+- [x] import `LastRun` / `PlaylistRunResult` / `RunStatus` from `../../entities.js`
+- [x] write table-driven tests: `null` input; `ok` with added>0 (+notFound); `ok`
       with added 0 -> skipped; `ok` with added 0 but notFound>0 -> skipped/null;
       `failed` (with error); `empty-source`; mixed run -> correct `verdict` +
       `lines`; all `ok` zero-added -> `null`
-- [ ] run `npm test` - must pass before next task
+- [x] run `npm test` - must pass before next task
 
 ### Task 3: Pure `renderDigest`
 
