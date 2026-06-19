@@ -15,6 +15,9 @@ import {
     HttpService,
     LocalDbService,
     LogService,
+    NoopNotifier,
+    Notifier,
+    RelayNotifier,
     SpotifyService,
     SyncService,
     YandexMusicService,
@@ -46,6 +49,18 @@ interface Container {
     healthController: HealthController;
     apiRouter: express.Router;
     syncService: SyncService;
+    notifier: Notifier;
+}
+
+function initNotifier(
+    logService: LogService,
+    configService: ConfigService<IConfig>,
+    fetchFn: FetchFn,
+): Notifier {
+    if (configService.get('notify.url')) {
+        return new RelayNotifier(logService, configService, fetchFn);
+    }
+    return new NoopNotifier();
 }
 
 export async function initContainer(): Promise<AwilixContainer<Container>> {
@@ -68,6 +83,7 @@ export async function initContainer(): Promise<AwilixContainer<Container>> {
         healthController: asClass(HealthController).singleton(),
         spotifyController: asClass(SpotifyController).singleton(),
         apiRouter: asFunction(initApiController).singleton(),
+        notifier: asFunction(initNotifier).singleton(),
         syncService: asClass(SyncService).singleton(),
     });
 

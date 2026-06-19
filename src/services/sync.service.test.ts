@@ -2,16 +2,25 @@ import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
 
 import { SyncConfig } from '../config.js';
-import { MusicServiceTypes, Playlist, Track } from '../entities.js';
+import { LastRun, MusicServiceTypes, Playlist, Track } from '../entities.js';
 import { BaseMusicService } from './music-providers/base-music.service.js';
 import { SpotifyService } from './music-providers/spotify.service.js';
 import { YandexMusicService } from './music-providers/yandex-music.service.js';
 import { LogService } from './log.service.js';
+import { Notifier } from './notifications/notifier.js';
 import { SyncService } from './sync.service.js';
 
 interface LogEntry {
     level: string;
     message: string;
+}
+
+class NotifierStub implements Notifier {
+    calls: (LastRun | null)[] = [];
+
+    async notify(lastRun: LastRun | null): Promise<void> {
+        this.calls.push(lastRun);
+    }
 }
 
 class StubMusicService extends BaseMusicService {
@@ -114,13 +123,15 @@ function makeHarness() {
 
     const target = new StubMusicService(async () => []);
 
+    const notifier = new NotifierStub();
     const syncService = new SyncService(
         makeLogStub(logs),
         source as unknown as YandexMusicService,
         target as unknown as SpotifyService,
+        notifier,
     );
 
-    return { logs, source, target, syncService };
+    return { logs, source, target, notifier, syncService };
 }
 
 test('syncAll skips a playlist whose source throws and processes the rest', async () => {
@@ -179,6 +190,15 @@ test('lastRun is null before any run', () => {
     assert.equal(syncService.lastRun, null);
 });
 
+test('syncAll notifies once with the recorded run after finishing', async () => {
+    const { notifier, syncService } = makeHarness();
+
+    await syncService.syncAll(makeSyncConfig());
+
+    assert.equal(notifier.calls.length, 1);
+    assert.equal(notifier.calls[0], syncService.lastRun);
+});
+
 test('syncAll records ok for every playlist when all succeed', async () => {
     const logs: LogEntry[] = [];
     const source = new StubMusicService(async () => [
@@ -189,6 +209,7 @@ test('syncAll records ok for every playlist when all succeed', async () => {
         makeLogStub(logs),
         source as unknown as YandexMusicService,
         target as unknown as SpotifyService,
+        new NotifierStub(),
     );
 
     await syncService.syncAll(makeSyncConfig());
@@ -210,6 +231,7 @@ test('syncAll records empty-source when the source has no tracks', async () => {
         makeLogStub(logs),
         source as unknown as YandexMusicService,
         target as unknown as SpotifyService,
+        new NotifierStub(),
     );
 
     await syncService.syncAll(makeSyncConfig());
@@ -231,6 +253,7 @@ test('syncAll records failed when the services are not ready', async () => {
         makeLogStub(logs),
         source as unknown as YandexMusicService,
         target as unknown as SpotifyService,
+        new NotifierStub(),
     );
 
     await syncService.syncAll(makeSyncConfig());
@@ -264,6 +287,7 @@ test('syncAll counts source tracks the target cannot match as notFound', async (
         makeLogStub(logs),
         source as unknown as YandexMusicService,
         target as unknown as SpotifyService,
+        new NotifierStub(),
     );
 
     await syncService.syncAll(makeSyncConfig());
@@ -288,6 +312,7 @@ test('sync counts matched as distinct source tracks across multiple targets', as
         makeLogStub(logs),
         source as unknown as YandexMusicService,
         target as unknown as SpotifyService,
+        new NotifierStub(),
     );
 
     const config: SyncConfig = {
@@ -339,6 +364,7 @@ test('syncAll does not throw when every playlist source fails', async () => {
         makeLogStub(logs),
         source as unknown as YandexMusicService,
         target as unknown as SpotifyService,
+        new NotifierStub(),
     );
 
     await assert.doesNotReject(() => syncService.syncAll(makeSyncConfig()));

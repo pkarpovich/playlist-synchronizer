@@ -347,15 +347,15 @@ Telegram `sendRichMessage` (no escaping). Prod relay: `https://relay.pkarpovich.
 - Modify: `src/services/sync.service.ts`
 - Modify: `src/services/sync.service.test.ts`
 
-- [ ] add `notifier: Notifier` to the `Container` interface and register it via
+- [x] add `notifier: Notifier` to the `Container` interface and register it via
       `asFunction` (RelayNotifier when `notify.url` is set, else NoopNotifier), `.singleton()`
-- [ ] add `notifier` to the `SyncService` constructor params (CLASSIC, by name)
-- [ ] call `await this.notifier.notify(this._lastRun)` at the end of `syncAll()`,
+- [x] add `notifier` to the `SyncService` constructor params (CLASSIC, by name)
+- [x] call `await this.notifier.notify(this._lastRun)` at the end of `syncAll()`,
       after `_lastRun` is assigned
-- [ ] update/extend `sync.service.test.ts`: inject a fake notifier, assert
+- [x] update/extend `sync.service.test.ts`: inject a fake notifier, assert
       `notify` is called once after a run with the recorded `LastRun`; existing
       sync tests still pass
-- [ ] run `npm test` - must pass before next task
+- [x] run `npm test` - must pass before next task
 
 ### Task 6: Verify acceptance criteria
 
