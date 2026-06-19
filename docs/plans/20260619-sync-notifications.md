@@ -312,13 +312,13 @@ Telegram `sendRichMessage` (no escaping). Prod relay: `https://relay.pkarpovich.
 - Create: `src/services/notifications/render-digest.ts`
 - Create: `src/services/notifications/render-digest.test.ts`
 
-- [ ] add `renderDigest(summary: RunSummary): string` producing the status card
+- [x] add `renderDigest(summary: RunSummary): string` producing the status card
       (title, ASCII divider, verdict line, then one line per `PlaylistLine` per
       the format in Technical Details)
-- [ ] write tests asserting exact strings for: added-only (no suffix when
+- [x] write tests asserting exact strings for: added-only (no suffix when
       notFound 0); added-with-not-found suffix; partial (mixed kinds); full-fail;
       verdict word/emoji mapping (ok/partial/failed)
-- [ ] run `npm test` - must pass before next task
+- [x] run `npm test` - must pass before next task
 
 ### Task 4: `Notifier` interface + `RelayNotifier` + `NoopNotifier`
 
