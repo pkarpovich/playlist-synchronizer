@@ -327,18 +327,18 @@ Telegram `sendRichMessage` (no escaping). Prod relay: `https://relay.pkarpovich.
 - Create: `src/services/notifications/notifier.test.ts`
 - Modify: `src/services.ts`
 
-- [ ] declare the `RelayFetch` minimal fetch type and the `Notifier` interface
-- [ ] implement `NoopNotifier.notify` as a no-op resolving `Promise`
-- [ ] implement `RelayNotifier` (constructor `logService`, `configService`,
+- [x] declare the `RelayFetch` minimal fetch type and the `Notifier` interface
+- [x] implement `NoopNotifier.notify` as a no-op resolving `Promise`
+- [x] implement `RelayNotifier` (constructor `logService`, `configService`,
       `fetchFn`): summarize -> if `null` return; else render and POST with the
       headers/body/timeout and error-swallowing in Technical Details; never rethrow
-- [ ] export the module from `src/services.ts`
-- [ ] write `RelayNotifier` tests with a fake `fetchFn` + fake `LogService`:
+- [x] export the module from `src/services.ts`
+- [x] write `RelayNotifier` tests with a fake `fetchFn` + fake `LogService`:
       asserts POST url, `X-Secret` header, body `{message, parse_mode:"md"}`;
       `null` summary -> `fetchFn` not called; non-`ok` response -> error logged,
       no throw; `fetchFn` rejects -> error logged, no throw
-- [ ] write a `NoopNotifier` test (resolves, no calls)
-- [ ] run `npm test` - must pass before next task
+- [x] write a `NoopNotifier` test (resolves, no calls)
+- [x] run `npm test` - must pass before next task
 
 ### Task 5: Wire the notifier into the container and `SyncService`
 

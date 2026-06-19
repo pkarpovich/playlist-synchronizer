@@ -7,3 +7,4 @@ export * from './services/sync.service.js';
 export * from './services/health.service.js';
 export * from './services/cron.service.js';
 export * from './services/log.service.js';
+export * from './services/notifications/notifier.js';
