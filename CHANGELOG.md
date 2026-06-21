@@ -1,5 +1,12 @@
 # playlist-synchronizer
 
+## 1.5.0
+
+### Minor Changes
+
+-   #69: rewrite `/health` into a passive sync-health facts endpoint - records the last run (per-playlist results), always returns HTTP 200, and leaves freshness thresholds to the consumer
+-   #70: add per-run sync notifications - posts an `md` status card to a tg-relay `/send` (added tracks, not-found-in-Spotify counts, failures), gated on `NOTIFY_URL`, best-effort and never blocks the sync
+
 ## 1.4.0
 
 ### Minor Changes
