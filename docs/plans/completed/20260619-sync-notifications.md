@@ -285,12 +285,12 @@ Telegram `sendRichMessage` (no escaping). Prod relay: `https://relay.pkarpovich.
 - Modify: `src/config/config.ts`
 - Modify: `src/config/config.test.ts`
 
-- [ ] add `notify: { url: string; secret: string }` to the `IConfig` interface
-- [ ] add `readNotifyConfig(env: NodeJS.ProcessEnv): IConfig['notify']` returning
+- [x] add `notify: { url: string; secret: string }` to the `IConfig` interface
+- [x] add `readNotifyConfig(env: NodeJS.ProcessEnv): IConfig['notify']` returning
       `{ url: env.NOTIFY_URL || '', secret: env.NOTIFY_SECRET || '' }`
-- [ ] set `notify: readNotifyConfig(process.env)` on the `Config` object
-- [ ] write tests for `readNotifyConfig` (both env vars set; both absent -> empty strings)
-- [ ] run `npm test` - must pass before next task
+- [x] set `notify: readNotifyConfig(process.env)` on the `Config` object
+- [x] write tests for `readNotifyConfig` (both env vars set; both absent -> empty strings)
+- [x] run `npm test` - must pass before next task
 
 ### Task 2: Pure `summarizeRun`
 
@@ -298,13 +298,13 @@ Telegram `sendRichMessage` (no escaping). Prod relay: `https://relay.pkarpovich.
 - Create: `src/services/notifications/sync-summary.ts`
 - Create: `src/services/notifications/sync-summary.test.ts`
 
-- [ ] add `PlaylistLine`, `RunSummary` types and `summarizeRun(lastRun: LastRun | null): RunSummary | null` per the rules in Technical Details
-- [ ] import `LastRun` / `PlaylistRunResult` / `RunStatus` from `../../entities.js`
-- [ ] write table-driven tests: `null` input; `ok` with added>0 (+notFound); `ok`
+- [x] add `PlaylistLine`, `RunSummary` types and `summarizeRun(lastRun: LastRun | null): RunSummary | null` per the rules in Technical Details
+- [x] import `LastRun` / `PlaylistRunResult` / `RunStatus` from `../../entities.js`
+- [x] write table-driven tests: `null` input; `ok` with added>0 (+notFound); `ok`
       with added 0 -> skipped; `ok` with added 0 but notFound>0 -> skipped/null;
       `failed` (with error); `empty-source`; mixed run -> correct `verdict` +
       `lines`; all `ok` zero-added -> `null`
-- [ ] run `npm test` - must pass before next task
+- [x] run `npm test` - must pass before next task
 
 ### Task 3: Pure `renderDigest`
 
@@ -312,13 +312,13 @@ Telegram `sendRichMessage` (no escaping). Prod relay: `https://relay.pkarpovich.
 - Create: `src/services/notifications/render-digest.ts`
 - Create: `src/services/notifications/render-digest.test.ts`
 
-- [ ] add `renderDigest(summary: RunSummary): string` producing the status card
+- [x] add `renderDigest(summary: RunSummary): string` producing the status card
       (title, ASCII divider, verdict line, then one line per `PlaylistLine` per
       the format in Technical Details)
-- [ ] write tests asserting exact strings for: added-only (no suffix when
+- [x] write tests asserting exact strings for: added-only (no suffix when
       notFound 0); added-with-not-found suffix; partial (mixed kinds); full-fail;
       verdict word/emoji mapping (ok/partial/failed)
-- [ ] run `npm test` - must pass before next task
+- [x] run `npm test` - must pass before next task
 
 ### Task 4: `Notifier` interface + `RelayNotifier` + `NoopNotifier`
 
@@ -327,18 +327,18 @@ Telegram `sendRichMessage` (no escaping). Prod relay: `https://relay.pkarpovich.
 - Create: `src/services/notifications/notifier.test.ts`
 - Modify: `src/services.ts`
 
-- [ ] declare the `RelayFetch` minimal fetch type and the `Notifier` interface
-- [ ] implement `NoopNotifier.notify` as a no-op resolving `Promise`
-- [ ] implement `RelayNotifier` (constructor `logService`, `configService`,
+- [x] declare the `RelayFetch` minimal fetch type and the `Notifier` interface
+- [x] implement `NoopNotifier.notify` as a no-op resolving `Promise`
+- [x] implement `RelayNotifier` (constructor `logService`, `configService`,
       `fetchFn`): summarize -> if `null` return; else render and POST with the
       headers/body/timeout and error-swallowing in Technical Details; never rethrow
-- [ ] export the module from `src/services.ts`
-- [ ] write `RelayNotifier` tests with a fake `fetchFn` + fake `LogService`:
+- [x] export the module from `src/services.ts`
+- [x] write `RelayNotifier` tests with a fake `fetchFn` + fake `LogService`:
       asserts POST url, `X-Secret` header, body `{message, parse_mode:"md"}`;
       `null` summary -> `fetchFn` not called; non-`ok` response -> error logged,
       no throw; `fetchFn` rejects -> error logged, no throw
-- [ ] write a `NoopNotifier` test (resolves, no calls)
-- [ ] run `npm test` - must pass before next task
+- [x] write a `NoopNotifier` test (resolves, no calls)
+- [x] run `npm test` - must pass before next task
 
 ### Task 5: Wire the notifier into the container and `SyncService`
 
@@ -347,27 +347,29 @@ Telegram `sendRichMessage` (no escaping). Prod relay: `https://relay.pkarpovich.
 - Modify: `src/services/sync.service.ts`
 - Modify: `src/services/sync.service.test.ts`
 
-- [ ] add `notifier: Notifier` to the `Container` interface and register it via
+- [x] add `notifier: Notifier` to the `Container` interface and register it via
       `asFunction` (RelayNotifier when `notify.url` is set, else NoopNotifier), `.singleton()`
-- [ ] add `notifier` to the `SyncService` constructor params (CLASSIC, by name)
-- [ ] call `await this.notifier.notify(this._lastRun)` at the end of `syncAll()`,
+- [x] add `notifier` to the `SyncService` constructor params (CLASSIC, by name)
+- [x] call `await this.notifier.notify(this._lastRun)` at the end of `syncAll()`,
       after `_lastRun` is assigned
-- [ ] update/extend `sync.service.test.ts`: inject a fake notifier, assert
+- [x] update/extend `sync.service.test.ts`: inject a fake notifier, assert
       `notify` is called once after a run with the recorded `LastRun`; existing
       sync tests still pass
-- [ ] run `npm test` - must pass before next task
+- [x] run `npm test` - must pass before next task
 
 ### Task 6: Verify acceptance criteria
 
-- [ ] verify all Overview requirements are implemented (one digest per run,
+- [x] verify all Overview requirements are implemented (one digest per run,
       verdict line, per-playlist lines, notFound suffix, silent on no-op,
       best-effort, `parse_mode:"md"`, config-gated, English copy)
-- [ ] verify edge cases: empty `NOTIFY_URL` -> `NoopNotifier`; relay down ->
+- [x] verify edge cases: empty `NOTIFY_URL` -> `NoopNotifier`; relay down ->
       sync still completes and records `LastRun`; `ok` run with only unmatched
       tracks -> silent
-- [ ] run full suite: `npm test`
-- [ ] run `npm run lint` and `npm run check-types` - fix all issues
-- [ ] verify changed-package coverage is reasonable (pure functions + notifier paths covered)
+- [x] run full suite: `npm test`
+- [x] run `npm run lint` and `npm run check-types` - fix all issues
+      (added `"root": true` to `.eslintrc.json` so lint stops cascading into a
+      parent-dir config; 0 errors, 1 pre-existing dotenv warning; check-types clean)
+- [x] verify changed-package coverage is reasonable (pure functions + notifier paths covered)
 
 ### Task 7: Update documentation
 
@@ -375,9 +377,9 @@ Telegram `sendRichMessage` (no escaping). Prod relay: `https://relay.pkarpovich.
 - Modify: `README.md`
 - Modify: `.env.example` (if present; otherwise document in README)
 
-- [ ] document `NOTIFY_URL` / `NOTIFY_SECRET` (notifications off when `NOTIFY_URL`
+- [x] document `NOTIFY_URL` / `NOTIFY_SECRET` (notifications off when `NOTIFY_URL`
       is empty; sends a per-run md status card to a tg-relay `/send`)
-- [ ] move this plan to `docs/plans/completed/`
+- [x] move this plan to `docs/plans/completed/`
 
 ## Post-Completion
 

@@ -24,6 +24,11 @@ export interface IConfig {
         baseUrl: string;
         proxyUrl: string;
     };
+
+    notify: {
+        url: string;
+        secret: string;
+    };
 }
 
 const DEFAULT_SYNC_CONFIG_PATH = './config/sync.config.json';
@@ -37,6 +42,13 @@ export function readYandexMusicConfig(
     return {
         baseUrl: env.YANDEX_API_BASE_URL || DEFAULT_YANDEX_API_BASE_URL,
         proxyUrl: env.YANDEX_API_PROXY || '',
+    };
+}
+
+export function readNotifyConfig(env: NodeJS.ProcessEnv): IConfig['notify'] {
+    return {
+        url: env.NOTIFY_URL || '',
+        secret: env.NOTIFY_SECRET || '',
     };
 }
 
@@ -59,4 +71,6 @@ export const Config = {
     },
 
     yandexMusic: readYandexMusicConfig(process.env),
+
+    notify: readNotifyConfig(process.env),
 } as IConfig;

@@ -1,7 +1,7 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
 
-import { readYandexMusicConfig } from './config.js';
+import { readNotifyConfig, readYandexMusicConfig } from './config.js';
 
 test('readYandexMusicConfig falls back to defaults when env is empty', () => {
     const config = readYandexMusicConfig({});
@@ -24,4 +24,21 @@ test('readYandexMusicConfig treats empty proxy string as empty', () => {
     const config = readYandexMusicConfig({ YANDEX_API_PROXY: '' });
 
     assert.equal(config.proxyUrl, '');
+});
+
+test('readNotifyConfig reads url and secret from env when provided', () => {
+    const config = readNotifyConfig({
+        NOTIFY_URL: 'https://relay.example.test/send',
+        NOTIFY_SECRET: 's3cret',
+    });
+
+    assert.equal(config.url, 'https://relay.example.test/send');
+    assert.equal(config.secret, 's3cret');
+});
+
+test('readNotifyConfig falls back to empty strings when env is empty', () => {
+    const config = readNotifyConfig({});
+
+    assert.equal(config.url, '');
+    assert.equal(config.secret, '');
 });

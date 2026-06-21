@@ -2,6 +2,7 @@ import { YandexMusicService } from './music-providers/yandex-music.service.js';
 import { BaseMusicService } from './music-providers/base-music.service.js';
 import { SpotifyService } from './music-providers/spotify.service.js';
 import { LoggerContext, LogService } from './log.service.js';
+import { Notifier } from './notifications/notifier.js';
 import { PlaylistConfig, SyncConfig } from '../config.js';
 import {
     MusicServiceTypes,
@@ -33,6 +34,7 @@ export class SyncService {
         private readonly logService: LogService,
         private readonly yandexMusicService: YandexMusicService,
         private readonly spotifyService: SpotifyService,
+        private readonly notifier: Notifier,
     ) {}
 
     async syncAll(syncConfig: SyncConfig): Promise<void> {
@@ -80,6 +82,8 @@ export class SyncService {
             status: computeRunStatus(playlists),
             playlists,
         };
+
+        await this.notifier.notify(this._lastRun);
     }
 
     isAllServicesReady(): boolean {
