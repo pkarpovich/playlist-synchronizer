@@ -1,0 +1,95 @@
+[
+    {
+        "href": "https://api.spotify.com/v1/playlists/7qqAU3xa2efU4T06IvcY2W/items?offset=0&limit=50",
+        "limit": 50,
+        "offset": 0,
+        "total": 7,
+        "next": "https://api.spotify.com/v1/playlists/7qqAU3xa2efU4T06IvcY2W/items?offset=50&limit=50",
+        "items": [
+            {
+                "added_at": "2026-01-05T10:00:00Z",
+                "is_local": false,
+                "item": {
+                    "uri": "spotify:track:1aaaaaaaaaaaaaaaaaaaaa",
+                    "name": "Быть богатым",
+                    "type": "track",
+                    "duration_ms": 201000,
+                    "artists": [{ "name": "Скриптонит" }],
+                    "external_ids": { "isrc": "QZES71900001" }
+                }
+            },
+            {
+                "added_at": "2026-01-05T10:01:00Z",
+                "is_local": false,
+                "item": null
+            },
+            {
+                "added_at": "2026-01-05T10:02:00Z",
+                "is_local": false,
+                "item": {
+                    "uri": "spotify:episode:4eeeeeeeeeeeeeeeeeeeee",
+                    "name": "Episode About Music",
+                    "type": "episode",
+                    "duration_ms": 3600000,
+                    "artists": []
+                }
+            },
+            {
+                "added_at": "2026-01-05T10:03:00Z",
+                "is_local": true,
+                "item": {
+                    "uri": "spotify:local:Unknown+Artist:::Home+Recording:180",
+                    "name": "Home Recording",
+                    "type": "track",
+                    "duration_ms": 180000,
+                    "artists": [{ "name": "Unknown Artist" }]
+                }
+            }
+        ]
+    },
+    {
+        "href": "https://api.spotify.com/v1/playlists/7qqAU3xa2efU4T06IvcY2W/items?offset=50&limit=50",
+        "limit": 50,
+        "offset": 50,
+        "total": 7,
+        "next": null,
+        "items": [
+            {
+                "added_at": "2026-01-06T09:00:00Z",
+                "is_local": false,
+                "item": {
+                    "uri": "spotify:track:2bbbbbbbbbbbbbbbbbbbbb",
+                    "name": "тРи пОлОсКи",
+                    "type": "track",
+                    "duration_ms": 154000,
+                    "artists": [{ "name": "Хаски" }],
+                    "external_ids": { "isrc": "QZES71900002" }
+                }
+            },
+            {
+                "added_at": "2026-01-06T09:01:00Z",
+                "is_local": false,
+                "item": {
+                    "uri": "spotify:track:1aaaaaaaaaaaaaaaaaaaaa",
+                    "name": "Быть богатым",
+                    "type": "track",
+                    "duration_ms": 201000,
+                    "artists": [{ "name": "Скриптонит" }],
+                    "external_ids": { "isrc": "QZES71900001" }
+                }
+            },
+            {
+                "added_at": "2026-01-06T09:02:00Z",
+                "is_local": false,
+                "item": {
+                    "uri": "spotify:track:3cccccccccccccccccccccc",
+                    "name": "(Don't Fear) The Reaper",
+                    "type": "track",
+                    "duration_ms": 308000,
+                    "artists": [{ "name": "Blue Öyster Cult" }],
+                    "external_ids": { "isrc": "USSM17600231" }
+                }
+            }
+        ]
+    }
+]

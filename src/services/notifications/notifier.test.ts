@@ -19,7 +19,10 @@ function playlist(overrides: Partial<PlaylistRunResult>): PlaylistRunResult {
         sourceTracks: 0,
         matched: 0,
         added: 0,
+        removed: 0,
+        adopted: 0,
         notFound: 0,
+        skipped: 0,
         ...overrides,
     };
 }

@@ -3,21 +3,33 @@ services:
     image: ghcr.io/pkarpovich/playlist-synchronizer:latest
     container_name: playlist-synchronizer
     restart: unless-stopped
-    ports:
-      - ${HTTP_PORT}:${HTTP_PORT}
+    expose:
+      - ${HTTP_PORT}
     environment:
       DB_PATH: /app/db
-      HTTP_PORT: 3200
+      HTTP_PORT: ${HTTP_PORT}
       SYNC_CONFIG_PATH: /app/sync-config.json
-      JOB_CRON_TIME: ${JOB_CRON_TIME}
+      JOB_CRON_PATTERN: ${JOB_CRON_PATTERN:-@hourly}
       SPOTIFY_CLIENT_ID: ${SPOTIFY_CLIENT_ID}
       SPOTIFY_CLIENT_SECRET: ${SPOTIFY_CLIENT_SECRET}
       SPOTIFY_REDIRECT_URI: ${SPOTIFY_REDIRECT_URI}
       YANDEX_API_BASE_URL: ${YANDEX_API_BASE_URL:-}
       YANDEX_API_PROXY: ${YANDEX_API_PROXY:-}
+      NOTIFY_URL: ${NOTIFY_URL:-}
+      NOTIFY_SECRET: ${NOTIFY_SECRET:-}
     volumes:
       - ./sync-config.json:/app/sync-config.json:ro
       - auth-store:/app/db
+    networks:
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.playlist-synchronizer.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.playlist-synchronizer.entrypoints=web-secure"
 
 volumes:
   auth-store:
+
+networks:
+  proxy:
+    external: true

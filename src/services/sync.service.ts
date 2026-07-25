@@ -3,6 +3,8 @@ import { BaseMusicService } from './music-providers/base-music.service.js';
 import { SpotifyService } from './music-providers/spotify.service.js';
 import { LoggerContext, LogService } from './log.service.js';
 import { Notifier } from './notifications/notifier.js';
+import { DbService, PlaylistStateKey } from './db.service.js';
+import { TrackMappingService } from './track-mapping.service.js';
 import { PlaylistConfig, SyncConfig } from '../config.js';
 import {
     MusicServiceTypes,
@@ -13,14 +15,41 @@ import {
     computeRunStatus,
 } from '../entities.js';
 
-interface PlaylistSyncContext {
-    targetService?: BaseMusicService;
-    targetPlaylist?: Playlist;
-    targetPlaylistTracks?: Track[];
-    sourceService: BaseMusicService;
-    sourcePlaylist: Playlist;
-    sourcePlaylistTracks: Track[];
-    loggerCtx: LoggerContext;
+type TargetPlaylistConfig = PlaylistConfig['targetPlaylists'][number];
+
+type TargetOutcome = {
+    added: number;
+    removed: number;
+    adopted: number;
+};
+
+function countUris(uris: string[]): Map<string, number> {
+    const counts = new Map<string, number>();
+
+    for (const uri of uris) {
+        counts.set(uri, (counts.get(uri) ?? 0) + 1);
+    }
+
+    return counts;
+}
+
+function buildDesired(
+    sourceTracks: Track[],
+    mapping: Map<string, string>,
+): Map<string, string> {
+    const desired = new Map<string, string>();
+
+    for (const { id } of sourceTracks) {
+        const targetUri = id ? mapping.get(id) : undefined;
+
+        if (!id || !targetUri || desired.has(targetUri)) {
+            continue;
+        }
+
+        desired.set(targetUri, id);
+    }
+
+    return desired;
 }
 
 export class SyncService {
@@ -35,6 +64,9 @@ export class SyncService {
         private readonly yandexMusicService: YandexMusicService,
         private readonly spotifyService: SpotifyService,
         private readonly notifier: Notifier,
+        private readonly dbService: DbService,
+        private readonly trackMappingService: TrackMappingService,
+        private readonly now: () => number,
     ) {}
 
     async syncAll(syncConfig: SyncConfig): Promise<void> {
@@ -68,7 +100,10 @@ export class SyncService {
                     sourceTracks: 0,
                     matched: 0,
                     added: 0,
+                    removed: 0,
+                    adopted: 0,
                     notFound: 0,
+                    skipped: 0,
                     error: reason,
                 });
             }
@@ -87,9 +122,16 @@ export class SyncService {
     }
 
     isAllServicesReady(): boolean {
-        return [this.yandexMusicService, this.spotifyService].every(
-            (service) => service.isReady,
-        );
+        return this.notReadyServices().length === 0;
+    }
+
+    private notReadyServices(): string[] {
+        return [
+            { name: 'yandex', service: this.yandexMusicService },
+            { name: 'spotify', service: this.spotifyService },
+        ]
+            .filter(({ service }) => !service.isReady)
+            .map(({ name }) => name);
     }
 
     async sync(
@@ -102,19 +144,17 @@ export class SyncService {
             sourceTracks: 0,
             matched: 0,
             added: 0,
+            removed: 0,
+            adopted: 0,
             notFound: 0,
+            skipped: 0,
         };
 
-        const isAllServicesReady = this.isAllServicesReady();
-        if (!isAllServicesReady) {
-            this.logService.await(
-                `Skip sync. Wait for all services to be ready`,
-            );
-            return {
-                ...result,
-                status: 'failed',
-                error: 'services not ready',
-            };
+        const notReady = this.notReadyServices();
+        if (notReady.length) {
+            const reason = `services not ready: ${notReady.join(', ')}`;
+            this.logService.await(`Skip sync. ${reason}`);
+            return { ...result, status: 'failed', error: reason };
         }
 
         const sourcePlaylistTracks = await this.getPlaylistTracks(
@@ -122,77 +162,160 @@ export class SyncService {
             syncConfig.metadata,
             loggerCtx,
         );
-        result.sourceTracks = sourcePlaylistTracks.length;
+        const availableTracks = sourcePlaylistTracks.filter(
+            ({ unavailable }) => !unavailable,
+        );
+        result.sourceTracks = availableTracks.length;
 
-        if (!sourcePlaylistTracks.length) {
+        if (!availableTracks.length) {
             return { ...result, status: 'empty-source' };
         }
 
-        const ctx: PlaylistSyncContext = {
-            sourceService: this.getMusicServiceByType(syncConfig.type),
-            sourcePlaylist: syncConfig.metadata,
-            sourcePlaylistTracks,
-            loggerCtx,
-        };
-
-        const matchedSourceTracks = new Set<Track>();
+        const { mapping, skipped } = await this.trackMappingService.resolve(
+            syncConfig.type,
+            availableTracks,
+        );
+        result.matched = mapping.size;
+        result.skipped = skipped;
+        result.notFound = result.sourceTracks - mapping.size - skipped;
 
         for (const target of syncConfig.targetPlaylists) {
-            ctx.targetService = this.getMusicServiceByType(target.type);
-            ctx.targetPlaylist = target.metadata;
-            ctx.targetPlaylistTracks = await this.getPlaylistTracks(
-                target.type,
-                target.metadata,
+            const outcome = await this.syncTarget(
+                syncConfig.type,
+                syncConfig.metadata.id,
+                sourcePlaylistTracks,
+                mapping,
+                target,
                 loggerCtx,
             );
 
-            const { found: tracksForAdd, matchedSource } =
-                await this.findTracksInService(
-                    ctx,
-                    target.type,
-                    ctx.sourcePlaylistTracks,
-                );
-            this.logService.success(
-                `Found ${tracksForAdd.length} tracks in ${target.type} service`,
-                loggerCtx,
-            );
-            for (const track of matchedSource) {
-                matchedSourceTracks.add(track);
-            }
-
-            await this.removeDeletedTracks(ctx, tracksForAdd);
-
-            const trackIdsForAdd: string[] = (
-                await this.filterDuplicates(
-                    ctx.targetPlaylistTracks,
-                    tracksForAdd,
-                )
-            ).map((newTrack) => newTrack.id as string);
-
-            if (!trackIdsForAdd.length) {
-                this.logService.success(
-                    `No tracks to add to playlist`,
-                    loggerCtx,
-                );
-                continue;
-            }
-
-            await ctx.targetService.addTracksToPlaylist(
-                trackIdsForAdd,
-                target.metadata,
-            );
-            this.logService.success(
-                `Added ${trackIdsForAdd.length} tracks to ${target.metadata.name} playlist`,
-                loggerCtx,
-            );
-            result.added += trackIdsForAdd.length;
+            result.added += outcome.added;
+            result.removed += outcome.removed;
+            result.adopted += outcome.adopted;
         }
-
-        result.matched = matchedSourceTracks.size;
-        result.notFound = result.sourceTracks - matchedSourceTracks.size;
 
         this.logService.success('Sync completed', loggerCtx);
         return result;
+    }
+
+    private async syncTarget(
+        sourceType: MusicServiceTypes,
+        sourcePlaylistId: string,
+        sourceTracks: Track[],
+        mapping: Map<string, string>,
+        target: TargetPlaylistConfig,
+        loggerCtx: LoggerContext,
+    ): Promise<TargetOutcome> {
+        const service = this.getMusicServiceByType(target.type);
+        const key: PlaylistStateKey = {
+            targetType: target.type,
+            targetPlaylistId: target.metadata.id,
+            sourcePlaylistId,
+        };
+
+        const presentCounts = countUris(
+            await service.getPlaylistTrackUris(target.metadata),
+        );
+        const desired = buildDesired(sourceTracks, mapping);
+        const provenance = this.dbService.listPlaylistState(key);
+        const recordedUris = new Set(
+            provenance.map(({ targetUri }) => targetUri),
+        );
+
+        const adopted = [...desired].filter(
+            ([targetUri]) =>
+                presentCounts.has(targetUri) && !recordedUris.has(targetUri),
+        );
+        this.recordAdditions(key, sourceType, adopted);
+        if (adopted.length) {
+            this.logService.success(
+                `Adopted ${adopted.length} existing tracks in ${target.metadata.name} playlist`,
+                loggerCtx,
+            );
+        }
+
+        const toAdd = [...desired].filter(
+            ([targetUri]) => !presentCounts.has(targetUri),
+        );
+        if (toAdd.length) {
+            await service.addTracksToPlaylist(
+                toAdd.map(([targetUri]) => targetUri),
+                target.metadata,
+            );
+            this.recordAdditions(key, sourceType, toAdd);
+            this.logService.success(
+                `Added ${toAdd.length} tracks to ${target.metadata.name} playlist`,
+                loggerCtx,
+            );
+        }
+
+        const currentSourceIds = new Set(sourceTracks.map(({ id }) => id));
+        const releasedUris = provenance
+            .filter(
+                ({ targetUri, sourceId }) =>
+                    !currentSourceIds.has(sourceId) && !desired.has(targetUri),
+            )
+            .map(({ targetUri }) => targetUri);
+        const claimedElsewhere = new Set(
+            this.dbService.listOtherSourceUris(key),
+        );
+        this.dbService.deletePlaylistState(
+            key,
+            releasedUris.filter((targetUri) => claimedElsewhere.has(targetUri)),
+        );
+
+        const staleUris = releasedUris.filter(
+            (targetUri) => !claimedElsewhere.has(targetUri),
+        );
+        if (staleUris.length) {
+            await service.removeTracksFromPlaylist(staleUris, target.metadata);
+            this.dbService.deletePlaylistState(key, staleUris);
+            this.logService.success(
+                `Removed ${staleUris.length} tracks from ${target.metadata.name} playlist`,
+                loggerCtx,
+            );
+        }
+
+        const stale = new Set(staleUris);
+        const owned = new Set([
+            ...recordedUris,
+            ...adopted.map(([targetUri]) => targetUri),
+        ]);
+        const duplicateUris = [...presentCounts]
+            .filter(
+                ([targetUri, count]) =>
+                    count > 1 && !stale.has(targetUri) && owned.has(targetUri),
+            )
+            .map(([targetUri]) => targetUri);
+        if (duplicateUris.length) {
+            await service.deduplicateTracks(duplicateUris, target.metadata);
+            this.logService.success(
+                `Deduplicated ${duplicateUris.length} tracks in ${target.metadata.name} playlist`,
+                loggerCtx,
+            );
+        }
+
+        return {
+            added: toAdd.length,
+            removed: staleUris.length,
+            adopted: adopted.length,
+        };
+    }
+
+    private recordAdditions(
+        key: PlaylistStateKey,
+        sourceType: MusicServiceTypes,
+        entries: [string, string][],
+    ): void {
+        const addedAt = this.now();
+
+        for (const [targetUri, sourceId] of entries) {
+            this.dbService.addPlaylistState(
+                key,
+                { targetUri, sourceType, sourceId },
+                addedAt,
+            );
+        }
     }
 
     private getMusicServiceByType(type: MusicServiceTypes): BaseMusicService {
@@ -224,76 +347,5 @@ export class SyncService {
         );
 
         return tracks;
-    }
-
-    private async findTracksInService(
-        ctx: PlaylistSyncContext,
-        serviceType: MusicServiceTypes,
-        tracks: Track[],
-    ): Promise<{ found: Track[]; matchedSource: Track[] }> {
-        const service = this.getMusicServiceByType(serviceType);
-        this.logService.await(
-            `Try to find tracks in ${serviceType} service`,
-            ctx.loggerCtx,
-        );
-        const found: Track[] = [];
-        const matchedSource: Track[] = [];
-
-        for (const track of tracks) {
-            const serviceTrack = await service.searchTrackByName(
-                track.name,
-                track.artists,
-            );
-
-            if (!serviceTrack) {
-                this.logService.warn(
-                    `Track ${track.name} by ${track.artists.join(
-                        ', ',
-                    )} not found`,
-                    ctx.loggerCtx,
-                );
-                continue;
-            }
-
-            found.push(serviceTrack);
-            matchedSource.push(track);
-        }
-
-        return { found, matchedSource };
-    }
-
-    private async filterDuplicates(
-        playlistTracks: Track[],
-        tracksToAdd: Track[],
-    ): Promise<Track[]> {
-        return tracksToAdd.filter(
-            (newTrack) =>
-                !playlistTracks.some(
-                    (playlistTrack) => playlistTrack.id === newTrack.id,
-                ),
-        );
-    }
-
-    private async removeDeletedTracks(
-        ctx: PlaylistSyncContext,
-        tracksToAdd: Track[],
-    ): Promise<void> {
-        if (!ctx.targetService || !ctx.targetPlaylist) {
-            return;
-        }
-
-        const tracksToRemove =
-            ctx.targetPlaylistTracks?.filter(
-                (t) => !tracksToAdd.some((ta) => ta.id === t.id),
-            ) ?? [];
-
-        if (!tracksToRemove.length) {
-            return;
-        }
-
-        await ctx.targetService.removeTracksFromPlaylist(
-            tracksToRemove,
-            ctx.targetPlaylist,
-        );
     }
 }

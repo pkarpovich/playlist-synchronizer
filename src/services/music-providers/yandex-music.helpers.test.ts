@@ -30,12 +30,24 @@ test('buildPlaylistUrl composes the official playlist endpoint', () => {
 test('mapPlaylistTracks maps titles and artists from the fixture', () => {
     const tracks = mapPlaylistTracks(fixture);
 
-    assert.equal(tracks.length, 3);
+    assert.equal(tracks.length, 4);
     assert.deepEqual(
         tracks.map(({ name }) => name),
-        ['Smells Like Teen Spirit', 'Numb / Encore', 'Bohemian Rhapsody'],
+        ['Smells Like Teen Spirit', 'Numb / Encore', 'Bohemian Rhapsody', ''],
     );
     assert.deepEqual(tracks[0].artists, ['Nirvana']);
+});
+
+test('mapPlaylistTracks reads the numeric entry id the live API returns', () => {
+    const tracks = mapPlaylistTracks(fixture);
+
+    assert.deepEqual(tracks[3], {
+        id: '145513389',
+        name: '',
+        artists: [],
+        unavailable: true,
+    });
+    assert.equal(tracks[0].id, '10994777');
 });
 
 test('mapPlaylistTracks flattens multi-artist tracks', () => {
@@ -50,13 +62,48 @@ test('mapPlaylistTracks keeps the raw track as the track source', () => {
     assert.deepEqual(tracks[0].source, fixture.result?.tracks?.[0].track);
 });
 
-test('mapPlaylistTracks skips unavailable tracks with a null track body', () => {
+test('mapPlaylistTracks throws when a null track body carries no entry id', () => {
+    assert.throws(
+        () =>
+            mapPlaylistTracks({
+                result: {
+                    tracks: [
+                        { track: null },
+                        {
+                            track: {
+                                id: '20580170',
+                                title: 'Numb',
+                                artists: [{ name: 'Linkin Park' }],
+                            },
+                        },
+                    ],
+                },
+            }),
+        /"id"/,
+    );
+});
+
+test('mapPlaylistTracks throws when a null track body carries an empty entry id', () => {
+    for (const id of ['', '   ']) {
+        assert.throws(
+            () =>
+                mapPlaylistTracks({
+                    result: { tracks: [{ id, track: null }] },
+                }),
+            /"id"/,
+        );
+    }
+});
+
+test('mapPlaylistTracks keeps a null track body as an unavailable entry id', () => {
     const tracks = mapPlaylistTracks({
         result: {
             tracks: [
-                { track: null },
+                { id: 10994777, track: null },
                 {
+                    id: 20580170,
                     track: {
+                        id: '20580170',
                         title: 'Numb',
                         artists: [{ name: 'Linkin Park' }],
                     },
@@ -65,13 +112,63 @@ test('mapPlaylistTracks skips unavailable tracks with a null track body', () => 
         },
     });
 
-    assert.deepEqual(tracks, [
-        {
-            name: 'Numb',
-            artists: ['Linkin Park'],
-            source: { title: 'Numb', artists: [{ name: 'Linkin Park' }] },
-        },
-    ]);
+    assert.deepEqual(tracks[0], {
+        id: '10994777',
+        name: '',
+        artists: [],
+        unavailable: true,
+    });
+    assert.equal(tracks[1].unavailable, undefined);
+});
+
+test('mapPlaylistTracks maps the source track id', () => {
+    const tracks = mapPlaylistTracks(fixture);
+
+    assert.deepEqual(
+        tracks.map(({ id }) => id),
+        ['10994777', '20580170', '31163', '145513389'],
+    );
+});
+
+test('mapPlaylistTracks throws when a track body is missing an id', () => {
+    assert.throws(
+        () =>
+            mapPlaylistTracks({
+                result: {
+                    tracks: [
+                        {
+                            track: {
+                                title: 'Numb',
+                                artists: [{ name: 'Linkin Park' }],
+                            },
+                        },
+                    ],
+                },
+            }),
+        /"id"/,
+    );
+});
+
+test('mapPlaylistTracks throws when an id is empty or whitespace-only', () => {
+    for (const id of ['', '   ']) {
+        assert.throws(
+            () =>
+                mapPlaylistTracks({
+                    result: {
+                        tracks: [
+                            {
+                                track: {
+                                    id,
+                                    title: 'Numb',
+                                    artists: [{ name: 'Linkin Park' }],
+                                },
+                            },
+                        ],
+                    },
+                }),
+            /"id"/,
+        );
+    }
 });
 
 test('mapPlaylistTracks throws when a track has no artists', () => {

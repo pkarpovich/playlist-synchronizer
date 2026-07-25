@@ -3,7 +3,13 @@ export type Track = {
 
     name: string;
 
+    version?: string;
+
     artists: string[];
+
+    durationMs?: number;
+
+    unavailable?: boolean;
 
     source?: unknown;
 };

@@ -2,10 +2,12 @@
   "result": {
     "revision": 14,
     "kind": 1054,
-    "trackCount": 3,
+    "trackCount": 4,
     "tracks": [
       {
-        "id": "10994777",
+        "id": 10994777,
+        "originalIndex": 0,
+        "timestamp": "2024-01-07T12:00:00+00:00",
         "track": {
           "id": "10994777",
           "title": "Smells Like Teen Spirit",
@@ -13,7 +15,9 @@
         }
       },
       {
-        "id": "20580170",
+        "id": 20580170,
+        "originalIndex": 1,
+        "timestamp": "2024-01-07T12:00:01+00:00",
         "track": {
           "id": "20580170",
           "title": "Numb / Encore",
@@ -21,12 +25,20 @@
         }
       },
       {
-        "id": "31163",
+        "id": 31163,
+        "originalIndex": 2,
+        "timestamp": "2024-01-07T12:00:02+00:00",
         "track": {
           "id": "31163",
           "title": "Bohemian Rhapsody",
           "artists": [{ "name": "Queen" }]
         }
+      },
+      {
+        "id": 145513389,
+        "originalIndex": 3,
+        "timestamp": "2024-01-07T12:00:03+00:00",
+        "track": null
       }
     ]
   }

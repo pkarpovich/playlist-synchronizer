@@ -1,6 +1,6 @@
 import * as process from 'process';
-import dotenv from 'dotenv';
-dotenv.config({ quiet: true });
+import { config } from 'dotenv';
+config({ quiet: true });
 
 export interface IConfig {
     dbPath: string;
@@ -33,7 +33,7 @@ export interface IConfig {
 
 const DEFAULT_SYNC_CONFIG_PATH = './config/sync.config.json';
 const DEFAULT_JOB_CRON_PATTERN = '@hourly';
-const DEFAULT_DB_PATH = './db/db.json';
+const DEFAULT_DB_PATH = './db';
 const DEFAULT_YANDEX_API_BASE_URL = 'https://api.music.yandex.net';
 
 export function readYandexMusicConfig(

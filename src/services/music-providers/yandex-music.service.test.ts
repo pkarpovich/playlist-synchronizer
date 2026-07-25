@@ -47,12 +47,13 @@ test('getPlaylistTracks maps a 200 response into tracks', async () => {
 
     const tracks = await makeService(fetchFn).getPlaylistTracks(playlist);
 
-    assert.equal(tracks.length, 3);
+    assert.equal(tracks.length, 4);
     assert.deepEqual(
         tracks.map(({ name }) => name),
-        ['Smells Like Teen Spirit', 'Numb / Encore', 'Bohemian Rhapsody'],
+        ['Smells Like Teen Spirit', 'Numb / Encore', 'Bohemian Rhapsody', ''],
     );
     assert.deepEqual(tracks[1].artists, ['Linkin Park', 'Jay-Z']);
+    assert.equal(tracks[3].unavailable, true);
 });
 
 test('getPlaylistTracks requests the official playlist endpoint', async () => {
