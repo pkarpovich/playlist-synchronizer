@@ -25,6 +25,10 @@ export class CronService {
     }
 
     private triggerJob(job: Cron): void {
+        if (job.isBusy()) {
+            return;
+        }
+
         job.trigger();
     }
 

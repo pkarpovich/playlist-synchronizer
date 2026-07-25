@@ -35,13 +35,16 @@ const Schema = `
     CREATE TABLE IF NOT EXISTS playlist_state (
         target_type TEXT,
         target_playlist_id TEXT,
+        source_playlist_id TEXT,
         target_uri TEXT,
         source_type TEXT,
         source_id TEXT,
         added_at INTEGER,
-        PRIMARY KEY (target_type, target_playlist_id, target_uri)
+        PRIMARY KEY (target_type, target_playlist_id, source_playlist_id, target_uri)
     );
 `;
+
+const PlaylistStateSourceColumn = 'source_playlist_id';
 
 type AuthColumn = 'refresh_token' | 'revoked_at' | 'pending_state';
 
@@ -81,6 +84,7 @@ export type TrackMapCounts = {
 export type PlaylistStateKey = {
     targetType: string;
     targetPlaylistId: string;
+    sourcePlaylistId: string;
 };
 
 export type PlaylistStateEntry = {
@@ -128,6 +132,19 @@ function resolveDbLocation(dbPath: string): string {
     return join(dbPath, DbFileName);
 }
 
+function dropUnscopedPlaylistState(db: DatabaseSync): void {
+    const columns = db.prepare('PRAGMA table_info(playlist_state)').all();
+
+    if (
+        !columns.length ||
+        columns.some(({ name }) => name === PlaylistStateSourceColumn)
+    ) {
+        return;
+    }
+
+    db.exec('DROP TABLE playlist_state');
+}
+
 function readLegacyFile(filePath: string): string | null {
     try {
         return readFileSync(filePath, 'utf8');
@@ -149,6 +166,7 @@ export class DbService {
 
         this.legacyFilePath = join(dbPath, LegacyDbFileName);
         this.db = new DatabaseSync(resolveDbLocation(dbPath));
+        dropUnscopedPlaylistState(this.db);
         this.db.exec(Schema);
         this.migrateLegacyAuth();
     }
@@ -278,12 +296,13 @@ export class DbService {
     listPlaylistState({
         targetType,
         targetPlaylistId,
+        sourcePlaylistId,
     }: PlaylistStateKey): PlaylistStateRecord[] {
         const rows = this.db
             .prepare(
-                'SELECT target_uri, source_type, source_id, added_at FROM playlist_state WHERE target_type = ? AND target_playlist_id = ?',
+                'SELECT target_uri, source_type, source_id, added_at FROM playlist_state WHERE target_type = ? AND target_playlist_id = ? AND source_playlist_id = ?',
             )
-            .all(targetType, targetPlaylistId);
+            .all(targetType, targetPlaylistId, sourcePlaylistId);
 
         return rows.map((row) => ({
             targetUri: String(row.target_uri),
@@ -294,15 +313,15 @@ export class DbService {
     }
 
     addPlaylistState(
-        { targetType, targetPlaylistId }: PlaylistStateKey,
+        { targetType, targetPlaylistId, sourcePlaylistId }: PlaylistStateKey,
         { targetUri, sourceType, sourceId }: PlaylistStateEntry,
         addedAt: number,
     ): void {
         this.db
             .prepare(
-                `INSERT INTO playlist_state (target_type, target_playlist_id, target_uri, source_type, source_id, added_at)
-                 VALUES (?, ?, ?, ?, ?, ?)
-                 ON CONFLICT(target_type, target_playlist_id, target_uri) DO UPDATE SET
+                `INSERT INTO playlist_state (target_type, target_playlist_id, source_playlist_id, target_uri, source_type, source_id, added_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?)
+                 ON CONFLICT(target_type, target_playlist_id, source_playlist_id, target_uri) DO UPDATE SET
                      source_type = excluded.source_type,
                      source_id = excluded.source_id,
                      added_at = excluded.added_at`,
@@ -310,6 +329,7 @@ export class DbService {
             .run(
                 targetType,
                 targetPlaylistId,
+                sourcePlaylistId,
                 targetUri,
                 sourceType,
                 sourceId,
@@ -318,15 +338,20 @@ export class DbService {
     }
 
     deletePlaylistState(
-        { targetType, targetPlaylistId }: PlaylistStateKey,
+        { targetType, targetPlaylistId, sourcePlaylistId }: PlaylistStateKey,
         targetUris: string[],
     ): void {
         const statement = this.db.prepare(
-            'DELETE FROM playlist_state WHERE target_type = ? AND target_playlist_id = ? AND target_uri = ?',
+            'DELETE FROM playlist_state WHERE target_type = ? AND target_playlist_id = ? AND source_playlist_id = ? AND target_uri = ?',
         );
 
         for (const targetUri of targetUris) {
-            statement.run(targetType, targetPlaylistId, targetUri);
+            statement.run(
+                targetType,
+                targetPlaylistId,
+                sourcePlaylistId,
+                targetUri,
+            );
         }
     }
 

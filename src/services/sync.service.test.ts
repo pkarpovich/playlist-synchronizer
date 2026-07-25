@@ -230,10 +230,15 @@ function makeHarness(
     };
 }
 
-function playlistState(dbService: DbService, targetPlaylistId: string) {
+function playlistState(
+    dbService: DbService,
+    targetPlaylistId: string,
+    sourcePlaylistId = 'good',
+) {
     return dbService.listPlaylistState({
         targetType: MusicServiceTypes.SPOTIFY,
         targetPlaylistId,
+        sourcePlaylistId,
     });
 }
 
@@ -452,6 +457,39 @@ test('an empty playlist_state yields zero removals whatever the target holds', a
         playlistState(dbService, 'sp-good').map(({ targetUri }) => targetUri),
         ['spotify:track:1'],
     );
+});
+
+test('two source playlists sharing a target keep each other tracks', async () => {
+    const { syncService, target } = makeHarness(async ({ id }) => [
+        id === 'src-a'
+            ? { id: 'y-1', name: 'A', artists: ['Artist'] }
+            : { id: 'y-2', name: 'B', artists: ['Artist'] },
+    ]);
+    const sharedConfig: SyncConfig = {
+        playlists: ['src-a', 'src-b'].map((id) => ({
+            type: MusicServiceTypes.YANDEX_MUSIC,
+            metadata: { id, userName: 'u', name: id },
+            targetPlaylists: [
+                {
+                    type: MusicServiceTypes.SPOTIFY,
+                    metadata: {
+                        id: 'sp-shared',
+                        userName: 'u',
+                        name: 'Shared Target',
+                    },
+                },
+            ],
+        })),
+    };
+
+    await syncService.syncAll(sharedConfig);
+    await syncService.syncAll(sharedConfig);
+
+    assert.equal(target.removeCalls.length, 0);
+    assert.deepEqual(target.getUris('sp-shared'), [
+        'spotify:track:1',
+        'spotify:track:2',
+    ]);
 });
 
 test('a source track that disappears removes exactly its recorded URI', async () => {

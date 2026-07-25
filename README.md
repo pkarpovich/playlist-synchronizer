@@ -18,9 +18,11 @@ All state lives in a SQLite database at `<DB_PATH>/sync.db`, opened through the 
 - `track_map` - the source track to Spotify URI mapping. A track that resolves is searched for once
   and never again; a track that resolves to nothing is recorded as a miss and re-searched at most
   once per 24 hours
-- `playlist_state` - what this app added to each target playlist, which is what removals are driven
-  from. On the first run every source-matched track already in the target is adopted into this
-  table, so the switchover removes nothing. Tracks with no row here are never removed, so unrelated
+- `playlist_state` - what this app added to each target playlist on behalf of each source playlist,
+  which is what removals are driven from. Rows are scoped by source playlist, so two sources feeding
+  one target only ever reap their own tracks. On the first run every source-matched track already in
+  the target is adopted into this table, so the switchover removes nothing. Tracks with no row here
+  are never removed, so unrelated
   manual additions survive syncing. A URI present more than once is the one exception: it is deleted
   and re-added once, because Spotify removes every occurrence of a URI at once.
 

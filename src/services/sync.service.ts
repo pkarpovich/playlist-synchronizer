@@ -179,6 +179,7 @@ export class SyncService {
         for (const target of syncConfig.targetPlaylists) {
             const outcome = await this.syncTarget(
                 syncConfig.type,
+                syncConfig.metadata.id,
                 sourcePlaylistTracks,
                 mapping,
                 target,
@@ -196,6 +197,7 @@ export class SyncService {
 
     private async syncTarget(
         sourceType: MusicServiceTypes,
+        sourcePlaylistId: string,
         sourceTracks: Track[],
         mapping: Map<string, string>,
         target: TargetPlaylistConfig,
@@ -205,6 +207,7 @@ export class SyncService {
         const key: PlaylistStateKey = {
             targetType: target.type,
             targetPlaylistId: target.metadata.id,
+            sourcePlaylistId,
         };
 
         const presentCounts = countUris(
