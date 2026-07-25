@@ -11,7 +11,6 @@ import {
     ConfigService,
     CronService,
     DbService,
-    DelayFn,
     FetchFn,
     HealthService,
     HttpService,
@@ -26,6 +25,7 @@ import {
     YandexMusicService,
 } from './services.js';
 import { Config, IConfig } from './config.js';
+import { delay, DelayFn } from './utils.js';
 import {
     initApiController,
     SpotifyController,
@@ -79,9 +79,7 @@ export async function initContainer(): Promise<AwilixContainer<Container>> {
         cronService: asClass(CronService).singleton(),
         fetchFn: asValue<FetchFn>(globalThis.fetch),
         now: asValue<() => number>(() => Date.now()),
-        delayFn: asValue<DelayFn>(
-            (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
-        ),
+        delayFn: asValue<DelayFn>(delay),
         yandexMusicService: asClass(YandexMusicService).singleton(),
         spotifyAuthService: asClass(SpotifyAuthService).singleton(),
         spotifyService: asClass(SpotifyService).singleton(),

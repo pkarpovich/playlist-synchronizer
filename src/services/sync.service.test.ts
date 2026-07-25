@@ -4,10 +4,8 @@ import { test } from 'node:test';
 import { IConfig, SyncConfig } from '../config.js';
 import { LastRun, MusicServiceTypes, Playlist, Track } from '../entities.js';
 import { BaseMusicService } from './music-providers/base-music.service.js';
-import {
-    DelayFn,
-    SpotifyAuthService,
-} from './music-providers/spotify-auth.service.js';
+import { SpotifyAuthService } from './music-providers/spotify-auth.service.js';
+import { DelayFn } from '../utils/delay.js';
 import { SpotifyFetchFn } from './music-providers/spotify-types.js';
 import { SpotifyService } from './music-providers/spotify.service.js';
 import { YandexMusicService } from './music-providers/yandex-music.service.js';

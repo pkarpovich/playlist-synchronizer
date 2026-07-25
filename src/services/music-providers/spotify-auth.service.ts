@@ -11,6 +11,7 @@ import {
     SpotifyNotAuthorizedError,
 } from './spotify-errors.js';
 import { SpotifyFetchFn, SpotifyFetchResponse } from './spotify-types.js';
+import { DelayFn } from '../../utils/delay.js';
 
 const AuthServiceName = 'spotify';
 const TokenUrl = 'https://accounts.spotify.com/api/token';
@@ -26,8 +27,6 @@ export type SpotifyAuthState =
     | 'not-authorized'
     | 'authorized'
     | 'needs-reauthorization';
-
-export type DelayFn = (ms: number) => Promise<void>;
 
 type TokenSuccess = {
     accessToken: string;

@@ -4,7 +4,8 @@ import { test } from 'node:test';
 
 import { Playlist, Track } from '../../entities.js';
 import { LogService } from '../log.service.js';
-import { DelayFn, SpotifyAuthService } from './spotify-auth.service.js';
+import { SpotifyAuthService } from './spotify-auth.service.js';
+import { DelayFn } from '../../utils/delay.js';
 import {
     SpotifyHttpError,
     SpotifyNotAuthorizedError,

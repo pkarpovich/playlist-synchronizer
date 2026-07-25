@@ -5,7 +5,8 @@ import { IConfig } from '../../config.js';
 import { ConfigService } from '../config.service.js';
 import { DbService } from '../db.service.js';
 import { LogService } from '../log.service.js';
-import { SpotifyAuthService, DelayFn } from './spotify-auth.service.js';
+import { SpotifyAuthService } from './spotify-auth.service.js';
+import { DelayFn } from '../../utils/delay.js';
 import { SpotifyNotAuthorizedError } from './spotify-errors.js';
 import { SpotifyFetchFn, SpotifyFetchResponse } from './spotify-types.js';
 
