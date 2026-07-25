@@ -288,11 +288,7 @@ export class SyncService {
             )
             .map(([targetUri]) => targetUri);
         if (duplicateUris.length) {
-            await service.removeTracksFromPlaylist(
-                duplicateUris,
-                target.metadata,
-            );
-            await service.addTracksToPlaylist(duplicateUris, target.metadata);
+            await service.deduplicateTracks(duplicateUris, target.metadata);
             this.logService.success(
                 `Deduplicated ${duplicateUris.length} tracks in ${target.metadata.name} playlist`,
                 loggerCtx,

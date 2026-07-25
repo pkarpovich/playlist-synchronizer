@@ -965,3 +965,65 @@ test('the renamed fallback stays off when the source carries no duration', async
 
     assert.equal(resolved, null);
 });
+
+function methodsOf(calls: FetchCall[]): string[] {
+    return calls.map((call) => String(call.init?.method));
+}
+
+test('deduplicateTracks pairs the removal and the re-add chunk by chunk', async () => {
+    const harness = makeHarness([
+        ...snapshot(1),
+        ...snapshot(2),
+        ...snapshot(3),
+        ...snapshot(4),
+        ...snapshot(5),
+        ...snapshot(6),
+    ]);
+
+    await harness.service.deduplicateTracks(makeUris(250), playlist);
+
+    assert.deepEqual(methodsOf(harness.calls), [
+        'DELETE',
+        'POST',
+        'DELETE',
+        'POST',
+        'DELETE',
+        'POST',
+    ]);
+    assert.deepEqual(
+        harness.calls.map((call) => {
+            const body = bodyOf(call);
+            const uris = (body.uris ?? body.items) as unknown[];
+
+            return uris.length;
+        }),
+        [100, 100, 100, 100, 50, 50],
+    );
+});
+
+test('deduplicateTracks reports the tracks left behind when the re-add fails', async () => {
+    const harness = makeHarness([...snapshot(1), { status: 403, body: {} }]);
+
+    await assert.rejects(
+        () => harness.service.deduplicateTracks(makeUris(10), playlist),
+        SpotifyHttpError,
+    );
+
+    assert.ok(
+        harness.logs.some((entry) => entry.includes('could not add them back')),
+    );
+});
+
+test('a request gives up after three attempts and says so', async () => {
+    const harness = makeHarness([
+        { status: 500, body: {} },
+        { status: 500, body: {} },
+        { status: 500, body: {} },
+    ]);
+
+    await assert.rejects(
+        () => harness.service.getPlaylistTrackUris(playlist),
+        /failed after 3 attempts/,
+    );
+    assert.deepEqual(harness.delays, [500, 1000]);
+});

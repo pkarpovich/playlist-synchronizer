@@ -11,6 +11,10 @@ export abstract class BaseMusicService {
         uris: string[],
         playlist: Playlist,
     ): Promise<void>;
+    abstract deduplicateTracks(
+        uris: string[],
+        playlist: Playlist,
+    ): Promise<void>;
 
     abstract isReady: boolean;
 }

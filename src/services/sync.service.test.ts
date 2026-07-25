@@ -85,6 +85,11 @@ class StubMusicService extends BaseMusicService {
             this.getUris(playlist.id).filter((uri) => !uris.includes(uri)),
         );
     }
+
+    async deduplicateTracks(uris: string[], playlist: Playlist): Promise<void> {
+        await this.removeTracksFromPlaylist(uris, playlist);
+        await this.addTracksToPlaylist(uris, playlist);
+    }
 }
 
 class TrackMappingStub {

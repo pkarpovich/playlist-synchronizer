@@ -20,7 +20,8 @@ const Scopes =
     'playlist-read-private playlist-modify-private playlist-modify-public';
 const InvalidGrantCode = 'invalid_grant';
 const ExpiryMarginMs = 60000;
-const BackoffDelaysMs = [500, 1000, 2000];
+const RetryDelaysMs = [500, 1000];
+const MaxAttempts = RetryDelaysMs.length + 1;
 const StateBytes = 16;
 
 export type SpotifyAuthState =
@@ -270,7 +271,7 @@ export class SpotifyAuthService {
         let lastStatus = 0;
         let lastReason = 'no attempt was made';
 
-        for (let attempt = 0; attempt < BackoffDelaysMs.length; attempt += 1) {
+        for (let attempt = 0; attempt < MaxAttempts; attempt += 1) {
             const outcome = await this.attemptToken(params);
 
             if (outcome.kind === 'success') {
@@ -284,13 +285,13 @@ export class SpotifyAuthService {
             lastStatus = outcome.status;
             lastReason = outcome.reason;
 
-            if (attempt < BackoffDelaysMs.length - 1) {
-                await this.delayFn(BackoffDelaysMs[attempt]);
+            if (attempt < RetryDelaysMs.length) {
+                await this.delayFn(RetryDelaysMs[attempt]);
             }
         }
 
         throw new SpotifyHttpError(
-            `Spotify token request failed after ${BackoffDelaysMs.length} attempts: ${lastReason}`,
+            `Spotify token request failed after ${MaxAttempts} attempts: ${lastReason}`,
             lastStatus,
         );
     }

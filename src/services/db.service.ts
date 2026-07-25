@@ -141,7 +141,10 @@ function resolveDbLocation(dbPath: string): string {
     return join(dbPath, DbFileName);
 }
 
-function dropUnscopedPlaylistState(db: DatabaseSync): void {
+function dropUnscopedPlaylistState(
+    db: DatabaseSync,
+    logService: LogService,
+): void {
     const columns = db.prepare('PRAGMA table_info(playlist_state)').all();
 
     if (
@@ -151,7 +154,14 @@ function dropUnscopedPlaylistState(db: DatabaseSync): void {
         return;
     }
 
+    const { total } = db
+        .prepare('SELECT COUNT(*) AS total FROM playlist_state')
+        .get() ?? { total: 0 };
+
     db.exec('DROP TABLE playlist_state');
+    logService.warn(
+        `Dropped ${Number(total)} playlist_state rows that predate source-playlist scoping; provenance is rebuilt by adoption on the next run, so nothing is removed from a target playlist until then`,
+    );
 }
 
 function addMissingTrackMapColumns(db: DatabaseSync): void {
@@ -192,10 +202,14 @@ export class DbService {
 
         this.legacyFilePath = join(dbPath, LegacyDbFileName);
         this.db = new DatabaseSync(resolveDbLocation(dbPath));
-        dropUnscopedPlaylistState(this.db);
+        dropUnscopedPlaylistState(this.db, logService);
         this.db.exec(Schema);
         addMissingTrackMapColumns(this.db);
         this.migrateLegacyAuth();
+    }
+
+    close(): void {
+        this.db.close();
     }
 
     getAuth(service: string): AuthRecord | null {

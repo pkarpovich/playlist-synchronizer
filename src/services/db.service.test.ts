@@ -688,3 +688,49 @@ test('an existing track_map gains both added columns', (t) => {
         skipped: 0,
     });
 });
+
+test('dropping the unscoped playlist_state is logged with the row count', (t) => {
+    const dir = makeTempDir(t);
+    const dbFilePath = join(dir, DbFile);
+    seedDb(
+        dbFilePath,
+        `CREATE TABLE playlist_state (
+            target_type TEXT,
+            target_playlist_id TEXT,
+            target_uri TEXT,
+            source_type TEXT,
+            source_id TEXT,
+            added_at INTEGER,
+            PRIMARY KEY (target_type, target_playlist_id, target_uri)
+        );
+        INSERT INTO playlist_state VALUES ('spotify', 'target-1', 'spotify:track:1', 'yandex', 'src-1', 1);
+        INSERT INTO playlist_state VALUES ('spotify', 'target-1', 'spotify:track:2', 'yandex', 'src-2', 1);`,
+    );
+
+    const logs: LogEntry[] = [];
+    makeDbService(dir, logs);
+
+    const warning = logs.find(({ level }) => level === 'warn');
+
+    assert.ok(warning);
+    assert.ok(warning?.message.includes('Dropped 2 playlist_state rows'));
+    assert.ok(warning?.message.includes('adoption'));
+});
+
+test('a fresh database drops nothing and logs no warning', (t) => {
+    const dir = makeTempDir(t);
+    const logs: LogEntry[] = [];
+
+    makeDbService(dir, logs);
+
+    assert.equal(logs.filter(({ level }) => level === 'warn').length, 0);
+});
+
+test('close releases the database handle', (t) => {
+    const dir = makeTempDir(t);
+    const dbService = makeDbService(dir);
+
+    dbService.close();
+
+    assert.throws(() => dbService.getAuth('spotify'));
+});

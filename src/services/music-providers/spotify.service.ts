@@ -26,7 +26,8 @@ const ApiBaseUrl = 'https://api.spotify.com/v1';
 const PageLimit = 50;
 const SearchLimit = 10;
 const MutationChunkSize = 100;
-const BackoffDelaysMs = [500, 1000, 2000];
+const RetryDelaysMs = [500, 1000];
+const MaxAttempts = RetryDelaysMs.length + 1;
 const MaxRateLimitRetries = 2;
 const DurationToleranceMs = 5000;
 const RenamedDurationToleranceMs = 1000;
@@ -230,11 +231,8 @@ export class SpotifyService implements BaseMusicService {
         trackIds: string[],
         { id }: Playlist,
     ): Promise<void> {
-        for (const uris of chunk(trackIds, MutationChunkSize)) {
-            await this.request(`${ApiBaseUrl}/playlists/${id}/items`, {
-                method: 'POST',
-                body: JSON.stringify({ uris }),
-            });
+        for (const batch of chunk(trackIds, MutationChunkSize)) {
+            await this.addChunk(batch, id);
         }
     }
 
@@ -243,13 +241,40 @@ export class SpotifyService implements BaseMusicService {
         { id }: Playlist,
     ): Promise<void> {
         for (const batch of chunk(uris, MutationChunkSize)) {
-            await this.request(`${ApiBaseUrl}/playlists/${id}/items`, {
-                method: 'DELETE',
-                body: JSON.stringify({
-                    items: batch.map((uri) => ({ uri })),
-                }),
-            });
+            await this.removeChunk(batch, id);
         }
+    }
+
+    async deduplicateTracks(uris: string[], playlist: Playlist): Promise<void> {
+        for (const batch of chunk(uris, MutationChunkSize)) {
+            await this.removeChunk(batch, playlist.id);
+
+            try {
+                await this.addChunk(batch, playlist.id);
+            } catch (error) {
+                this.logService.error(
+                    `Removed ${batch.length} duplicated tracks from ${playlist.name} but could not add them back, the next run restores them: ${String(error)}`,
+                );
+                throw error;
+            }
+        }
+    }
+
+    private async addChunk(uris: string[], playlistId: string): Promise<void> {
+        await this.request(`${ApiBaseUrl}/playlists/${playlistId}/items`, {
+            method: 'POST',
+            body: JSON.stringify({ uris }),
+        });
+    }
+
+    private async removeChunk(
+        uris: string[],
+        playlistId: string,
+    ): Promise<void> {
+        await this.request(`${ApiBaseUrl}/playlists/${playlistId}/items`, {
+            method: 'DELETE',
+            body: JSON.stringify({ items: uris.map((uri) => ({ uri })) }),
+        });
     }
 
     private async readPlaylistEntries(
@@ -318,7 +343,7 @@ export class SpotifyService implements BaseMusicService {
         let lastStatus = 0;
         let lastReason = 'no attempt was made';
 
-        while (attempt < BackoffDelaysMs.length) {
+        while (attempt < MaxAttempts) {
             const token = await this.spotifyAuthService.getAccessToken();
             const outcome = await this.attempt(url, init, token);
 
@@ -367,14 +392,14 @@ export class SpotifyService implements BaseMusicService {
             this.logService.warn(
                 `Spotify request to ${url} failed (${outcome.reason}), retrying`,
             );
-            if (attempt < BackoffDelaysMs.length - 1) {
-                await this.delayFn(BackoffDelaysMs[attempt]);
+            if (attempt < RetryDelaysMs.length) {
+                await this.delayFn(RetryDelaysMs[attempt]);
             }
             attempt += 1;
         }
 
         throw new SpotifyHttpError(
-            `Spotify request to ${url} failed after ${BackoffDelaysMs.length} attempts: ${lastReason}`,
+            `Spotify request to ${url} failed after ${MaxAttempts} attempts: ${lastReason}`,
             lastStatus,
         );
     }

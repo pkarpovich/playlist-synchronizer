@@ -6,6 +6,7 @@ const container = await initContainer();
 const {
     logService,
     configService,
+    dbService,
     httpService,
     cronService,
     spotifyAuthService,
@@ -36,4 +37,5 @@ cronService.addJob({
 
 cleanup(() => {
     cronService.stopAllJobs();
+    dbService.close();
 });

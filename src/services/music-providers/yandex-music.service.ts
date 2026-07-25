@@ -87,4 +87,13 @@ export class YandexMusicService extends BaseMusicService {
     ): Promise<void> {
         throw new Error('Method not implemented.');
     }
+
+    async deduplicateTracks(
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        uris: string[],
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        playlist: Playlist,
+    ): Promise<void> {
+        throw new Error('Method not implemented.');
+    }
 }
