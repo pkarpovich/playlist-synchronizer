@@ -631,13 +631,13 @@ so dropping `spotifyReady` is safe. Do not look for that configuration in this r
 - Modify: `src/services/music-providers/spotify.service.ts`
 - Modify: `src/services/music-providers/spotify.service.test.ts`
 
-- [ ] implement `addTracksToPlaylist` over `POST /playlists/{id}/items` with body `{ uris }`, chunked
+- [x] implement `addTracksToPlaylist` over `POST /playlists/{id}/items` with body `{ uris }`, chunked
       by **100**
-- [ ] implement `removeTracksFromPlaylist` over `DELETE /playlists/{id}/items` with body
+- [x] implement `removeTracksFromPlaylist` over `DELETE /playlists/{id}/items` with body
       `{ items: [{ uri }] }` - key `items`, not `tracks` - chunked by **100**
-- [ ] write tests: 250 URIs to add produce exactly 3 requests sized 100/100/50; 250 to remove do the
+- [x] write tests: 250 URIs to add produce exactly 3 requests sized 100/100/50; 250 to remove do the
       same; the removal body uses the `items` key; an empty list issues zero requests
-- [ ] Gate G passes
+- [x] Gate G passes
 
 ### Task 9: Track mapping service
 

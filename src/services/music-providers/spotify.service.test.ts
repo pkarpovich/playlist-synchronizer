@@ -544,6 +544,113 @@ test('artist objects without followers or popularity resolve without throwing', 
     });
 });
 
+const MutationUrl =
+    'https://api.spotify.com/v1/playlists/7qqAU3xa2efU4T06IvcY2W/items';
+
+function makeUris(count: number): string[] {
+    return Array.from(
+        { length: count },
+        (_, index) => `spotify:track:${index}`,
+    );
+}
+
+function bodyOf({ init }: FetchCall): Record<string, unknown> {
+    return JSON.parse(String(init?.body)) as Record<string, unknown>;
+}
+
+function snapshot(count: number): StubbedResponse[] {
+    return Array.from({ length: count }, () => ({
+        status: 200,
+        body: { snapshot_id: 'snapshot-1' },
+    }));
+}
+
+test('adding 250 URIs sends three chunked POST requests of 100/100/50', async () => {
+    const harness = makeHarness(snapshot(3));
+    const uris = makeUris(250);
+
+    await harness.service.addTracksToPlaylist(uris, playlist);
+
+    assert.equal(harness.calls.length, 3);
+    assert.deepEqual(
+        harness.calls.map((call) => (bodyOf(call).uris as string[]).length),
+        [100, 100, 50],
+    );
+    assert.deepEqual(
+        harness.calls.flatMap((call) => bodyOf(call).uris as string[]),
+        uris,
+    );
+
+    for (const call of harness.calls) {
+        const headers = call.init?.headers as Record<string, string>;
+
+        assert.equal(call.url, MutationUrl);
+        assert.equal(call.init?.method, 'POST');
+        assert.equal(headers['Content-Type'], 'application/json');
+        assert.equal(headers.Authorization, 'Bearer access-1');
+    }
+});
+
+test('removing 250 URIs sends three chunked DELETE requests of 100/100/50', async () => {
+    const harness = makeHarness(snapshot(3));
+    const uris = makeUris(250);
+    const tracks = uris.map((uri) => ({ id: uri, name: uri, artists: [] }));
+
+    await harness.service.removeTracksFromPlaylist(tracks, playlist);
+
+    assert.equal(harness.calls.length, 3);
+    assert.deepEqual(
+        harness.calls.map((call) => (bodyOf(call).items as unknown[]).length),
+        [100, 100, 50],
+    );
+
+    for (const call of harness.calls) {
+        assert.equal(call.url, MutationUrl);
+        assert.equal(call.init?.method, 'DELETE');
+    }
+});
+
+test('the removal body uses the items key and not tracks', async () => {
+    const harness = makeHarness(snapshot(1));
+
+    await harness.service.removeTracksFromPlaylist(
+        [{ id: 'spotify:track:gone', name: 'Gone', artists: ['Someone'] }],
+        playlist,
+    );
+
+    const body = bodyOf(harness.calls[0]);
+
+    assert.equal(body.tracks, undefined);
+    assert.deepEqual(body, { items: [{ uri: 'spotify:track:gone' }] });
+});
+
+test('empty add and remove lists issue zero requests', async () => {
+    const harness = makeHarness([]);
+
+    await harness.service.addTracksToPlaylist([], playlist);
+    await harness.service.removeTracksFromPlaylist([], playlist);
+
+    assert.equal(harness.calls.length, 0);
+    assert.deepEqual(harness.delays, []);
+});
+
+test('a chunk that fails with a 5xx retries and does not skip the rest', async () => {
+    const harness = makeHarness([
+        ...snapshot(1),
+        { status: 500, body: {} },
+        ...snapshot(2),
+    ]);
+
+    await harness.service.addTracksToPlaylist(makeUris(250), playlist);
+
+    assert.equal(harness.calls.length, 4);
+    assert.deepEqual(harness.delays, [500]);
+    assert.deepEqual(
+        harness.calls.map((call) => (bodyOf(call).uris as string[]).length),
+        [100, 100, 100, 50],
+    );
+});
+
 test('the interim shims delegate to the auth service', async () => {
     const harness = makeHarness([]);
 

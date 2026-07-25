@@ -17,6 +17,7 @@ import {
 const ApiBaseUrl = 'https://api.spotify.com/v1';
 const PageLimit = 50;
 const SearchLimit = 10;
+const MutationChunkSize = 100;
 const BackoffDelaysMs = [500, 1000, 2000];
 const MaxRateLimitRetries = 2;
 
@@ -74,6 +75,16 @@ function toResolvedTrack(track: SpotifyTrack): SpotifyResolvedTrack {
         isrc: track.external_ids?.isrc ?? null,
         durationMs: track.duration_ms ?? null,
     };
+}
+
+function chunk<T>(items: T[], size: number): T[][] {
+    const chunks: T[][] = [];
+
+    for (let index = 0; index < items.length; index += size) {
+        chunks.push(items.slice(index, index + size));
+    }
+
+    return chunks;
 }
 
 async function readJson(response: SpotifyFetchResponse): Promise<unknown> {
@@ -172,18 +183,34 @@ export class SpotifyService implements BaseMusicService {
         throw new Error('Method not implemented.');
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    addTracksToPlaylist(trackIds: string[], playlist: Playlist): Promise<void> {
-        throw new Error('Method not implemented.');
+    async addTracksToPlaylist(
+        trackIds: string[],
+        { id }: Playlist,
+    ): Promise<void> {
+        for (const uris of chunk(trackIds, MutationChunkSize)) {
+            await this.request(`${ApiBaseUrl}/playlists/${id}/items`, {
+                method: 'POST',
+                body: JSON.stringify({ uris }),
+            });
+        }
     }
 
-    removeTracksFromPlaylist(
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    async removeTracksFromPlaylist(
         tracks: Track[],
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        playlist: Playlist,
+        { id }: Playlist,
     ): Promise<void> {
-        throw new Error('Method not implemented.');
+        const uris = tracks
+            .map(({ id: uri }) => uri)
+            .filter((uri): uri is string => Boolean(uri));
+
+        for (const batch of chunk(uris, MutationChunkSize)) {
+            await this.request(`${ApiBaseUrl}/playlists/${id}/items`, {
+                method: 'DELETE',
+                body: JSON.stringify({
+                    items: batch.map((uri) => ({ uri })),
+                }),
+            });
+        }
     }
 
     private async search(query: string): Promise<SpotifyTrack[]> {
