@@ -57,6 +57,7 @@ test('mapPlaylistTracks skips unavailable tracks with a null track body', () => 
                 { track: null },
                 {
                     track: {
+                        id: '20580170',
                         title: 'Numb',
                         artists: [{ name: 'Linkin Park' }],
                     },
@@ -67,11 +68,66 @@ test('mapPlaylistTracks skips unavailable tracks with a null track body', () => 
 
     assert.deepEqual(tracks, [
         {
+            id: '20580170',
             name: 'Numb',
             artists: ['Linkin Park'],
-            source: { title: 'Numb', artists: [{ name: 'Linkin Park' }] },
+            source: {
+                id: '20580170',
+                title: 'Numb',
+                artists: [{ name: 'Linkin Park' }],
+            },
         },
     ]);
+});
+
+test('mapPlaylistTracks maps the source track id', () => {
+    const tracks = mapPlaylistTracks(fixture);
+
+    assert.deepEqual(
+        tracks.map(({ id }) => id),
+        ['10994777', '20580170', '31163'],
+    );
+});
+
+test('mapPlaylistTracks throws when a track body is missing an id', () => {
+    assert.throws(
+        () =>
+            mapPlaylistTracks({
+                result: {
+                    tracks: [
+                        {
+                            track: {
+                                title: 'Numb',
+                                artists: [{ name: 'Linkin Park' }],
+                            },
+                        },
+                    ],
+                },
+            }),
+        /"id"/,
+    );
+});
+
+test('mapPlaylistTracks throws when an id is empty or whitespace-only', () => {
+    for (const id of ['', '   ']) {
+        assert.throws(
+            () =>
+                mapPlaylistTracks({
+                    result: {
+                        tracks: [
+                            {
+                                track: {
+                                    id,
+                                    title: 'Numb',
+                                    artists: [{ name: 'Linkin Park' }],
+                                },
+                            },
+                        ],
+                    },
+                }),
+            /"id"/,
+        );
+    }
 });
 
 test('mapPlaylistTracks throws when a track has no artists', () => {

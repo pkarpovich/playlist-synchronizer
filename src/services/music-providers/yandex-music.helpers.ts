@@ -89,8 +89,15 @@ export function mapPlaylistTracks(json: YandexPlaylistResponse): Track[] {
             );
         }
 
+        if (typeof track.id !== 'string' || track.id.trim().length === 0) {
+            throw new Error(
+                'Unexpected Yandex playlist response: track body is missing a non-empty "id"',
+            );
+        }
+
         return [
             {
+                id: track.id,
                 name: track.title,
                 artists: artists.map(({ name }) => name),
                 source: track,
