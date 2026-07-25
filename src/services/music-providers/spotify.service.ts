@@ -8,7 +8,14 @@ import {
     parseRetryAfter,
     SpotifyHttpError,
 } from './spotify-errors.js';
-import { artistOverlaps, titleMatches } from './spotify-match.helpers.js';
+import {
+    artistOverlaps,
+    censoredTitlePattern,
+    closestByDuration,
+    isPrefixMatch,
+    sourceTitleForms,
+    titleMatches,
+} from './spotify-match.helpers.js';
 import {
     SpotifyFetchFn,
     SpotifyFetchResponse,
@@ -21,6 +28,8 @@ const SearchLimit = 10;
 const MutationChunkSize = 100;
 const BackoffDelaysMs = [500, 1000, 2000];
 const MaxRateLimitRetries = 2;
+const DurationToleranceMs = 5000;
+const RenamedDurationToleranceMs = 1000;
 
 export type SpotifyResolvedTrack = {
     uri: string;
@@ -148,17 +157,18 @@ export class SpotifyService implements BaseMusicService {
         return entries.map(({ id: uri }) => uri);
     }
 
-    async resolveTrack({
-        name,
-        artists,
-    }: Track): Promise<SpotifyResolvedTrack | null> {
+    async resolveTrack(source: Track): Promise<SpotifyResolvedTrack | null> {
+        const { name, artists, durationMs } = source;
         const [firstArtist = ''] = artists;
+        const forms = sourceTitleForms(source);
 
         const filtered = await this.search(
             `track:"${quoteless(name)}" artist:"${quoteless(firstArtist)}"`,
         );
-        const byFilter = filtered.find((candidate) =>
-            titleMatches(candidate.name, name),
+        const byFilter = closestByDuration(
+            filtered.filter((candidate) => titleMatches(candidate.name, forms)),
+            durationMs,
+            DurationToleranceMs,
         );
 
         if (byFilter) {
@@ -166,17 +176,54 @@ export class SpotifyService implements BaseMusicService {
         }
 
         const freeText = await this.search(`${name} ${firstArtist}`);
-        const byFreeText = freeText.find(
-            (candidate) =>
-                titleMatches(candidate.name, name) &&
-                artistOverlaps(candidate, artists),
+        const byFreeText = closestByDuration(
+            freeText.filter(
+                (candidate) =>
+                    titleMatches(candidate.name, forms) &&
+                    artistOverlaps(candidate, artists),
+            ),
+            durationMs,
+            DurationToleranceMs,
         );
 
-        if (!byFreeText) {
+        if (byFreeText) {
+            return toResolvedTrack(byFreeText);
+        }
+
+        const renamed = this.resolveRenamed(source, [...filtered, ...freeText]);
+
+        if (!renamed) {
             return null;
         }
 
-        return toResolvedTrack(byFreeText);
+        this.logService.warn(
+            `Matched ${name} by ${artists.join(', ')} to the renamed Spotify track ${renamed.name}`,
+        );
+
+        return toResolvedTrack(renamed);
+    }
+
+    private resolveRenamed(
+        { name, artists, durationMs }: Track,
+        candidates: SpotifyTrack[],
+    ): SpotifyTrack | null {
+        if (durationMs === undefined) {
+            return null;
+        }
+
+        const censored = censoredTitlePattern(name);
+        const sameTrack = censored
+            ? (candidate: SpotifyTrack) => censored.test(candidate.name)
+            : (candidate: SpotifyTrack) => isPrefixMatch(candidate.name, name);
+
+        return closestByDuration(
+            candidates.filter(
+                (candidate) =>
+                    artistOverlaps(candidate, artists) && sameTrack(candidate),
+            ),
+            durationMs,
+            RenamedDurationToleranceMs,
+        );
     }
 
     async addTracksToPlaylist(

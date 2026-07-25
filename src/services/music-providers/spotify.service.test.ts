@@ -775,3 +775,193 @@ test('a chunk that fails with a 5xx retries and does not skip the rest', async (
         [100, 100, 100, 50],
     );
 });
+
+function spotifyTrack(
+    uri: string,
+    name: string,
+    durationMs: number,
+    artists: string[] = ['Skryptonite'],
+): unknown {
+    return {
+        uri,
+        name,
+        type: 'track',
+        duration_ms: durationMs,
+        artists: artists.map((artist) => ({ name: artist })),
+        external_ids: { isrc: 'QZES71982314' },
+    };
+}
+
+test('resolveTrack prefers the closest duration over the search ranking', async () => {
+    const harness = makeHarness([
+        {
+            status: 200,
+            body: searchBody([
+                spotifyTrack('spotify:track:rmx', 'Всё просто (RMX)', 185_142, [
+                    'Antoha MC',
+                ]),
+                spotifyTrack('spotify:track:original', 'Всё просто', 201_857, [
+                    'Antoha MC',
+                ]),
+            ]),
+        },
+    ]);
+
+    const resolved = await harness.service.resolveTrack({
+        id: '1',
+        name: 'Всё просто',
+        artists: ['Антоха МС'],
+        durationMs: 201_850,
+    });
+
+    assert.equal(resolved?.uri, 'spotify:track:original');
+    assert.equal(harness.calls.length, 1);
+});
+
+test('resolveTrack separates two masters that share a title', async () => {
+    const harness = makeHarness([
+        {
+            status: 200,
+            body: searchBody([
+                spotifyTrack('spotify:track:other', 'Танцы на снегу', 185_941, [
+                    'Husky',
+                ]),
+                spotifyTrack('spotify:track:exact', 'Танцы на снегу', 183_765, [
+                    'Husky',
+                ]),
+            ]),
+        },
+    ]);
+
+    const resolved = await harness.service.resolveTrack({
+        id: '2',
+        name: 'Танцы на снегу',
+        artists: ['Хаски'],
+        durationMs: 183_760,
+    });
+
+    assert.equal(resolved?.uri, 'spotify:track:exact');
+});
+
+test('resolveTrack matches a source version against a decorated Spotify title', async () => {
+    const harness = makeHarness([
+        {
+            status: 200,
+            body: searchBody([
+                spotifyTrack(
+                    'spotify:track:pyatna',
+                    'Пятна - from "Арлан. Решающий раунд"',
+                    182_769,
+                    ['Truwer'],
+                ),
+            ]),
+        },
+    ]);
+
+    const resolved = await harness.service.resolveTrack({
+        id: '3',
+        name: 'Пятна',
+        version: 'from "Арлан. Решающий раунд"',
+        artists: ['Truwer'],
+        durationMs: 182_760,
+    });
+
+    assert.equal(resolved?.uri, 'spotify:track:pyatna');
+});
+
+test('resolveTrack falls back to a renamed track confirmed by duration', async () => {
+    const miami = spotifyTrack('spotify:track:miami96', 'Miami 96', 121_919, [
+        'BORIS REDWALL',
+        'AQYLA',
+    ]);
+    const harness = makeHarness([
+        { status: 200, body: searchBody([miami]) },
+        { status: 200, body: searchBody([miami]) },
+    ]);
+
+    const resolved = await harness.service.resolveTrack({
+        id: '4',
+        name: 'Miami',
+        artists: ['BORIS REDWALL', 'AQYLA'],
+        durationMs: 121_910,
+    });
+
+    assert.equal(resolved?.uri, 'spotify:track:miami96');
+    assert.equal(harness.calls.length, 2);
+    assert.ok(harness.logs.some((entry) => entry.includes('renamed')));
+});
+
+test('resolveTrack falls back through a censored source title', async () => {
+    const track = spotifyTrack('spotify:track:tpx', 'так похуй', 108_000, [
+        'madk1d',
+    ]);
+    const harness = makeHarness([
+        { status: 200, body: searchBody([track]) },
+        { status: 200, body: searchBody([track]) },
+    ]);
+
+    const resolved = await harness.service.resolveTrack({
+        id: '5',
+        name: 'так по***',
+        artists: ['madk1d'],
+        durationMs: 108_000,
+    });
+
+    assert.equal(resolved?.uri, 'spotify:track:tpx');
+});
+
+test('the renamed fallback refuses a duration further than one second away', async () => {
+    const sequel = spotifyTrack('spotify:track:miura2', 'Miura 2', 87_972, [
+        'Skryptonite',
+    ]);
+    const harness = makeHarness([
+        { status: 200, body: searchBody([sequel]) },
+        { status: 200, body: searchBody([sequel]) },
+    ]);
+
+    const resolved = await harness.service.resolveTrack({
+        id: '6',
+        name: 'Miura',
+        artists: ['Skryptonite'],
+        durationMs: 104_140,
+    });
+
+    assert.equal(resolved, null);
+});
+
+test('the renamed fallback requires an overlapping artist', async () => {
+    const other = spotifyTrack('spotify:track:foreign', 'Miami 96', 121_919, [
+        'Someone Else',
+    ]);
+    const harness = makeHarness([
+        { status: 200, body: searchBody([other]) },
+        { status: 200, body: searchBody([other]) },
+    ]);
+
+    const resolved = await harness.service.resolveTrack({
+        id: '7',
+        name: 'Miami',
+        artists: ['BORIS REDWALL'],
+        durationMs: 121_910,
+    });
+
+    assert.equal(resolved, null);
+});
+
+test('the renamed fallback stays off when the source carries no duration', async () => {
+    const miami = spotifyTrack('spotify:track:miami96', 'Miami 96', 121_919, [
+        'BORIS REDWALL',
+    ]);
+    const harness = makeHarness([
+        { status: 200, body: searchBody([miami]) },
+        { status: 200, body: searchBody([miami]) },
+    ]);
+
+    const resolved = await harness.service.resolveTrack({
+        id: '8',
+        name: 'Miami',
+        artists: ['BORIS REDWALL'],
+    });
+
+    assert.equal(resolved, null);
+});

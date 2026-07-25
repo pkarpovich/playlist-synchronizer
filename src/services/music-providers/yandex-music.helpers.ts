@@ -9,6 +9,8 @@ export type YandexEntityId = string | number;
 export type YandexTrack = {
     id?: YandexEntityId;
     title?: string;
+    version?: string;
+    durationMs?: number;
     artists?: YandexArtist[];
 };
 
@@ -123,7 +125,13 @@ export function mapPlaylistTracks(json: YandexPlaylistResponse): Track[] {
             {
                 id: trackId,
                 name: track.title,
+                ...(typeof track.version === 'string' && track.version.trim()
+                    ? { version: track.version }
+                    : {}),
                 artists: artists.map(({ name }) => name),
+                ...(typeof track.durationMs === 'number'
+                    ? { durationMs: track.durationMs }
+                    : {}),
                 source: track,
             },
         ];
