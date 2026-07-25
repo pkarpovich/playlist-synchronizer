@@ -66,10 +66,6 @@ class StubMusicService extends BaseMusicService {
         return this.getUris(id);
     }
 
-    async searchTrackByName(): Promise<Track | null> {
-        return null;
-    }
-
     async addTracksToPlaylist(
         trackIds: string[],
         playlist: Playlist,
@@ -79,11 +75,9 @@ class StubMusicService extends BaseMusicService {
     }
 
     async removeTracksFromPlaylist(
-        tracks: Track[],
+        uris: string[],
         playlist: Playlist,
     ): Promise<void> {
-        const uris = tracks.map(({ id }) => id as string);
-
         this.removeCalls.push({ uris, playlist });
         this.setUris(
             playlist.id,
@@ -352,7 +346,9 @@ test('syncAll records failed when the services are not ready', async () => {
     assert.equal(lastRun.status, 'failed');
     assert.ok(
         lastRun.playlists.every(
-            (p) => p.status === 'failed' && p.error === 'services not ready',
+            (p) =>
+                p.status === 'failed' &&
+                p.error === 'services not ready: spotify',
         ),
     );
     assert.equal(target.addCalls.length, 0);
@@ -484,6 +480,27 @@ test('a source track that disappears removes exactly its recorded URI', async ()
 
     const lastRun = syncService.lastRun;
     assert.equal(lastRun?.playlists[0].removed, 1);
+});
+
+test('a URI another source track still maps to survives its provenance source leaving', async () => {
+    let sourceTracks: Track[] = [
+        { id: 'y-1', name: 'A', artists: ['Artist'] },
+        { id: 'y-2', name: 'A', artists: ['Artist'] },
+    ];
+    const { syncService, target, trackMapping } = makeHarness(
+        async () => sourceTracks,
+    );
+    trackMapping.mapping.set('y-2', 'spotify:track:1');
+
+    await syncService.syncAll(makeSingleConfig());
+    assert.deepEqual(target.getUris('sp-good'), ['spotify:track:1']);
+
+    sourceTracks = [{ id: 'y-2', name: 'A', artists: ['Artist'] }];
+    await syncService.syncAll(makeSingleConfig());
+
+    assert.equal(target.removeCalls.length, 0);
+    assert.deepEqual(target.getUris('sp-good'), ['spotify:track:1']);
+    assert.equal(syncService.lastRun?.playlists[0].removed, 0);
 });
 
 test('a target track with no provenance row is never removed', async () => {

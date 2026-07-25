@@ -75,18 +75,13 @@ export class YandexMusicService extends BaseMusicService {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    searchTrackByName(name: string, artists: string[]): Promise<Track> {
-        throw new Error('Method not implemented.');
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     addTracksToPlaylist(trackIds: string[], playlist: Playlist): Promise<void> {
         throw new Error('Method not implemented.');
     }
 
     async removeTracksFromPlaylist(
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        tracks: Track[],
+        uris: string[],
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         playlist: Playlist,
     ): Promise<void> {

@@ -89,6 +89,10 @@ function chunk<T>(items: T[], size: number): T[][] {
     return chunks;
 }
 
+function quoteless(value: string): string {
+    return value.replace(/"/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
 async function readJson(response: SpotifyFetchResponse): Promise<unknown> {
     try {
         return await response.json();
@@ -139,7 +143,7 @@ export class SpotifyService implements BaseMusicService {
         const [firstArtist = ''] = artists;
 
         const filtered = await this.search(
-            `track:"${name}" artist:"${firstArtist}"`,
+            `track:"${quoteless(name)}" artist:"${quoteless(firstArtist)}"`,
         );
         const byFilter = filtered.find((candidate) =>
             titleMatches(candidate.name, name),
@@ -163,11 +167,6 @@ export class SpotifyService implements BaseMusicService {
         return toResolvedTrack(byFreeText);
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    searchTrackByName(name: string, artists: string[]): Promise<Track | null> {
-        throw new Error('Method not implemented.');
-    }
-
     async addTracksToPlaylist(
         trackIds: string[],
         { id }: Playlist,
@@ -181,13 +180,9 @@ export class SpotifyService implements BaseMusicService {
     }
 
     async removeTracksFromPlaylist(
-        tracks: Track[],
+        uris: string[],
         { id }: Playlist,
     ): Promise<void> {
-        const uris = tracks
-            .map(({ id: uri }) => uri)
-            .filter((uri): uri is string => Boolean(uri));
-
         for (const batch of chunk(uris, MutationChunkSize)) {
             await this.request(`${ApiBaseUrl}/playlists/${id}/items`, {
                 method: 'DELETE',
@@ -209,7 +204,9 @@ export class SpotifyService implements BaseMusicService {
         while (url) {
             const page = (await this.request(url)) as PlaylistItemsPage | null;
             if (!page) {
-                break;
+                throw new Error(
+                    `Spotify returned an unreadable playlist page for ${url}`,
+                );
             }
 
             for (const entry of page.items ?? []) {

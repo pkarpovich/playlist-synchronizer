@@ -294,9 +294,19 @@ test('a transient failure leaves the next getAccessToken free to retry', async (
 
     await harness.authService.initialize();
     assert.equal(harness.authService.state, 'not-authorized');
+    assert.equal(harness.authService.isReady, true);
 
     assert.equal(await harness.authService.getAccessToken(), 'access-1');
     assert.equal(harness.authService.state, 'authorized');
+});
+
+test('a stored refresh token is required for readiness before the first success', async () => {
+    const harness = makeHarness([]);
+
+    await harness.authService.initialize();
+
+    assert.equal(harness.authService.state, 'not-authorized');
+    assert.equal(harness.authService.isReady, false);
 });
 
 test('an empty token with revoked_at needs reauthorization without any fetch', async () => {

@@ -96,7 +96,14 @@ export class SpotifyAuthService {
     }
 
     get isReady(): boolean {
-        return this.authState === 'authorized';
+        if (this.authState === 'needs-reauthorization') {
+            return false;
+        }
+
+        return (
+            this.authState === 'authorized' ||
+            Boolean(this.dbService.getAuth(AuthServiceName)?.refreshToken)
+        );
     }
 
     async initialize(): Promise<void> {

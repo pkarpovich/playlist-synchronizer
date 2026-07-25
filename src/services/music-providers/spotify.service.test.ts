@@ -41,6 +41,7 @@ interface StubbedResponse {
     status: number;
     body?: unknown;
     headers?: Record<string, string>;
+    unreadable?: boolean;
 }
 
 interface Harness {
@@ -93,11 +94,18 @@ function makeResponse({
     status,
     body,
     headers = {},
+    unreadable = false,
 }: StubbedResponse): SpotifyFetchResponse {
     return {
         ok: status >= 200 && status < 300,
         status,
-        json: async () => body,
+        json: async () => {
+            if (unreadable) {
+                throw new SyntaxError('Unexpected end of JSON input');
+            }
+
+            return body;
+        },
         headers: { get: (name: string) => headers[name] ?? null },
     };
 }
@@ -197,6 +205,18 @@ test('getPlaylistTrackUris keeps every occurrence and applies the same skips', a
         'spotify:track:1aaaaaaaaaaaaaaaaaaaaa',
         'spotify:track:3cccccccccccccccccccccc',
     ]);
+});
+
+test('a page body that cannot be parsed fails the read instead of truncating it', async () => {
+    const harness = makeHarness([
+        { status: 200, body: firstPage },
+        { status: 200, unreadable: true },
+    ]);
+
+    await assert.rejects(
+        () => harness.service.getPlaylistTrackUris(playlist),
+        /unreadable playlist page/,
+    );
 });
 
 test('reading a playlist issues only GET requests with a bearer token', async () => {
@@ -402,6 +422,24 @@ test('resolveTrack sends the field-filtered query with limit 10', async () => {
     );
 });
 
+test('a quoted title does not unbalance the field-filtered query', async () => {
+    const harness = makeHarness([
+        { status: 200, body: searchBody([]) },
+        { status: 200, body: searchBody([]) },
+    ]);
+
+    await harness.service.resolveTrack({
+        id: '1046',
+        name: '"Heroes"',
+        artists: ['David "Bowie"'],
+    });
+
+    assert.equal(
+        queryOf(harness.calls[0]),
+        'track:"Heroes" artist:"David Bowie"',
+    );
+});
+
 test('step one accepts a candidate whose artists do not overlap the source', async () => {
     const harness = makeHarness([
         { status: 200, body: searchBody([skryptonite]) },
@@ -598,9 +636,8 @@ test('adding 250 URIs sends three chunked POST requests of 100/100/50', async ()
 test('removing 250 URIs sends three chunked DELETE requests of 100/100/50', async () => {
     const harness = makeHarness(snapshot(3));
     const uris = makeUris(250);
-    const tracks = uris.map((uri) => ({ id: uri, name: uri, artists: [] }));
 
-    await harness.service.removeTracksFromPlaylist(tracks, playlist);
+    await harness.service.removeTracksFromPlaylist(uris, playlist);
 
     assert.equal(harness.calls.length, 3);
     assert.deepEqual(
@@ -618,7 +655,7 @@ test('the removal body uses the items key and not tracks', async () => {
     const harness = makeHarness(snapshot(1));
 
     await harness.service.removeTracksFromPlaylist(
-        [{ id: 'spotify:track:gone', name: 'Gone', artists: ['Someone'] }],
+        ['spotify:track:gone'],
         playlist,
     );
 

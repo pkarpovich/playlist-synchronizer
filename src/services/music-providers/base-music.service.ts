@@ -1,25 +1,14 @@
 import { Playlist, Track } from '../../entities.js';
 
-interface IBaseMusicService {
-    getPlaylistTracks(options: Playlist): Promise<Track[]>;
-    getPlaylistTrackUris(options: Playlist): Promise<string[]>;
-    searchTrackByName(name: string, artists: string[]): Promise<Track | null>;
-    addTracksToPlaylist(trackIds: string[], playlist: Playlist): Promise<void>;
-}
-
-export abstract class BaseMusicService implements IBaseMusicService {
+export abstract class BaseMusicService {
     abstract getPlaylistTracks(options: Playlist): Promise<Track[]>;
     abstract getPlaylistTrackUris(options: Playlist): Promise<string[]>;
-    abstract searchTrackByName(
-        name: string,
-        artists: string[],
-    ): Promise<Track | null>;
     abstract addTracksToPlaylist(
         trackIds: string[],
         playlist: Playlist,
     ): Promise<void>;
     abstract removeTracksFromPlaylist(
-        tracks: Track[],
+        uris: string[],
         playlist: Playlist,
     ): Promise<void>;
 

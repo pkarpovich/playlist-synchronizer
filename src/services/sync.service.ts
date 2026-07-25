@@ -52,10 +52,6 @@ function buildDesired(
     return desired;
 }
 
-function toUriTrack(uri: string): Track {
-    return { id: uri, name: uri, artists: [] };
-}
-
 export class SyncService {
     private _lastRun: LastRun | null = null;
 
@@ -125,9 +121,16 @@ export class SyncService {
     }
 
     isAllServicesReady(): boolean {
-        return [this.yandexMusicService, this.spotifyService].every(
-            (service) => service.isReady,
-        );
+        return this.notReadyServices().length === 0;
+    }
+
+    private notReadyServices(): string[] {
+        return [
+            { name: 'yandex', service: this.yandexMusicService },
+            { name: 'spotify', service: this.spotifyService },
+        ]
+            .filter(({ service }) => !service.isReady)
+            .map(({ name }) => name);
     }
 
     async sync(
@@ -145,16 +148,11 @@ export class SyncService {
             notFound: 0,
         };
 
-        const isAllServicesReady = this.isAllServicesReady();
-        if (!isAllServicesReady) {
-            this.logService.await(
-                `Skip sync. Wait for all services to be ready`,
-            );
-            return {
-                ...result,
-                status: 'failed',
-                error: 'services not ready',
-            };
+        const notReady = this.notReadyServices();
+        if (notReady.length) {
+            const reason = `services not ready: ${notReady.join(', ')}`;
+            this.logService.await(`Skip sync. ${reason}`);
+            return { ...result, status: 'failed', error: reason };
         }
 
         const sourcePlaylistTracks = await this.getPlaylistTracks(
@@ -244,13 +242,13 @@ export class SyncService {
 
         const currentSourceIds = new Set(sourceTracks.map(({ id }) => id));
         const staleUris = provenance
-            .filter(({ sourceId }) => !currentSourceIds.has(sourceId))
+            .filter(
+                ({ targetUri, sourceId }) =>
+                    !currentSourceIds.has(sourceId) && !desired.has(targetUri),
+            )
             .map(({ targetUri }) => targetUri);
         if (staleUris.length) {
-            await service.removeTracksFromPlaylist(
-                staleUris.map(toUriTrack),
-                target.metadata,
-            );
+            await service.removeTracksFromPlaylist(staleUris, target.metadata);
             this.dbService.deletePlaylistState(key, staleUris);
             this.logService.success(
                 `Removed ${staleUris.length} tracks from ${target.metadata.name} playlist`,
@@ -264,7 +262,7 @@ export class SyncService {
             .map(([targetUri]) => targetUri);
         if (duplicateUris.length) {
             await service.removeTracksFromPlaylist(
-                duplicateUris.map(toUriTrack),
+                duplicateUris,
                 target.metadata,
             );
             await service.addTracksToPlaylist(duplicateUris, target.metadata);

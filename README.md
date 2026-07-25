@@ -15,10 +15,14 @@ All state lives in a SQLite database at `<DB_PATH>/sync.db`, opened through the 
 `node:sqlite` module. It holds three collections:
 
 - the Spotify auth record (refresh token, revocation timestamp, pending OAuth state)
-- `track_map` - the source track to Spotify URI mapping, so a track is searched for once and never
-  again
+- `track_map` - the source track to Spotify URI mapping. A track that resolves is searched for once
+  and never again; a track that resolves to nothing is recorded as a miss and re-searched at most
+  once per 24 hours
 - `playlist_state` - what this app added to each target playlist, which is what removals are driven
-  from. Tracks the app did not add are never removed, so manual additions survive syncing.
+  from. On the first run every source-matched track already in the target is adopted into this
+  table, so the switchover removes nothing. Tracks with no row here are never removed, so unrelated
+  manual additions survive syncing. A URI present more than once is the one exception: it is deleted
+  and re-added once, because Spotify removes every occurrence of a URI at once.
 
 A refresh token left over from the previous lowdb store (`<DB_PATH>/db.json`) is imported once at
 startup; that file is left on disk untouched.
@@ -31,7 +35,8 @@ When the token expires, the token endpoint answers `400 invalid_grant`. The serv
 it discards the dead token, moves to the `needs-reauthorization` state, and keeps serving HTTP.
 
 - `GET /health` reports `spotify: { state }`, one of `not-authorized`, `authorized`,
-  `needs-reauthorization`, plus `mapping: { resolved, unresolved }`
+  `needs-reauthorization`, plus `mapping: { resolved, unresolved }`. This replaces the former
+  `spotifyReady: boolean`, which is gone.
 - the re-authorization link is printed **to the log only** (`docker logs playlist-synchronizer`) and
   never to `/health` or a notification channel, because it carries a single-use `state` value
 - opening that link and authorizing hits `SPOTIFY_REDIRECT_URI`, which verifies the `state`, stores
@@ -45,6 +50,7 @@ Copy `.env.example` to `.env` and fill in the values.
 | Variable | Required | Description |
 | --- | --- | --- |
 | `SPOTIFY_CLIENT_ID` / `SPOTIFY_CLIENT_SECRET` / `SPOTIFY_REDIRECT_URI` | yes | Spotify OAuth app credentials (sync target). |
+| `DB_PATH` | no | Directory holding `sync.db`. Created when missing, defaults to `./db`, and is the mounted volume (`/app/db`) in Docker. |
 | `YANDEX_API_PROXY` | recommended | SOCKS5 proxy URL (e.g. `socks5h://host:port`) egressing from a RU/CIS box. `api.music.yandex.net` is geo-blocked elsewhere, so leaving this empty fetches directly and fails outside RU/CIS. |
 | `YANDEX_API_BASE_URL` | no | Override the Yandex API base URL. Defaults to `https://api.music.yandex.net`. |
 | `NOTIFY_URL` | no | tg-relay `/send` endpoint (e.g. `https://relay.pkarpovich.space/send`). When set, each sync run that has something to report (tracks added, a failed playlist, or an empty source) posts a Markdown status card; runs with nothing notable stay silent. Leave empty to disable notifications. |
