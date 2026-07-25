@@ -531,17 +531,17 @@ so dropping `spotifyReady` is safe. Do not look for that configuration in this r
 - Modify: `src/services/music-providers/spotify-auth.service.ts`
 - Modify: `src/services/music-providers/spotify-auth.service.test.ts`
 
-- [ ] build the authorize URL per Technical Details with a random `state` from `node:crypto`, stored
+- [x] build the authorize URL per Technical Details with a random `state` from `node:crypto`, stored
       in `auth.pending_state`
-- [ ] implement `exchangeCode(code, state)`: compare against `pending_state`, reject without any
+- [x] implement `exchangeCode(code, state)`: compare against `pending_state`, reject without any
       network call on mismatch or absence; on success store the refresh token, clear `revoked_at` and
       `pending_state`, move to `authorized`
-- [ ] log the authorize URL when entering `not-authorized` or `needs-reauthorization`, formatted so it
+- [x] log the authorize URL when entering `not-authorized` or `needs-reauthorization`, formatted so it
       is visible in `docker logs`
-- [ ] write tests: two calls produce different `state` values; correct `state` exchanges and clears
+- [x] write tests: two calls produce different `state` values; correct `state` exchanges and clears
       `revoked_at`; wrong or missing `state` is rejected with zero fetch calls; a reused `state` is
       rejected
-- [ ] Gate G passes
+- [x] Gate G passes
 
 ### Task 5: Pure track matcher
 

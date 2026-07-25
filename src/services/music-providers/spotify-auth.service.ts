@@ -147,6 +147,30 @@ export class SpotifyAuthService {
         return this.refreshInFlight;
     }
 
+    async exchangeCode(code: string, state: string | null): Promise<void> {
+        const pendingState =
+            this.dbService.getAuth(AuthServiceName)?.pendingState ?? null;
+
+        if (!state || !pendingState || state !== pendingState) {
+            throw new Error(
+                'Spotify authorization state does not match a pending authorization request',
+            );
+        }
+
+        const token = await this.postToken(
+            new URLSearchParams({
+                grant_type: 'authorization_code',
+                code,
+                redirect_uri: this.configService.get('spotify.redirectUri'),
+            }),
+        );
+
+        this.acceptToken(token);
+        this.dbService.setRevokedAt(AuthServiceName, null);
+        this.dbService.setPendingState(AuthServiceName, null);
+        this.logService.success('Spotify authorization completed');
+    }
+
     buildAuthorizeUrl(): string {
         const state = randomBytes(StateBytes).toString('hex');
         this.dbService.setPendingState(AuthServiceName, state);

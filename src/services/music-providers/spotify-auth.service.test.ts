@@ -10,6 +10,7 @@ import { SpotifyNotAuthorizedError } from './spotify-errors.js';
 import { SpotifyFetchFn, SpotifyFetchResponse } from './spotify-types.js';
 
 const AuthServiceName = 'spotify';
+const AuthorizeUrl = 'https://accounts.spotify.com/authorize';
 
 interface LogEntry {
     level: string;
@@ -382,6 +383,123 @@ test('concurrent getAccessToken calls share a single refresh', async () => {
 
     assert.deepEqual(tokens, ['access-1', 'access-1', 'access-1']);
     assert.equal(harness.calls.length, 1);
+});
+
+function readState(authorizeUrl: string): string {
+    return new URL(authorizeUrl).searchParams.get('state') ?? '';
+}
+
+test('the authorize URL carries the documented parameters and a stored state', () => {
+    const harness = makeHarness([]);
+
+    const url = new URL(harness.authService.buildAuthorizeUrl());
+    const params = url.searchParams;
+
+    assert.equal(`${url.origin}${url.pathname}`, AuthorizeUrl);
+    assert.equal(params.get('client_id'), 'client-1');
+    assert.equal(params.get('response_type'), 'code');
+    assert.equal(
+        params.get('redirect_uri'),
+        'https://sync.example/spotify/callback',
+    );
+    assert.equal(
+        params.get('scope'),
+        'playlist-read-private playlist-modify-private playlist-modify-public',
+    );
+    assert.equal(
+        harness.dbService.getAuth(AuthServiceName)?.pendingState,
+        params.get('state'),
+    );
+    assert.equal(harness.calls.length, 0);
+});
+
+test('two authorize URLs carry different state values', () => {
+    const harness = makeHarness([]);
+
+    const first = readState(harness.authService.buildAuthorizeUrl());
+    const second = readState(harness.authService.buildAuthorizeUrl());
+
+    assert.notEqual(first, second);
+    assert.ok(first.length > 0);
+    assert.equal(
+        harness.dbService.getAuth(AuthServiceName)?.pendingState,
+        second,
+    );
+});
+
+test('the matching state exchanges the code and clears the revoked marker', async () => {
+    const harness = makeHarness([accessTokenResponse('access-1', 'refresh-2')]);
+    harness.dbService.setRevokedAt(AuthServiceName, 1700000000000);
+
+    const state = readState(harness.authService.buildAuthorizeUrl());
+    await harness.authService.exchangeCode('code-1', state);
+
+    assert.equal(harness.authService.state, 'authorized');
+    assert.equal(harness.authService.isReady, true);
+
+    const record = harness.dbService.getAuth(AuthServiceName);
+    assert.equal(record?.refreshToken, 'refresh-2');
+    assert.equal(record?.revokedAt, null);
+    assert.equal(record?.pendingState, null);
+
+    const { init } = harness.calls[0];
+    assert.equal(init?.method, 'POST');
+    assert.equal(
+        init?.body,
+        'grant_type=authorization_code&code=code-1&redirect_uri=https%3A%2F%2Fsync.example%2Fspotify%2Fcallback',
+    );
+    assert.equal(await harness.authService.getAccessToken(), 'access-1');
+});
+
+test('a mismatched state is rejected without any fetch call', async () => {
+    const harness = makeHarness([]);
+    harness.authService.buildAuthorizeUrl();
+
+    await assert.rejects(() =>
+        harness.authService.exchangeCode('code-1', 'not-the-state'),
+    );
+
+    assert.equal(harness.calls.length, 0);
+    assert.equal(harness.authService.state, 'not-authorized');
+});
+
+test('a missing state is rejected without any fetch call', async () => {
+    const harness = makeHarness([]);
+    harness.authService.buildAuthorizeUrl();
+
+    await assert.rejects(() =>
+        harness.authService.exchangeCode('code-1', null),
+    );
+
+    assert.equal(harness.calls.length, 0);
+    assert.equal(harness.authService.state, 'not-authorized');
+});
+
+test('an exchange without a pending state is rejected without any fetch call', async () => {
+    const harness = makeHarness([]);
+
+    await assert.rejects(() =>
+        harness.authService.exchangeCode('code-1', 'some-state'),
+    );
+
+    assert.equal(harness.calls.length, 0);
+});
+
+test('a reused state is rejected after the first exchange consumed it', async () => {
+    const harness = makeHarness([accessTokenResponse('access-1', 'refresh-2')]);
+
+    const state = readState(harness.authService.buildAuthorizeUrl());
+    await harness.authService.exchangeCode('code-1', state);
+
+    await assert.rejects(() =>
+        harness.authService.exchangeCode('code-2', state),
+    );
+
+    assert.equal(harness.calls.length, 1);
+    assert.equal(
+        harness.dbService.getAuth(AuthServiceName)?.refreshToken,
+        'refresh-2',
+    );
 });
 
 test('a success without an access token is not retried', async () => {
