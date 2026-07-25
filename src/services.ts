@@ -1,6 +1,7 @@
 export * from './services/config.service.js';
 export * from './services/music-providers/yandex-music.service.js';
 export * from './services/music-providers/spotify.service.js';
+export * from './services/music-providers/spotify-auth.service.js';
 export * from './services/music-providers/spotify-errors.js';
 export * from './services/music-providers/spotify-types.js';
 export * from './services/db.service.js';

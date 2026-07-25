@@ -11,6 +11,7 @@ import {
     ConfigService,
     CronService,
     DbService,
+    DelayFn,
     FetchFn,
     HealthService,
     HttpService,
@@ -37,6 +38,7 @@ interface Container {
     cronService: CronService;
     fetchFn: FetchFn;
     now: () => number;
+    delayFn: DelayFn;
     yandexMusicService: YandexMusicService;
     spotifyService: SpotifyService;
     healthService: HealthService;
@@ -73,6 +75,9 @@ export async function initContainer(): Promise<AwilixContainer<Container>> {
         cronService: asClass(CronService).singleton(),
         fetchFn: asValue<FetchFn>(globalThis.fetch),
         now: asValue<() => number>(() => Date.now()),
+        delayFn: asValue<DelayFn>(
+            (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+        ),
         yandexMusicService: asClass(YandexMusicService).singleton(),
         spotifyService: asClass(SpotifyService).singleton(),
         healthService: asClass(HealthService).singleton(),

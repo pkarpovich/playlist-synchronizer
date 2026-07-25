@@ -508,22 +508,22 @@ so dropping `spotifyReady` is safe. Do not look for that configuration in this r
 - Create: `src/services/music-providers/spotify-auth.service.test.ts`
 - Modify: `src/container.ts`, `src/services.ts`
 
-- [ ] create `SpotifyAuthService` with dependencies `dbService`, `configService`, `logService`,
+- [x] create `SpotifyAuthService` with dependencies `dbService`, `configService`, `logService`,
       `fetchFn`, `now`, `delayFn`; register `delayFn` in `src/container.ts` as
       `asValue((ms) => new Promise((r) => setTimeout(r, ms)))` and add it to the `Container` interface
-- [ ] implement `initialize(): Promise<void>` that **never throws**, plus `state` and `isReady`
+- [x] implement `initialize(): Promise<void>` that **never throws**, plus `state` and `isReady`
       getters, following the state transition list in Technical Details
-- [ ] implement the token endpoint call and `getAccessToken()` with the proactive 60-second margin,
+- [x] implement the token endpoint call and `getAccessToken()` with the proactive 60-second margin,
       single-flight refresh, and the backoff parameters from Technical Details
-- [ ] implement `invalid_grant` handling (discard, write `revoked_at`, log the authorize URL, no
+- [x] implement `invalid_grant` handling (discard, write `revoked_at`, log the authorize URL, no
       retries) and `config-error` handling (leave the token untouched)
-- [ ] persist a rotated `refresh_token` before using the new access token
-- [ ] write tests with a stubbed fetch and a recording `delayFn`: successful refresh; rotation
+- [x] persist a rotated `refresh_token` before using the new access token
+- [x] write tests with a stubbed fetch and a recording `delayFn`: successful refresh; rotation
       persisted before use; `invalid_grant` discards and performs zero retries; `invalid_client`
       leaves the token; `429` and `5xx` retry with the exact delay sequence 500/1000/2000; startup
       with an empty token plus `revoked_at` yields `needs-reauthorization` with **zero** fetch calls;
       transient failure at startup leaves state `not-authorized` with no `revoked_at`
-- [ ] Gate G passes
+- [x] Gate G passes
 
 ### Task 4: SpotifyAuthService - authorize URL and code exchange
 
