@@ -109,17 +109,6 @@ export class SpotifyService implements BaseMusicService {
         return this.spotifyAuthService.isReady;
     }
 
-    async initializeClient(): Promise<void> {
-        await this.spotifyAuthService.initialize();
-    }
-
-    async authorizationCodeGrant(
-        code: string,
-        state: string | null = null,
-    ): Promise<void> {
-        await this.spotifyAuthService.exchangeCode(code, state);
-    }
-
     async getPlaylistTracks({ id }: Playlist): Promise<Track[]> {
         const entries = await this.readPlaylistEntries(id);
         const seen = new Set<string>();

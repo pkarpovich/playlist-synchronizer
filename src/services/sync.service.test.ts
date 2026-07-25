@@ -4,6 +4,11 @@ import { test } from 'node:test';
 import { IConfig, SyncConfig } from '../config.js';
 import { LastRun, MusicServiceTypes, Playlist, Track } from '../entities.js';
 import { BaseMusicService } from './music-providers/base-music.service.js';
+import {
+    DelayFn,
+    SpotifyAuthService,
+} from './music-providers/spotify-auth.service.js';
+import { SpotifyFetchFn } from './music-providers/spotify-types.js';
 import { SpotifyService } from './music-providers/spotify.service.js';
 import { YandexMusicService } from './music-providers/yandex-music.service.js';
 import { ConfigService } from './config.service.js';
@@ -541,6 +546,73 @@ test('adoption inserts provenance for already-present desired URIs', async () =>
 
     const lastRun = syncService.lastRun;
     assert.equal(lastRun?.playlists[0].adopted, 1);
+});
+
+test('a revoked Spotify authorization records a failed run without throwing', async () => {
+    const logs: LogEntry[] = [];
+    const calls: string[] = [];
+    const dbService = new DbService(
+        new ConfigService<IConfig>({ dbPath: ':memory:' } as IConfig),
+        makeLogStub(logs),
+    );
+    dbService.setRevokedAt('spotify', StartTime);
+
+    const fetchFn: SpotifyFetchFn = async (url) => {
+        calls.push(url);
+        throw new Error('no Spotify request was expected');
+    };
+    const delays: number[] = [];
+    const delayFn: DelayFn = async (ms) => {
+        delays.push(ms);
+    };
+
+    const spotifyAuthService = new SpotifyAuthService(
+        dbService,
+        new ConfigService<IConfig>({
+            spotify: {
+                clientId: 'client-1',
+                clientSecret: 'secret-1',
+                redirectUri: 'https://sync.example/spotify/callback',
+            },
+        } as IConfig),
+        makeLogStub(logs),
+        fetchFn,
+        () => StartTime,
+        delayFn,
+    );
+
+    await spotifyAuthService.initialize();
+    assert.equal(spotifyAuthService.state, 'needs-reauthorization');
+
+    const source = new StubMusicService(async () => [
+        { id: 'y-1', name: 'Song', artists: ['Artist'] },
+    ]);
+    const trackMapping = new TrackMappingStub();
+    const syncService = new SyncService(
+        makeLogStub(logs),
+        source as unknown as YandexMusicService,
+        new SpotifyService(
+            spotifyAuthService,
+            makeLogStub(logs),
+            fetchFn,
+            delayFn,
+        ),
+        new NotifierStub(),
+        dbService,
+        trackMapping as unknown as TrackMappingService,
+        () => StartTime,
+    );
+
+    await assert.doesNotReject(() => syncService.syncAll(makeSingleConfig()));
+
+    const lastRun = syncService.lastRun;
+    assert.ok(lastRun);
+    assert.equal(lastRun.status, 'failed');
+    assert.equal(lastRun.playlists[0].status, 'failed');
+    assert.match(lastRun.playlists[0].error ?? '', /not ready/);
+    assert.equal(calls.length, 0);
+    assert.deepEqual(delays, []);
+    assert.equal(trackMapping.resolveCalls, 0);
 });
 
 test('an added track is recorded with its source id and stays recorded', async () => {

@@ -724,17 +724,17 @@ so dropping `spotifyReady` is safe. Do not look for that configuration in this r
 - Modify: `src/index.ts`, `src/container.ts`, `src/services.ts`
 - Modify: `src/services/music-providers/spotify.service.ts`
 
-- [ ] implement this exact startup order in `src/index.ts`: build the container; call
+- [x] implement this exact startup order in `src/index.ts`: build the container; call
       `httpService.start()`; load the sync config inside a try/catch that logs and calls
       `process.exit(1)` on failure; `await spotifyAuthService.initialize()` which never throws and
       never exits; register the cron job; call `cleanup(...)`
-- [ ] remove the delegating shims added in Task 6 from `SpotifyService`, keeping only the derived
+- [x] remove the delegating shims added in Task 6 from `SpotifyService`, keeping only the derived
       `get isReady()`
-- [ ] register `trackMappingService`; confirm every constructor parameter name matches its
+- [x] register `trackMappingService`; confirm every constructor parameter name matches its
       registration
-- [ ] write a test that `SyncService` records a `failed` run with a legible reason when the auth state
+- [x] write a test that `SyncService` records a `failed` run with a legible reason when the auth state
       is `needs-reauthorization`, without throwing
-- [ ] Gate G passes
+- [x] Gate G passes
 
 ### Task 14: Process liveness
 

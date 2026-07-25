@@ -54,23 +54,11 @@ interface Harness {
 class AuthServiceStub {
     refreshCalls = 0;
 
-    initializeCalls = 0;
-
-    exchangeCalls: { code: string; state: string | null }[] = [];
-
     isReady = false;
 
     token = 'access-1';
 
     failure: Error | null = null;
-
-    async initialize(): Promise<void> {
-        this.initializeCalls += 1;
-    }
-
-    async exchangeCode(code: string, state: string | null): Promise<void> {
-        this.exchangeCalls.push({ code, state });
-    }
 
     async getAccessToken(): Promise<string> {
         if (this.failure) {
@@ -665,17 +653,4 @@ test('a chunk that fails with a 5xx retries and does not skip the rest', async (
         harness.calls.map((call) => (bodyOf(call).uris as string[]).length),
         [100, 100, 100, 50],
     );
-});
-
-test('the interim shims delegate to the auth service', async () => {
-    const harness = makeHarness([]);
-
-    await harness.service.initializeClient();
-    await harness.service.authorizationCodeGrant('code-1', 'state-1');
-
-    assert.equal(harness.auth.initializeCalls, 1);
-    assert.deepEqual(harness.auth.exchangeCalls, [
-        { code: 'code-1', state: 'state-1' },
-    ]);
-    assert.equal(harness.calls.length, 0);
 });
