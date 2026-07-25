@@ -3,4 +3,4 @@ node = "24.16"
 pnpm = "10"
 
 [tasks.deploy]
-run = 'spot -t deploy -v -i ./inventory.yml -k "${SSH_KEY:-$HOME/.ssh/id_ed25519}"'
+run = 'spot -t deploy -v -i ./inventory.yml -k "${SSH_KEY:-$HOME/.ssh/keys/lasso}"'

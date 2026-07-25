@@ -27,9 +27,12 @@ SSH_KEY=/path/to/other/key mise run deploy    # override the key
 
 On the host, `~/playlist-synchronizer/.env` must carry `DOMAIN`, `HTTP_PORT`, the three `SPOTIFY_*`
 values, `JOB_CRON_PATTERN`, and - for this deployment - `YANDEX_API_PROXY`, `NOTIFY_URL` and
-`NOTIFY_SECRET`. `sync-config.json` is per-host: mark it with
-`git update-index --skip-worktree sync-config.json` in the checkout so a local playlist
-configuration survives `git pull`.
+`NOTIFY_SECRET`.
+
+`sync-config.json` is per-host and is not tracked: copy `sync-config.example.json` next to it and
+edit. Keeping it out of git is what lets `git pull` run unattended - `git update-index
+--skip-worktree` is not enough, because a merge that touches the file still refuses to overwrite
+local changes.
 
 ## State
 All state lives in a SQLite database at `<DB_PATH>/sync.db`, opened through the built-in
@@ -112,7 +115,7 @@ Copy `.env.example` to `.env` and fill in the values.
 | `NOTIFY_SECRET` | no | `X-Secret` header value sent with the notification POST. Only used when `NOTIFY_URL` is set. |
 
 ## Config example
-`sync-config.json`
+`sync-config.json`, kept out of git; `sync-config.example.json` holds the same shape
 ```json
 {
   "playlists": [

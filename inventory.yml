@@ -1,3 +1,4 @@
 groups:
   deploy:
     - host: lasso
+      user: root

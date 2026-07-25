@@ -265,3 +265,6 @@ Temporary Items
 *.icloud
 
 # End of https://www.toptal.com/developers/gitignore/api/webstorm+all,node
+
+# Per-host playlist configuration; copy sync-config.example.json and edit.
+sync-config.json
