@@ -101,6 +101,7 @@ test('an unmapped track is searched once and stored', async () => {
             targetType: MusicServiceTypes.SPOTIFY,
         }),
         {
+            sourceName: 'Song',
             targetUri: 'spotify:track:1',
             isrc: 'ISRC1',
             durationMs: 1000,
@@ -155,6 +156,7 @@ test('a negative row within 24 hours issues zero searches', async () => {
             targetType: MusicServiceTypes.SPOTIFY,
         }),
         {
+            sourceName: 'Missing',
             targetUri: null,
             isrc: null,
             durationMs: null,
@@ -182,6 +184,7 @@ test('a negative row older than 24 hours is retried', async () => {
             targetType: MusicServiceTypes.SPOTIFY,
         }),
         {
+            sourceName: 'Missing',
             targetUri: null,
             isrc: null,
             durationMs: null,
@@ -217,6 +220,7 @@ test('a later successful retry clears the negative state', async () => {
             targetType: MusicServiceTypes.SPOTIFY,
         }),
         {
+            sourceName: 'Missing',
             targetUri: 'spotify:track:2',
             isrc: 'ISRC2',
             durationMs: 2000,

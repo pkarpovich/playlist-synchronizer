@@ -29,6 +29,28 @@ All state lives in a SQLite database at `<DB_PATH>/sync.db`, opened through the 
 A refresh token left over from the previous lowdb store (`<DB_PATH>/db.json`) is imported once at
 startup; that file is left on disk untouched.
 
+## Correcting a mapping
+Because a resolved track is searched for exactly once, a wrong match would otherwise stay wrong
+forever. `cli.js` edits `track_map` directly, against the same database the service uses:
+
+```sh
+docker exec playlist-synchronizer node /app/cli.js list
+docker exec playlist-synchronizer node /app/cli.js list --unresolved
+docker exec playlist-synchronizer node /app/cli.js map 145513389 spotify:track:3fvTuOnHeSB2OGXNqsmVnd
+docker exec playlist-synchronizer node /app/cli.js unmap 145513389
+```
+
+`list` prints the source id, the stored title and the target URI, so a wrong row can be found
+without reading the source playlist. The source id is also included in the "not found" log line.
+
+`map` pins a source track to a Spotify URI; it accepts only `spotify:track:...`, keeps the stored
+title, and clears the ISRC and duration since those described the previous target. `unmap` drops
+the row so the next run resolves it again.
+
+Nothing else needs to happen: the running service reads `track_map` on every sync, so the next
+scheduled run picks the change up. The database file is on the `auth-store` volume, so edits
+survive restarts but not a volume wipe.
+
 ## Spotify authorization
 Spotify's refresh token has a **180-day lifetime**, so re-authorization is a recurring, expected
 event rather than an outage.

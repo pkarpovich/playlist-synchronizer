@@ -60,9 +60,9 @@ export class TrackMappingService {
         const triedAt = this.now();
 
         if (!resolved) {
-            this.dbService.setTrackMiss(key, triedAt);
+            this.dbService.setTrackMiss(key, track.name, triedAt);
             this.logService.warn(
-                `Track ${track.name} by ${track.artists.join(', ')} not found in ${TargetType}`,
+                `Track ${track.name} by ${track.artists.join(', ')} (${sourceType} ${sourceId}) not found in ${TargetType}`,
             );
             return null;
         }
@@ -70,6 +70,7 @@ export class TrackMappingService {
         this.dbService.setTrackResolution(
             key,
             {
+                sourceName: track.name,
                 targetUri: resolved.uri,
                 isrc: resolved.isrc,
                 durationMs: resolved.durationMs,

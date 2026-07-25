@@ -22,6 +22,7 @@ const Schema = `
     CREATE TABLE IF NOT EXISTS track_map (
         source_type TEXT,
         source_id TEXT,
+        source_name TEXT,
         target_type TEXT,
         target_uri TEXT,
         isrc TEXT,
@@ -45,6 +46,7 @@ const Schema = `
 `;
 
 const PlaylistStateSourceColumn = 'source_playlist_id';
+const TrackMapNameColumn = 'source_name';
 
 type AuthColumn = 'refresh_token' | 'revoked_at' | 'pending_state';
 
@@ -62,6 +64,7 @@ export type TrackMapKey = {
 };
 
 export type TrackMapRecord = {
+    sourceName: string | null;
     targetUri: string | null;
     isrc: string | null;
     durationMs: number | null;
@@ -71,10 +74,13 @@ export type TrackMapRecord = {
 };
 
 export type TrackMapResolution = {
+    sourceName: string | null;
     targetUri: string;
     isrc: string | null;
     durationMs: number | null;
 };
+
+export type TrackMapEntry = TrackMapKey & TrackMapRecord;
 
 export type TrackMapCounts = {
     resolved: number;
@@ -145,6 +151,16 @@ function dropUnscopedPlaylistState(db: DatabaseSync): void {
     db.exec('DROP TABLE playlist_state');
 }
 
+function addTrackMapSourceName(db: DatabaseSync): void {
+    const columns = db.prepare('PRAGMA table_info(track_map)').all();
+
+    if (columns.some(({ name }) => name === TrackMapNameColumn)) {
+        return;
+    }
+
+    db.exec(`ALTER TABLE track_map ADD COLUMN ${TrackMapNameColumn} TEXT`);
+}
+
 function readLegacyFile(filePath: string): string | null {
     try {
         return readFileSync(filePath, 'utf8');
@@ -168,6 +184,7 @@ export class DbService {
         this.db = new DatabaseSync(resolveDbLocation(dbPath));
         dropUnscopedPlaylistState(this.db);
         this.db.exec(Schema);
+        addTrackMapSourceName(this.db);
         this.migrateLegacyAuth();
     }
 
@@ -214,7 +231,7 @@ export class DbService {
     }: TrackMapKey): TrackMapRecord | null {
         const row = this.db
             .prepare(
-                'SELECT target_uri, isrc, duration_ms, resolved_at, last_tried_at, attempts FROM track_map WHERE source_type = ? AND source_id = ? AND target_type = ?',
+                'SELECT source_name, target_uri, isrc, duration_ms, resolved_at, last_tried_at, attempts FROM track_map WHERE source_type = ? AND source_id = ? AND target_type = ?',
             )
             .get(sourceType, sourceId, targetType);
 
@@ -223,6 +240,7 @@ export class DbService {
         }
 
         return {
+            sourceName: toStringOrNull(row.source_name),
             targetUri: toStringOrNull(row.target_uri),
             isrc: toStringOrNull(row.isrc),
             durationMs: toNumberOrNull(row.duration_ms),
@@ -234,14 +252,15 @@ export class DbService {
 
     setTrackResolution(
         { sourceType, sourceId, targetType }: TrackMapKey,
-        { targetUri, isrc, durationMs }: TrackMapResolution,
+        { sourceName, targetUri, isrc, durationMs }: TrackMapResolution,
         triedAt: number,
     ): void {
         this.db
             .prepare(
-                `INSERT INTO track_map (source_type, source_id, target_type, target_uri, isrc, duration_ms, resolved_at, last_tried_at, attempts)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
+                `INSERT INTO track_map (source_type, source_id, source_name, target_type, target_uri, isrc, duration_ms, resolved_at, last_tried_at, attempts)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
                  ON CONFLICT(source_type, source_id, target_type) DO UPDATE SET
+                     source_name = excluded.source_name,
                      target_uri = excluded.target_uri,
                      isrc = excluded.isrc,
                      duration_ms = excluded.duration_ms,
@@ -252,6 +271,7 @@ export class DbService {
             .run(
                 sourceType,
                 sourceId,
+                sourceName,
                 targetType,
                 targetUri,
                 isrc,
@@ -263,13 +283,15 @@ export class DbService {
 
     setTrackMiss(
         { sourceType, sourceId, targetType }: TrackMapKey,
+        sourceName: string | null,
         triedAt: number,
     ): void {
         this.db
             .prepare(
-                `INSERT INTO track_map (source_type, source_id, target_type, target_uri, isrc, duration_ms, resolved_at, last_tried_at, attempts)
-                 VALUES (?, ?, ?, NULL, NULL, NULL, NULL, ?, 1)
+                `INSERT INTO track_map (source_type, source_id, source_name, target_type, target_uri, isrc, duration_ms, resolved_at, last_tried_at, attempts)
+                 VALUES (?, ?, ?, ?, NULL, NULL, NULL, NULL, ?, 1)
                  ON CONFLICT(source_type, source_id, target_type) DO UPDATE SET
+                     source_name = excluded.source_name,
                      target_uri = NULL,
                      isrc = NULL,
                      duration_ms = NULL,
@@ -277,7 +299,38 @@ export class DbService {
                      last_tried_at = excluded.last_tried_at,
                      attempts = track_map.attempts + 1`,
             )
-            .run(sourceType, sourceId, targetType, triedAt);
+            .run(sourceType, sourceId, sourceName, targetType, triedAt);
+    }
+
+    listTrackMap(): TrackMapEntry[] {
+        const rows = this.db
+            .prepare(
+                'SELECT source_type, source_id, source_name, target_type, target_uri, isrc, duration_ms, resolved_at, last_tried_at, attempts FROM track_map ORDER BY source_name, source_id',
+            )
+            .all();
+
+        return rows.map((row) => ({
+            sourceType: String(row.source_type),
+            sourceId: String(row.source_id),
+            sourceName: toStringOrNull(row.source_name),
+            targetType: String(row.target_type),
+            targetUri: toStringOrNull(row.target_uri),
+            isrc: toStringOrNull(row.isrc),
+            durationMs: toNumberOrNull(row.duration_ms),
+            resolvedAt: toNumberOrNull(row.resolved_at),
+            lastTriedAt: toNumberOrNull(row.last_tried_at),
+            attempts: Number(row.attempts ?? 0),
+        }));
+    }
+
+    deleteTrackMap({ sourceType, sourceId, targetType }: TrackMapKey): boolean {
+        const { changes } = this.db
+            .prepare(
+                'DELETE FROM track_map WHERE source_type = ? AND source_id = ? AND target_type = ?',
+            )
+            .run(sourceType, sourceId, targetType);
+
+        return Number(changes) > 0;
     }
 
     countTrackMap(): TrackMapCounts {

@@ -467,3 +467,96 @@ test('parseLegacyRefreshToken rejects everything but a non-empty token', () => {
         null,
     );
 });
+
+const trackKey = {
+    sourceType: 'yandex',
+    sourceId: '145513389',
+    targetType: 'spotify',
+};
+
+test('listTrackMap returns both resolved and unresolved rows', () => {
+    const dbService = makeDbService(':memory:');
+
+    dbService.setTrackMiss(
+        { ...trackKey, sourceId: 'missing-1' },
+        'Absent Song',
+        1000,
+    );
+    dbService.setTrackResolution(
+        trackKey,
+        {
+            sourceName: 'Быть богатым',
+            targetUri: 'spotify:track:abc',
+            isrc: 'RUAGW2511068',
+            durationMs: 176862,
+        },
+        2000,
+    );
+
+    const entries = dbService.listTrackMap();
+    const byId = new Map(entries.map((entry) => [entry.sourceId, entry]));
+
+    assert.equal(entries.length, 2);
+    assert.equal(byId.get('145513389')?.sourceName, 'Быть богатым');
+    assert.equal(byId.get('145513389')?.targetUri, 'spotify:track:abc');
+    assert.equal(byId.get('145513389')?.isrc, 'RUAGW2511068');
+    assert.equal(byId.get('missing-1')?.targetUri, null);
+    assert.equal(byId.get('missing-1')?.sourceName, 'Absent Song');
+});
+
+test('listTrackMap is empty on a fresh database', () => {
+    assert.deepEqual(makeDbService(':memory:').listTrackMap(), []);
+});
+
+test('deleteTrackMap removes a row and reports whether it existed', () => {
+    const dbService = makeDbService(':memory:');
+
+    dbService.setTrackResolution(
+        trackKey,
+        {
+            sourceName: 'Song',
+            targetUri: 'spotify:track:abc',
+            isrc: null,
+            durationMs: null,
+        },
+        1000,
+    );
+
+    assert.equal(dbService.deleteTrackMap(trackKey), true);
+    assert.equal(dbService.getTrackMap(trackKey), null);
+    assert.equal(dbService.deleteTrackMap(trackKey), false);
+});
+
+test('an existing track_map without source_name gains the column', (t) => {
+    const dir = makeTempDir(t);
+    const dbFilePath = join(dir, DbFile);
+    const legacy = new DatabaseSync(dbFilePath);
+
+    legacy.exec(`
+        CREATE TABLE track_map (
+            source_type TEXT,
+            source_id TEXT,
+            target_type TEXT,
+            target_uri TEXT,
+            isrc TEXT,
+            duration_ms INTEGER,
+            resolved_at INTEGER,
+            last_tried_at INTEGER,
+            attempts INTEGER NOT NULL DEFAULT 0,
+            PRIMARY KEY (source_type, source_id, target_type)
+        );
+    `);
+    legacy
+        .prepare(
+            'INSERT INTO track_map (source_type, source_id, target_type, target_uri, attempts) VALUES (?, ?, ?, ?, 1)',
+        )
+        .run('yandex', '145513389', 'spotify', 'spotify:track:abc');
+    legacy.close();
+
+    const dbService = makeDbService(dir);
+    const [entry] = dbService.listTrackMap();
+
+    assert.equal(entry.sourceId, '145513389');
+    assert.equal(entry.targetUri, 'spotify:track:abc');
+    assert.equal(entry.sourceName, null);
+});
