@@ -490,16 +490,16 @@ so dropping `spotifyReady` is safe. Do not look for that configuration in this r
 - Create: `src/services/music-providers/spotify-types.ts`
 - Modify: `src/services.ts`
 
-- [ ] declare `SpotifyTrack`, `SpotifyFetchResponse`, and `SpotifyFetchFn` in `spotify-types.ts`
+- [x] declare `SpotifyTrack`, `SpotifyFetchResponse`, and `SpotifyFetchFn` in `spotify-types.ts`
       exactly as written in Technical Details
-- [ ] implement `SpotifyHttpError`, `SpotifyNotAuthorizedError`, `classifyTokenResponse`,
+- [x] implement `SpotifyHttpError`, `SpotifyNotAuthorizedError`, `classifyTokenResponse`,
       `classifyApiStatus`, and `parseRetryAfter` with the signatures and semantics from Technical
       Details; the classifiers are pure and perform no side effects
-- [ ] write tests covering every classification branch: `invalid_grant`, `invalid_client`, another
+- [x] write tests covering every classification branch: `invalid_grant`, `invalid_client`, another
       `400`, `429`, `500`, and `401`/`403`/`404`/`429`/`5xx` on the API side
-- [ ] write tests for `parseRetryAfter`: `'2'` -> 2000, `'999'` -> 60000, `'abc'` -> 1000, `null` ->
+- [x] write tests for `parseRetryAfter`: `'2'` -> 2000, `'999'` -> 60000, `'abc'` -> 1000, `null` ->
       1000, `'-5'` -> 1000
-- [ ] Gate G passes
+- [x] Gate G passes
 
 ### Task 3: SpotifyAuthService - token lifecycle
 
