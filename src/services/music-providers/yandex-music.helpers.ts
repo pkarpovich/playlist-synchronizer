@@ -61,7 +61,9 @@ export function mapPlaylistTracks(json: YandexPlaylistResponse): Track[] {
             const entryId = item.id;
 
             if (typeof entryId !== 'string' || entryId.trim().length === 0) {
-                return [];
+                throw new Error(
+                    'Unexpected Yandex playlist response: an unavailable entry is missing a non-empty "id"',
+                );
             }
 
             return [{ id: entryId, name: '', artists: [], unavailable: true }];

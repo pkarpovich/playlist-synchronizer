@@ -359,7 +359,7 @@ test('a 429 without a usable Retry-After falls back to one second', async () => 
     assert.deepEqual(harness.delays, [1000]);
 });
 
-test('a 5xx retries with the 500/1000/2000 delay sequence and then throws', async () => {
+test('a 5xx retries with the 500/1000 delay sequence and then throws without a trailing sleep', async () => {
     const harness = makeHarness([
         { status: 500, body: {} },
         { status: 502, body: {} },
@@ -372,7 +372,7 @@ test('a 5xx retries with the 500/1000/2000 delay sequence and then throws', asyn
     );
 
     assert.equal(harness.calls.length, 3);
-    assert.deepEqual(harness.delays, [500, 1000, 2000]);
+    assert.deepEqual(harness.delays, [500, 1000]);
 });
 
 test('a thrown fetch error is retried with the backoff sequence', async () => {

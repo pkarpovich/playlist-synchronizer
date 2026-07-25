@@ -11,6 +11,10 @@ function readQueryParam(value: unknown): string | null {
     return typeof value === 'string' && value ? value : null;
 }
 
+function sanitizeForLog(value: string): string {
+    return value.replace(/[^\w-]/g, '').slice(0, 64);
+}
+
 export class SpotifyController implements BaseController {
     constructor(
         private readonly spotifyAuthService: SpotifyAuthService,
@@ -34,7 +38,7 @@ export class SpotifyController implements BaseController {
 
         if (authError) {
             this.logService.error(
-                `Spotify authorization was denied: ${authError}`,
+                `Spotify authorization was denied: ${sanitizeForLog(authError)}`,
             );
             res.status(400).send('Spotify authorization was denied');
             return;

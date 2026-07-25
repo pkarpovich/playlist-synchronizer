@@ -34,12 +34,12 @@ function makeCronService(): { service: CronService; triggered: number[] } {
     return { service, triggered };
 }
 
-function makeLogService(): LogService {
+function makeLogService(errors: string[] = []): LogService {
     return {
         info: () => undefined,
         warn: () => undefined,
         success: () => undefined,
-        error: () => undefined,
+        error: (message: string) => errors.push(message),
     } as unknown as LogService;
 }
 
@@ -138,6 +138,50 @@ test('authCallback responds 400 when Spotify reports access_denied', async () =>
     assert.equal(result.statusCode, 400);
     assert.equal(auth.calls.length, 0);
     assert.equal(cron.triggered.length, 0);
+});
+
+test('authCallback strips newlines and control characters from the logged error', async () => {
+    const auth = makeAuthService(() => undefined);
+    const cron = makeCronService();
+    const errors: string[] = [];
+    const controller = new SpotifyController(
+        auth.service,
+        cron.service,
+        makeLogService(errors),
+    );
+    const result = makeResponse();
+
+    await controller.authCallback(
+        makeRequest({ error: 'access_denied\n[error] forged log line' }),
+        result.res,
+    );
+
+    assert.equal(result.statusCode, 400);
+    assert.deepEqual(errors, [
+        'Spotify authorization was denied: access_deniederrorforgedlogline',
+    ]);
+});
+
+test('authCallback caps the logged error at 64 characters', async () => {
+    const auth = makeAuthService(() => undefined);
+    const cron = makeCronService();
+    const errors: string[] = [];
+    const controller = new SpotifyController(
+        auth.service,
+        cron.service,
+        makeLogService(errors),
+    );
+    const result = makeResponse();
+
+    await controller.authCallback(
+        makeRequest({ error: 'a'.repeat(500) }),
+        result.res,
+    );
+
+    assert.equal(
+        errors[0],
+        `Spotify authorization was denied: ${'a'.repeat(64)}`,
+    );
 });
 
 test('authCallback responds 400 and triggers no jobs when the state does not match', async () => {

@@ -65,6 +65,91 @@ test('creates the three tables on construction', (t) => {
     assert.ok(tables.includes('playlist_state'));
 });
 
+function listColumns(dbFilePath: string, table: string): string[] {
+    const db = new DatabaseSync(dbFilePath);
+    const rows = db.prepare(`PRAGMA table_info(${table})`).all();
+    db.close();
+
+    return rows.map((row) => String(row.name));
+}
+
+function seedDb(dbFilePath: string, sql: string): void {
+    const db = new DatabaseSync(dbFilePath);
+    db.exec(sql);
+    db.close();
+}
+
+test('drops a playlist_state table that predates source scoping', (t) => {
+    const dir = makeTempDir(t);
+    const dbFilePath = join(dir, DbFile);
+    seedDb(
+        dbFilePath,
+        `CREATE TABLE playlist_state (
+            target_type TEXT,
+            target_playlist_id TEXT,
+            target_uri TEXT,
+            source_type TEXT,
+            source_id TEXT,
+            added_at INTEGER,
+            PRIMARY KEY (target_type, target_playlist_id, target_uri)
+        );
+        INSERT INTO playlist_state VALUES ('spotify', 'target-1', 'spotify:track:1', 'yandex', 'src-1', 1);`,
+    );
+
+    const dbService = makeDbService(dir);
+
+    assert.ok(
+        listColumns(dbFilePath, 'playlist_state').includes(
+            'source_playlist_id',
+        ),
+    );
+    assert.deepEqual(
+        dbService.listPlaylistState({
+            targetType: 'spotify',
+            targetPlaylistId: 'target-1',
+            sourcePlaylistId: 'source-1',
+        }),
+        [],
+    );
+});
+
+test('keeps a playlist_state table that already carries the source scope', (t) => {
+    const dir = makeTempDir(t);
+    const dbFilePath = join(dir, DbFile);
+    seedDb(
+        dbFilePath,
+        `CREATE TABLE playlist_state (
+            target_type TEXT,
+            target_playlist_id TEXT,
+            source_playlist_id TEXT,
+            target_uri TEXT,
+            source_type TEXT,
+            source_id TEXT,
+            added_at INTEGER,
+            PRIMARY KEY (target_type, target_playlist_id, source_playlist_id, target_uri)
+        );
+        INSERT INTO playlist_state VALUES ('spotify', 'target-1', 'source-1', 'spotify:track:1', 'yandex', 'src-1', 1);`,
+    );
+
+    const dbService = makeDbService(dir);
+
+    assert.deepEqual(
+        dbService.listPlaylistState({
+            targetType: 'spotify',
+            targetPlaylistId: 'target-1',
+            sourcePlaylistId: 'source-1',
+        }),
+        [
+            {
+                targetUri: 'spotify:track:1',
+                sourceType: 'yandex',
+                sourceId: 'src-1',
+                addedAt: 1,
+            },
+        ],
+    );
+});
+
 test('reading an unknown auth service returns null', () => {
     const dbService = makeDbService(':memory:');
 

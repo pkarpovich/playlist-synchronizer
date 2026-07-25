@@ -319,7 +319,9 @@ export class SpotifyService implements BaseMusicService {
             this.logService.warn(
                 `Spotify request to ${url} failed (${outcome.reason}), retrying`,
             );
-            await this.delayFn(BackoffDelaysMs[attempt]);
+            if (attempt < BackoffDelaysMs.length - 1) {
+                await this.delayFn(BackoffDelaysMs[attempt]);
+            }
             attempt += 1;
         }
 

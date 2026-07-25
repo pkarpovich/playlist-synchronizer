@@ -238,7 +238,7 @@ test('invalid_client leaves the stored token untouched', async () => {
     assert.deepEqual(harness.delays, []);
 });
 
-test('a 5xx response retries with the 500/1000/2000 delay sequence', async () => {
+test('a 5xx response retries with the 500/1000 delay sequence', async () => {
     const harness = makeHarness([
         { status: 500, body: {} },
         { status: 502, body: {} },
@@ -249,12 +249,12 @@ test('a 5xx response retries with the 500/1000/2000 delay sequence', async () =>
     await harness.authService.initialize();
 
     assert.equal(harness.calls.length, 3);
-    assert.deepEqual(harness.delays, [500, 1000, 2000]);
+    assert.deepEqual(harness.delays, [500, 1000]);
     assert.equal(harness.authService.state, 'not-authorized');
     assert.equal(harness.dbService.getAuth(AuthServiceName)?.revokedAt, null);
 });
 
-test('a 429 response retries with the 500/1000/2000 delay sequence', async () => {
+test('a 429 response retries with the 500/1000 delay sequence', async () => {
     const harness = makeHarness([
         { status: 429, body: {} },
         { status: 429, body: {} },
@@ -265,7 +265,7 @@ test('a 429 response retries with the 500/1000/2000 delay sequence', async () =>
     await harness.authService.initialize();
 
     assert.equal(harness.calls.length, 3);
-    assert.deepEqual(harness.delays, [500, 1000, 2000]);
+    assert.deepEqual(harness.delays, [500, 1000]);
     assert.equal(harness.authService.state, 'not-authorized');
 });
 

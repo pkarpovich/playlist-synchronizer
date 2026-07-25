@@ -284,7 +284,10 @@ export class SpotifyAuthService {
 
             lastStatus = outcome.status;
             lastReason = outcome.reason;
-            await this.delayFn(BackoffDelaysMs[attempt]);
+
+            if (attempt < BackoffDelaysMs.length - 1) {
+                await this.delayFn(BackoffDelaysMs[attempt]);
+            }
         }
 
         throw new SpotifyHttpError(
