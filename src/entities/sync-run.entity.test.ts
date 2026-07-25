@@ -17,6 +17,7 @@ function result(status: PlaylistRunStatus): PlaylistRunResult {
         removed: 0,
         adopted: 0,
         notFound: 0,
+        skipped: 0,
     };
 }
 

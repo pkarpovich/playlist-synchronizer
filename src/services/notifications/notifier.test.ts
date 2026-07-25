@@ -22,6 +22,7 @@ function playlist(overrides: Partial<PlaylistRunResult>): PlaylistRunResult {
         removed: 0,
         adopted: 0,
         notFound: 0,
+        skipped: 0,
         ...overrides,
     };
 }

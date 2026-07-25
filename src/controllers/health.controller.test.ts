@@ -15,7 +15,7 @@ function makeSnapshot(state: SpotifyAuthState = 'authorized'): HealthSnapshot {
         lastSyncAt: '2026-06-16T12:00:00.000Z',
         ageSeconds: 90,
         spotify: { state },
-        mapping: { resolved: 3, unresolved: 1 },
+        mapping: { resolved: 3, unresolved: 1, skipped: 0 },
         lastRun: {
             startedAt: 1,
             finishedAt: 2,
@@ -31,6 +31,7 @@ function makeSnapshot(state: SpotifyAuthState = 'authorized'): HealthSnapshot {
                     removed: 0,
                     adopted: 0,
                     notFound: 0,
+                    skipped: 0,
                 },
             ],
         },

@@ -560,3 +560,131 @@ test('an existing track_map without source_name gains the column', (t) => {
     assert.equal(entry.targetUri, 'spotify:track:abc');
     assert.equal(entry.sourceName, null);
 });
+
+test('setTrackSkipped marks a row and drops any stale target', () => {
+    const dbService = makeDbService(':memory:');
+
+    dbService.setTrackResolution(
+        trackKey,
+        {
+            sourceName: 'ЭКСПОЗИЦИЯ',
+            targetUri: 'spotify:track:wrong',
+            isrc: 'X',
+            durationMs: 1,
+        },
+        1000,
+    );
+    dbService.setTrackSkipped(trackKey, null, 2000);
+
+    const record = dbService.getTrackMap(trackKey);
+
+    assert.equal(record?.skippedAt, 2000);
+    assert.equal(record?.targetUri, null);
+    assert.equal(record?.isrc, null);
+    assert.equal(record?.sourceName, 'ЭКСПОЗИЦИЯ');
+});
+
+test('setTrackSkipped works on a source id with no row yet', () => {
+    const dbService = makeDbService(':memory:');
+
+    dbService.setTrackSkipped(trackKey, 'Absent', 2000);
+
+    assert.equal(dbService.getTrackMap(trackKey)?.skippedAt, 2000);
+    assert.equal(dbService.getTrackMap(trackKey)?.sourceName, 'Absent');
+});
+
+test('clearTrackSkipped reports whether the row was skipped', () => {
+    const dbService = makeDbService(':memory:');
+
+    assert.equal(dbService.clearTrackSkipped(trackKey), false);
+
+    dbService.setTrackSkipped(trackKey, 'Absent', 2000);
+
+    assert.equal(dbService.clearTrackSkipped(trackKey), true);
+    assert.equal(dbService.getTrackMap(trackKey)?.skippedAt, null);
+    assert.equal(dbService.clearTrackSkipped(trackKey), false);
+});
+
+test('resolving a skipped track clears the skip', () => {
+    const dbService = makeDbService(':memory:');
+
+    dbService.setTrackSkipped(trackKey, 'Absent', 2000);
+    dbService.setTrackResolution(
+        trackKey,
+        {
+            sourceName: 'Absent',
+            targetUri: 'spotify:track:found',
+            isrc: null,
+            durationMs: null,
+        },
+        3000,
+    );
+
+    assert.equal(dbService.getTrackMap(trackKey)?.skippedAt, null);
+});
+
+test('countTrackMap keeps skipped rows out of the unresolved count', () => {
+    const dbService = makeDbService(':memory:');
+
+    dbService.setTrackResolution(
+        trackKey,
+        {
+            sourceName: 'Song',
+            targetUri: 'spotify:track:1',
+            isrc: null,
+            durationMs: null,
+        },
+        1000,
+    );
+    dbService.setTrackMiss({ ...trackKey, sourceId: 'miss-1' }, 'Miss', 1000);
+    dbService.setTrackSkipped(
+        { ...trackKey, sourceId: 'skip-1' },
+        'Skip',
+        1000,
+    );
+
+    assert.deepEqual(dbService.countTrackMap(), {
+        resolved: 1,
+        unresolved: 1,
+        skipped: 1,
+    });
+});
+
+test('an existing track_map gains both added columns', (t) => {
+    const dir = makeTempDir(t);
+    const dbFilePath = join(dir, DbFile);
+    const legacy = new DatabaseSync(dbFilePath);
+
+    legacy.exec(`
+        CREATE TABLE track_map (
+            source_type TEXT,
+            source_id TEXT,
+            target_type TEXT,
+            target_uri TEXT,
+            isrc TEXT,
+            duration_ms INTEGER,
+            resolved_at INTEGER,
+            last_tried_at INTEGER,
+            attempts INTEGER NOT NULL DEFAULT 0,
+            PRIMARY KEY (source_type, source_id, target_type)
+        );
+    `);
+    legacy
+        .prepare(
+            'INSERT INTO track_map (source_type, source_id, target_type, target_uri, attempts) VALUES (?, ?, ?, ?, 1)',
+        )
+        .run('yandex', '145513389', 'spotify', 'spotify:track:abc');
+    legacy.close();
+
+    const dbService = makeDbService(dir);
+    const [entry] = dbService.listTrackMap();
+
+    assert.equal(entry.targetUri, 'spotify:track:abc');
+    assert.equal(entry.sourceName, null);
+    assert.equal(entry.skippedAt, null);
+    assert.deepEqual(dbService.countTrackMap(), {
+        resolved: 1,
+        unresolved: 0,
+        skipped: 0,
+    });
+});

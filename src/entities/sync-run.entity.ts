@@ -9,6 +9,7 @@ export type PlaylistRunResult = {
     removed: number;
     adopted: number;
     notFound: number;
+    skipped: number;
     error?: string;
 };
 

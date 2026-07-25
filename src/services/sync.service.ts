@@ -103,6 +103,7 @@ export class SyncService {
                     removed: 0,
                     adopted: 0,
                     notFound: 0,
+                    skipped: 0,
                     error: reason,
                 });
             }
@@ -146,6 +147,7 @@ export class SyncService {
             removed: 0,
             adopted: 0,
             notFound: 0,
+            skipped: 0,
         };
 
         const notReady = this.notReadyServices();
@@ -169,12 +171,13 @@ export class SyncService {
             return { ...result, status: 'empty-source' };
         }
 
-        const mapping = await this.trackMappingService.resolve(
+        const { mapping, skipped } = await this.trackMappingService.resolve(
             syncConfig.type,
             availableTracks,
         );
         result.matched = mapping.size;
-        result.notFound = result.sourceTracks - mapping.size;
+        result.skipped = skipped;
+        result.notFound = result.sourceTracks - mapping.size - skipped;
 
         for (const target of syncConfig.targetPlaylists) {
             const outcome = await this.syncTarget(

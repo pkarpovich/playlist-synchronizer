@@ -208,3 +208,121 @@ test('unmap without a source id fails with the usage', () => {
     assert.equal(result.exitCode, 1);
     assert.ok(result.output.some((line) => line.startsWith('Usage:')));
 });
+
+test('skip confirms the track is absent and stops the searching', () => {
+    const dbService = makeDbService();
+    dbService.setTrackMiss(key, 'ЭКСПОЗИЦИЯ', Now);
+
+    const result = run(dbService, 'skip', '145513389');
+
+    assert.equal(result.exitCode, 0);
+    assert.ok(result.output[0].includes('confirmed absent from Spotify'));
+    assert.equal(dbService.getTrackMap(key)?.skippedAt, Now);
+});
+
+test('skip drops a wrong target it replaces and says so', () => {
+    const dbService = makeDbService();
+    seedResolved(dbService);
+
+    const result = run(dbService, 'skip', '145513389');
+
+    assert.ok(
+        result.output[0].includes(
+            'dropped spotify:track:oldoldoldoldoldoldoldo',
+        ),
+    );
+    assert.equal(dbService.getTrackMap(key)?.targetUri, null);
+});
+
+test('skip is idempotent', () => {
+    const dbService = makeDbService();
+
+    run(dbService, 'skip', '145513389');
+    const result = run(dbService, 'skip', '145513389');
+
+    assert.equal(result.exitCode, 0);
+    assert.ok(result.output[0].includes('already skipped'));
+});
+
+test('skip keeps the stored title so list stays readable', () => {
+    const dbService = makeDbService();
+    dbService.setTrackMiss(key, 'ЭКСПОЗИЦИЯ', Now);
+
+    run(dbService, 'skip', '145513389');
+
+    assert.equal(dbService.getTrackMap(key)?.sourceName, 'ЭКСПОЗИЦИЯ');
+});
+
+test('list marks a skipped row and counts it apart from unresolved', () => {
+    const dbService = makeDbService();
+    dbService.setTrackMiss(key, 'ЭКСПОЗИЦИЯ', Now);
+    run(dbService, 'skip', '145513389');
+    dbService.setTrackMiss(
+        { ...key, sourceId: 'miss-1' },
+        'Still Missing',
+        Now,
+    );
+
+    const result = run(dbService, 'list');
+
+    assert.ok(
+        result.output.some((line) =>
+            line.includes('skipped, absent from Spotify'),
+        ),
+    );
+    assert.ok(result.output.at(-1)?.includes('1 unresolved, 1 skipped'));
+});
+
+test('list --unresolved hides skipped rows', () => {
+    const dbService = makeDbService();
+    dbService.setTrackMiss(key, 'ЭКСПОЗИЦИЯ', Now);
+    run(dbService, 'skip', '145513389');
+
+    const result = run(dbService, 'list', '--unresolved');
+
+    assert.deepEqual(result.output, ['no mappings stored']);
+});
+
+test('unskip puts the track back into the search path', () => {
+    const dbService = makeDbService();
+    run(dbService, 'skip', '145513389');
+
+    const result = run(dbService, 'unskip', '145513389');
+
+    assert.equal(result.exitCode, 0);
+    assert.ok(result.output[0].includes('searched again on the next run'));
+    assert.equal(dbService.getTrackMap(key)?.skippedAt, null);
+});
+
+test('unskip reports a track that was not skipped', () => {
+    const dbService = makeDbService();
+    seedResolved(dbService);
+
+    const result = run(dbService, 'unskip', '145513389');
+
+    assert.equal(result.exitCode, 1);
+    assert.ok(result.output[0].includes('is not skipped'));
+});
+
+test('skip and unskip without a source id fail with the usage', () => {
+    const dbService = makeDbService();
+
+    assert.equal(run(dbService, 'skip').exitCode, 1);
+    assert.equal(run(dbService, 'unskip').exitCode, 1);
+    assert.ok(
+        run(dbService, 'skip').output.some((line) => line.startsWith('Usage:')),
+    );
+});
+
+test('map on a skipped track resumes it', () => {
+    const dbService = makeDbService();
+    run(dbService, 'skip', '145513389');
+
+    run(dbService, 'map', '145513389', 'spotify:track:3fvTuOnHeSB2OGXNqsmVnd');
+
+    assert.equal(dbService.getTrackMap(key)?.skippedAt, null);
+    assert.equal(
+        dbService.getTrackMap(key)?.targetUri,
+        'spotify:track:3fvTuOnHeSB2OGXNqsmVnd',
+    );
+});

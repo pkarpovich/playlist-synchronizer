@@ -88,7 +88,7 @@ test('an unmapped track is searched once and stored', async () => {
         durationMs: 1000,
     });
 
-    const mapping = await service.resolve(MusicServiceTypes.YANDEX_MUSIC, [
+    const { mapping } = await service.resolve(MusicServiceTypes.YANDEX_MUSIC, [
         makeTrack('yandex-1', 'Song'),
     ]);
 
@@ -107,6 +107,7 @@ test('an unmapped track is searched once and stored', async () => {
             durationMs: 1000,
             resolvedAt: StartTime,
             lastTriedAt: StartTime,
+            skippedAt: null,
             attempts: 1,
         },
     );
@@ -124,7 +125,7 @@ test('a mapped track issues zero searches on the next call', async () => {
     await service.resolve(MusicServiceTypes.YANDEX_MUSIC, tracks);
     spotify.searchedTracks = [];
 
-    const mapping = await service.resolve(
+    const { mapping } = await service.resolve(
         MusicServiceTypes.YANDEX_MUSIC,
         tracks,
     );
@@ -138,7 +139,7 @@ test('a negative row within 24 hours issues zero searches', async () => {
     const tracks = [makeTrack('yandex-1', 'Missing')];
 
     const first = await service.resolve(MusicServiceTypes.YANDEX_MUSIC, tracks);
-    assert.equal(first.size, 0);
+    assert.equal(first.mapping.size, 0);
     assert.equal(spotify.searchedTracks.length, 1);
 
     setNow(StartTime + DayMs - 1);
@@ -147,7 +148,7 @@ test('a negative row within 24 hours issues zero searches', async () => {
         tracks,
     );
 
-    assert.equal(second.size, 0);
+    assert.equal(second.mapping.size, 0);
     assert.equal(spotify.searchedTracks.length, 1);
     assert.deepEqual(
         dbService.getTrackMap({
@@ -162,6 +163,7 @@ test('a negative row within 24 hours issues zero searches', async () => {
             durationMs: null,
             resolvedAt: null,
             lastTriedAt: StartTime,
+            skippedAt: null,
             attempts: 1,
         },
     );
@@ -190,6 +192,7 @@ test('a negative row older than 24 hours is retried', async () => {
             durationMs: null,
             resolvedAt: null,
             lastTriedAt: StartTime + DayMs,
+            skippedAt: null,
             attempts: 2,
         },
     );
@@ -207,7 +210,7 @@ test('a later successful retry clears the negative state', async () => {
         isrc: 'ISRC2',
         durationMs: 2000,
     });
-    const mapping = await service.resolve(
+    const { mapping } = await service.resolve(
         MusicServiceTypes.YANDEX_MUSIC,
         tracks,
     );
@@ -226,6 +229,7 @@ test('a later successful retry clears the negative state', async () => {
             durationMs: 2000,
             resolvedAt: StartTime + DayMs,
             lastTriedAt: StartTime + DayMs,
+            skippedAt: null,
             attempts: 2,
         },
     );
@@ -240,7 +244,7 @@ test('a later successful retry clears the negative state', async () => {
 test('tracks without an id are skipped', async () => {
     const { service, spotify } = makeHarness();
 
-    const mapping = await service.resolve(MusicServiceTypes.YANDEX_MUSIC, [
+    const { mapping } = await service.resolve(MusicServiceTypes.YANDEX_MUSIC, [
         { name: 'Song', artists: ['Artist'] },
     ]);
 
@@ -258,6 +262,7 @@ test('an unresolved track is logged and counted as unresolved', async () => {
     assert.deepEqual(dbService.countTrackMap(), {
         resolved: 0,
         unresolved: 1,
+        skipped: 0,
     });
     assert.ok(logs.some((message) => message.includes('Missing')));
 });
@@ -273,6 +278,7 @@ test('counts split resolved and unresolved rows', async () => {
     assert.deepEqual(dbService.countTrackMap(), {
         resolved: 0,
         unresolved: 0,
+        skipped: 0,
     });
 
     await service.resolve(MusicServiceTypes.YANDEX_MUSIC, [
@@ -283,5 +289,77 @@ test('counts split resolved and unresolved rows', async () => {
     assert.deepEqual(dbService.countTrackMap(), {
         resolved: 1,
         unresolved: 1,
+        skipped: 0,
     });
+});
+
+test('a skipped track is never searched and is reported as skipped', async () => {
+    const { service, dbService, spotify } = makeHarness();
+    spotify.results.set('Missing', {
+        uri: 'spotify:track:1',
+        isrc: null,
+        durationMs: null,
+    });
+    dbService.setTrackSkipped(
+        {
+            sourceType: MusicServiceTypes.YANDEX_MUSIC,
+            sourceId: 'yandex-1',
+            targetType: MusicServiceTypes.SPOTIFY,
+        },
+        'Missing',
+        StartTime,
+    );
+
+    const result = await service.resolve(MusicServiceTypes.YANDEX_MUSIC, [
+        makeTrack('yandex-1', 'Missing'),
+    ]);
+
+    assert.equal(spotify.searchedTracks.length, 0);
+    assert.equal(result.mapping.size, 0);
+    assert.equal(result.skipped, 1);
+});
+
+test('a skipped track stays skipped past the 24 hour retry window', async () => {
+    const { service, dbService, spotify, setNow } = makeHarness();
+    dbService.setTrackSkipped(
+        {
+            sourceType: MusicServiceTypes.YANDEX_MUSIC,
+            sourceId: 'yandex-1',
+            targetType: MusicServiceTypes.SPOTIFY,
+        },
+        'Missing',
+        StartTime,
+    );
+
+    setNow(StartTime + DayMs * 7);
+    const result = await service.resolve(MusicServiceTypes.YANDEX_MUSIC, [
+        makeTrack('yandex-1', 'Missing'),
+    ]);
+
+    assert.equal(spotify.searchedTracks.length, 0);
+    assert.equal(result.skipped, 1);
+});
+
+test('unskipping puts a track back into the search path', async () => {
+    const { service, dbService, spotify } = makeHarness();
+    const key = {
+        sourceType: MusicServiceTypes.YANDEX_MUSIC,
+        sourceId: 'yandex-1',
+        targetType: MusicServiceTypes.SPOTIFY,
+    };
+    spotify.results.set('Missing', {
+        uri: 'spotify:track:1',
+        isrc: null,
+        durationMs: null,
+    });
+    dbService.setTrackSkipped(key, 'Missing', StartTime);
+    dbService.clearTrackSkipped(key);
+
+    const result = await service.resolve(MusicServiceTypes.YANDEX_MUSIC, [
+        makeTrack('yandex-1', 'Missing'),
+    ]);
+
+    assert.equal(spotify.searchedTracks.length, 1);
+    assert.deepEqual([...result.mapping], [['yandex-1', 'spotify:track:1']]);
+    assert.equal(result.skipped, 0);
 });

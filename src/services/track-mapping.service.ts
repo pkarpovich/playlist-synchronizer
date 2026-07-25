@@ -1,10 +1,15 @@
-import { DbService, TrackMapRecord } from './db.service.js';
+import { DbService, TrackMapKey, TrackMapRecord } from './db.service.js';
 import { LogService } from './log.service.js';
 import { SpotifyService } from './music-providers/spotify.service.js';
 import { MusicServiceTypes, Track } from '../entities.js';
 
 const NegativeRetryIntervalMs = 24 * 60 * 60 * 1000;
 const TargetType = MusicServiceTypes.SPOTIFY;
+
+export type TrackMappingResult = {
+    mapping: Map<string, string>;
+    skipped: number;
+};
 
 export class TrackMappingService {
     constructor(
@@ -17,19 +22,27 @@ export class TrackMappingService {
     async resolve(
         sourceType: MusicServiceTypes,
         sourceTracks: Track[],
-    ): Promise<Map<string, string>> {
+    ): Promise<TrackMappingResult> {
         const mapping = new Map<string, string>();
+        let skipped = 0;
 
         for (const track of sourceTracks) {
             if (!track.id) {
                 continue;
             }
 
-            const targetUri = await this.resolveOne(
+            const key = {
                 sourceType,
-                track.id,
-                track,
-            );
+                sourceId: track.id,
+                targetType: TargetType,
+            };
+
+            if (this.dbService.getTrackMap(key)?.skippedAt) {
+                skipped += 1;
+                continue;
+            }
+
+            const targetUri = await this.resolveOne(key, track);
             if (!targetUri) {
                 continue;
             }
@@ -37,15 +50,13 @@ export class TrackMappingService {
             mapping.set(track.id, targetUri);
         }
 
-        return mapping;
+        return { mapping, skipped };
     }
 
     private async resolveOne(
-        sourceType: MusicServiceTypes,
-        sourceId: string,
+        key: TrackMapKey,
         track: Track,
     ): Promise<string | null> {
-        const key = { sourceType, sourceId, targetType: TargetType };
         const existing = this.dbService.getTrackMap(key);
 
         if (existing?.targetUri) {
@@ -62,7 +73,7 @@ export class TrackMappingService {
         if (!resolved) {
             this.dbService.setTrackMiss(key, track.name, triedAt);
             this.logService.warn(
-                `Track ${track.name} by ${track.artists.join(', ')} (${sourceType} ${sourceId}) not found in ${TargetType}`,
+                `Track ${track.name} by ${track.artists.join(', ')} (${key.sourceType} ${key.sourceId}) not found in ${TargetType}`,
             );
             return null;
         }

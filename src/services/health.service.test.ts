@@ -10,7 +10,7 @@ import {
 import { SyncService } from './sync.service.js';
 import { HealthService } from './health.service.js';
 
-const NoCounts: TrackMapCounts = { resolved: 0, unresolved: 0 };
+const NoCounts: TrackMapCounts = { resolved: 0, unresolved: 0, skipped: 0 };
 
 function makeLastRun(finishedAt: number): LastRun {
     return {
@@ -28,6 +28,7 @@ function makeLastRun(finishedAt: number): LastRun {
                 removed: 0,
                 adopted: 0,
                 notFound: 0,
+                skipped: 0,
             },
             {
                 name: 'Bad Source',
@@ -38,6 +39,7 @@ function makeLastRun(finishedAt: number): LastRun {
                 removed: 0,
                 adopted: 0,
                 notFound: 0,
+                skipped: 0,
                 error: 'source unavailable',
             },
         ],
@@ -135,13 +137,14 @@ test('snapshot reports mapping counts from the database', () => {
     const health = makeHealthService(
         null,
         'authorized',
-        { resolved: 261, unresolved: 3 },
+        { resolved: 261, unresolved: 3, skipped: 1 },
         0,
     );
 
     assert.deepEqual(health.snapshot().mapping, {
         resolved: 261,
         unresolved: 3,
+        skipped: 1,
     });
 });
 

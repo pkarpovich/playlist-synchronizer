@@ -29,6 +29,7 @@ const Schema = `
         duration_ms INTEGER,
         resolved_at INTEGER,
         last_tried_at INTEGER,
+        skipped_at INTEGER,
         attempts INTEGER NOT NULL DEFAULT 0,
         PRIMARY KEY (source_type, source_id, target_type)
     );
@@ -46,7 +47,7 @@ const Schema = `
 `;
 
 const PlaylistStateSourceColumn = 'source_playlist_id';
-const TrackMapNameColumn = 'source_name';
+const TrackMapAddedColumns = ['source_name', 'skipped_at'];
 
 type AuthColumn = 'refresh_token' | 'revoked_at' | 'pending_state';
 
@@ -70,6 +71,7 @@ export type TrackMapRecord = {
     durationMs: number | null;
     resolvedAt: number | null;
     lastTriedAt: number | null;
+    skippedAt: number | null;
     attempts: number;
 };
 
@@ -85,6 +87,7 @@ export type TrackMapEntry = TrackMapKey & TrackMapRecord;
 export type TrackMapCounts = {
     resolved: number;
     unresolved: number;
+    skipped: number;
 };
 
 export type PlaylistStateKey = {
@@ -151,14 +154,21 @@ function dropUnscopedPlaylistState(db: DatabaseSync): void {
     db.exec('DROP TABLE playlist_state');
 }
 
-function addTrackMapSourceName(db: DatabaseSync): void {
-    const columns = db.prepare('PRAGMA table_info(track_map)').all();
+function addMissingTrackMapColumns(db: DatabaseSync): void {
+    const present = new Set(
+        db
+            .prepare('PRAGMA table_info(track_map)')
+            .all()
+            .map(({ name }) => name),
+    );
 
-    if (columns.some(({ name }) => name === TrackMapNameColumn)) {
-        return;
+    for (const column of TrackMapAddedColumns) {
+        if (present.has(column)) {
+            continue;
+        }
+
+        db.exec(`ALTER TABLE track_map ADD COLUMN ${column} TEXT`);
     }
-
-    db.exec(`ALTER TABLE track_map ADD COLUMN ${TrackMapNameColumn} TEXT`);
 }
 
 function readLegacyFile(filePath: string): string | null {
@@ -184,7 +194,7 @@ export class DbService {
         this.db = new DatabaseSync(resolveDbLocation(dbPath));
         dropUnscopedPlaylistState(this.db);
         this.db.exec(Schema);
-        addTrackMapSourceName(this.db);
+        addMissingTrackMapColumns(this.db);
         this.migrateLegacyAuth();
     }
 
@@ -231,7 +241,7 @@ export class DbService {
     }: TrackMapKey): TrackMapRecord | null {
         const row = this.db
             .prepare(
-                'SELECT source_name, target_uri, isrc, duration_ms, resolved_at, last_tried_at, attempts FROM track_map WHERE source_type = ? AND source_id = ? AND target_type = ?',
+                'SELECT source_name, target_uri, isrc, duration_ms, resolved_at, last_tried_at, skipped_at, attempts FROM track_map WHERE source_type = ? AND source_id = ? AND target_type = ?',
             )
             .get(sourceType, sourceId, targetType);
 
@@ -246,6 +256,7 @@ export class DbService {
             durationMs: toNumberOrNull(row.duration_ms),
             resolvedAt: toNumberOrNull(row.resolved_at),
             lastTriedAt: toNumberOrNull(row.last_tried_at),
+            skippedAt: toNumberOrNull(row.skipped_at),
             attempts: Number(row.attempts ?? 0),
         };
     }
@@ -266,6 +277,7 @@ export class DbService {
                      duration_ms = excluded.duration_ms,
                      resolved_at = excluded.resolved_at,
                      last_tried_at = excluded.last_tried_at,
+                     skipped_at = NULL,
                      attempts = track_map.attempts + 1`,
             )
             .run(
@@ -305,7 +317,7 @@ export class DbService {
     listTrackMap(): TrackMapEntry[] {
         const rows = this.db
             .prepare(
-                'SELECT source_type, source_id, source_name, target_type, target_uri, isrc, duration_ms, resolved_at, last_tried_at, attempts FROM track_map ORDER BY source_name, source_id',
+                'SELECT source_type, source_id, source_name, target_type, target_uri, isrc, duration_ms, resolved_at, last_tried_at, skipped_at, attempts FROM track_map ORDER BY source_name, source_id',
             )
             .all();
 
@@ -319,6 +331,7 @@ export class DbService {
             durationMs: toNumberOrNull(row.duration_ms),
             resolvedAt: toNumberOrNull(row.resolved_at),
             lastTriedAt: toNumberOrNull(row.last_tried_at),
+            skippedAt: toNumberOrNull(row.skipped_at),
             attempts: Number(row.attempts ?? 0),
         }));
     }
@@ -333,17 +346,52 @@ export class DbService {
         return Number(changes) > 0;
     }
 
+    setTrackSkipped(
+        { sourceType, sourceId, targetType }: TrackMapKey,
+        sourceName: string | null,
+        skippedAt: number,
+    ): void {
+        this.db
+            .prepare(
+                `INSERT INTO track_map (source_type, source_id, source_name, target_type, target_uri, skipped_at, attempts)
+                 VALUES (?, ?, ?, ?, NULL, ?, 0)
+                 ON CONFLICT(source_type, source_id, target_type) DO UPDATE SET
+                     source_name = COALESCE(excluded.source_name, track_map.source_name),
+                     target_uri = NULL,
+                     isrc = NULL,
+                     duration_ms = NULL,
+                     resolved_at = NULL,
+                     skipped_at = excluded.skipped_at`,
+            )
+            .run(sourceType, sourceId, sourceName, targetType, skippedAt);
+    }
+
+    clearTrackSkipped({
+        sourceType,
+        sourceId,
+        targetType,
+    }: TrackMapKey): boolean {
+        const { changes } = this.db
+            .prepare(
+                'UPDATE track_map SET skipped_at = NULL, last_tried_at = NULL WHERE source_type = ? AND source_id = ? AND target_type = ? AND skipped_at IS NOT NULL',
+            )
+            .run(sourceType, sourceId, targetType);
+
+        return Number(changes) > 0;
+    }
+
     countTrackMap(): TrackMapCounts {
         const row = this.db
             .prepare(
-                'SELECT COUNT(*) AS total, COUNT(target_uri) AS resolved FROM track_map',
+                'SELECT COUNT(*) AS total, COUNT(target_uri) AS resolved, COUNT(skipped_at) AS skipped FROM track_map',
             )
             .get();
 
         const total = Number(row?.total ?? 0);
         const resolved = Number(row?.resolved ?? 0);
+        const skipped = Number(row?.skipped ?? 0);
 
-        return { resolved, unresolved: total - resolved };
+        return { resolved, unresolved: total - resolved - skipped, skipped };
     }
 
     listPlaylistState({

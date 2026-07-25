@@ -14,7 +14,10 @@ import { DbService } from './db.service.js';
 import { LogService } from './log.service.js';
 import { Notifier } from './notifications/notifier.js';
 import { SyncService } from './sync.service.js';
-import { TrackMappingService } from './track-mapping.service.js';
+import {
+    TrackMappingResult,
+    TrackMappingService,
+} from './track-mapping.service.js';
 
 const StartTime = 1750000000000;
 
@@ -93,23 +96,31 @@ class TrackMappingStub {
         return this.sourceTypes.length;
     }
 
+    skippedIds = new Set<string>();
+
     async resolve(
         sourceType: MusicServiceTypes,
         sourceTracks: Track[],
-    ): Promise<Map<string, string>> {
+    ): Promise<TrackMappingResult> {
         this.sourceTypes.push(sourceType);
         this.requestedIds.push(...sourceTracks.map(({ id }) => id ?? ''));
-        const resolved = new Map<string, string>();
+        const mapping = new Map<string, string>();
+        let skipped = 0;
 
         for (const { id } of sourceTracks) {
+            if (id && this.skippedIds.has(id)) {
+                skipped += 1;
+                continue;
+            }
+
             const targetUri = id ? this.mapping.get(id) : undefined;
 
             if (id && targetUri) {
-                resolved.set(id, targetUri);
+                mapping.set(id, targetUri);
             }
         }
 
-        return resolved;
+        return { mapping, skipped };
     }
 }
 
@@ -853,4 +864,24 @@ test('an added track is recorded with its source id and stays recorded', async (
             addedAt: StartTime,
         },
     ]);
+});
+
+test('skipped source tracks are counted apart from notFound', async () => {
+    const harness = makeHarness(async () => [
+        { id: 'y-1', name: 'Song', artists: ['Artist'] },
+        { id: 'y-2', name: 'Other', artists: ['Artist'] },
+        { id: 'y-3', name: 'Absent', artists: ['Artist'] },
+        { id: 'y-4', name: 'Nowhere', artists: ['Artist'] },
+    ]);
+    harness.trackMapping.skippedIds.add('y-3');
+
+    await harness.syncService.syncAll(makeSingleConfig());
+
+    const [playlist] = harness.syncService.lastRun?.playlists ?? [];
+
+    assert.equal(playlist.sourceTracks, 4);
+    assert.equal(playlist.matched, 2);
+    assert.equal(playlist.skipped, 1);
+    assert.equal(playlist.notFound, 1);
+    assert.equal(playlist.status, 'ok');
 });
