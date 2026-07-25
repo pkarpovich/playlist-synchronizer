@@ -1,5 +1,24 @@
 # playlist-synchronizer
 
+## 2.0.0
+
+### Major Changes
+
+-   #71: survive Spotify refresh-token expiry. Refresh tokens now live 180 days, and expiry used to crash the process on startup in an endless restart loop with the recovery link unreachable. The service now stays up, reports `needs-reauthorization` on `/health`, and prints the authorization link to the log
+-   #71: give the sync memory. Source tracks resolve to a Spotify track once and are remembered in SQLite; removals are driven by recorded provenance instead of by whatever a fresh search returned. On the real playlist this cut removals from 41 (33 of them the same recording under a different URI) to 8, and steady-state search calls from roughly 300 per run to zero. Only tracks this app recorded adding are ever removed, so manual additions survive
+-   #71: match tracks by the Yandex `version` field and recording duration instead of trusting search ranking. Measured against the live API: 263 of 264 tracks matched, with a maximum duration difference of 70 ms across every match, so no remix, live version or alternate master slips through
+
+### Breaking Changes
+
+-   `/health` no longer returns `spotifyReady`. It returns `spotify: { state }`, one of `not-authorized`, `authorized`, `needs-reauthorization`, plus `mapping: { resolved, unresolved, skipped }`
+-   state moved from the lowdb file `<DB_PATH>/db.json` to SQLite at `<DB_PATH>/sync.db`. An existing refresh token is imported once at startup and the old file is left untouched
+-   `excludedTrackIds` was removed from the sync configuration schema. It was never read by any code; leaving it in a config file is harmless
+
+### Minor Changes
+
+-   #71: add `cli.js` for correcting mappings, since resolution now happens once. `list`, `map`, `unmap`, and `skip`/`unskip` to record that a track is genuinely absent from Spotify so it stops being re-searched every 24 hours
+-   #71: drop `spotify-web-api-node` and `lowdb`, move to the `/playlists/{id}/items` endpoints, and chunk playlist mutations at 100 items, which is what had let 199 duplicate entries accumulate
+
 ## 1.5.0
 
 ### Minor Changes
