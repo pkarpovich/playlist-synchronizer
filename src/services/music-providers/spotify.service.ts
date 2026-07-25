@@ -231,11 +231,16 @@ export class SpotifyService implements BaseMusicService {
             limit: String(SearchLimit),
         });
 
-        const page = (await this.request(
-            `${ApiBaseUrl}/search?${params.toString()}`,
-        )) as SearchPage | null;
+        const url = `${ApiBaseUrl}/search?${params.toString()}`;
+        const page = (await this.request(url)) as SearchPage | null;
 
-        return page?.tracks?.items ?? [];
+        if (!page) {
+            throw new Error(
+                `Spotify returned an unreadable search response for ${url}`,
+            );
+        }
+
+        return page.tracks?.items ?? [];
     }
 
     private async request(

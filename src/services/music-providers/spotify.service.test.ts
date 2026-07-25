@@ -468,6 +468,29 @@ test('step two rejects the same candidate because its artists do not overlap', a
     assert.equal(queryOf(harness.calls[1]), 'тРи пОлОсКи Скриптонит');
 });
 
+test('a search body that cannot be parsed fails the resolve instead of reporting no candidates', async () => {
+    const harness = makeHarness([{ status: 200, unreadable: true }]);
+
+    await assert.rejects(
+        () => harness.service.resolveTrack(source),
+        /unreadable search response/,
+    );
+
+    assert.equal(harness.calls.length, 1);
+});
+
+test('a search response without a tracks envelope means zero candidates', async () => {
+    const harness = makeHarness([
+        { status: 200, body: {} },
+        { status: 200, body: {} },
+    ]);
+
+    const resolved = await harness.service.resolveTrack(source);
+
+    assert.equal(resolved, null);
+    assert.equal(harness.calls.length, 2);
+});
+
 test('an empty step one result triggers the free-text search', async () => {
     const harness = makeHarness([
         { status: 200, body: searchBody([]) },

@@ -461,6 +461,25 @@ test('the matching state exchanges the code and clears the revoked marker', asyn
     assert.equal(await harness.authService.getAccessToken(), 'access-1');
 });
 
+test('a code exchange without a refresh token leaves the app unauthorized', async () => {
+    const harness = makeHarness([accessTokenResponse('access-1')]);
+    harness.dbService.setRevokedAt(AuthServiceName, 1700000000000);
+
+    const state = readState(harness.authService.buildAuthorizeUrl());
+
+    await assert.rejects(
+        () => harness.authService.exchangeCode('code-1', state),
+        /no refresh token/,
+    );
+
+    assert.equal(harness.authService.state, 'not-authorized');
+    assert.equal(harness.authService.isReady, false);
+
+    const record = harness.dbService.getAuth(AuthServiceName);
+    assert.equal(record?.refreshToken, '');
+    assert.equal(record?.revokedAt, 1700000000000);
+});
+
 test('a mismatched state is rejected without any fetch call', async () => {
     const harness = makeHarness([]);
     harness.authService.buildAuthorizeUrl();

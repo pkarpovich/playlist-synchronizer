@@ -179,6 +179,12 @@ export class SpotifyAuthService {
             }),
         );
 
+        if (!token.refreshToken) {
+            throw new Error(
+                'Spotify code exchange returned no refresh token, authorization did not complete',
+            );
+        }
+
         this.acceptToken(token);
         this.dbService.setRevokedAt(AuthServiceName, null);
         this.dbService.setPendingState(AuthServiceName, null);
