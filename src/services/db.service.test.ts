@@ -110,7 +110,7 @@ test('writing a single auth column creates a row with defaults', () => {
     });
 });
 
-test('migration imports the lowdb refresh token and leaves db.json in place', (t) => {
+test('migration imports the legacy refresh token and leaves db.json in place', (t) => {
     const dir = makeTempDir(t);
     const legacyFile = join(dir, 'db.json');
     writeFileSync(legacyFile, JSON.stringify({ refreshToken: 'legacy-1' }));

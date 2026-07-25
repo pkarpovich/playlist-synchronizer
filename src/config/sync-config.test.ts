@@ -24,7 +24,6 @@ async function withConfigFile(
 const validPlaylist = {
     type: 'yandex',
     metadata: { id: '1', userName: 'u' },
-    excludedTrackIds: [],
     targetPlaylists: [{ type: 'spotify', metadata: { id: '2' } }],
 };
 

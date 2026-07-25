@@ -139,7 +139,6 @@ function makeSyncConfig(): SyncConfig {
             {
                 type: MusicServiceTypes.YANDEX_MUSIC,
                 metadata: { id: 'bad', userName: 'u', name: 'Bad Source' },
-                excludedTrackIds: [],
                 targetPlaylists: [
                     {
                         type: MusicServiceTypes.SPOTIFY,
@@ -154,7 +153,6 @@ function makeSyncConfig(): SyncConfig {
             {
                 type: MusicServiceTypes.YANDEX_MUSIC,
                 metadata: { id: 'good', userName: 'u', name: 'Good Source' },
-                excludedTrackIds: [],
                 targetPlaylists: [
                     {
                         type: MusicServiceTypes.SPOTIFY,
@@ -393,7 +391,6 @@ test('sync resolves the source once and adds to every target', async () => {
             {
                 type: MusicServiceTypes.YANDEX_MUSIC,
                 metadata: { id: 'src', userName: 'u', name: 'Source' },
-                excludedTrackIds: [],
                 targetPlaylists: [
                     {
                         type: MusicServiceTypes.SPOTIFY,

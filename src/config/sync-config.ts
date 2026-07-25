@@ -6,11 +6,7 @@ import { Playlist, MusicServiceTypes } from '../entities.js';
 export interface PlaylistConfig {
     type: MusicServiceTypes;
     metadata: Playlist;
-    excludedTrackIds: ReadonlyArray<string>;
-    targetPlaylists: Omit<
-        PlaylistConfig,
-        'excludedTrackIds' | 'targetPlaylists'
-    >[];
+    targetPlaylists: Omit<PlaylistConfig, 'targetPlaylists'>[];
 }
 
 export interface SyncConfig {
@@ -32,7 +28,6 @@ const SyncConfigSchema = object({
             object({
                 type: MusicServiceTypeSchema,
                 metadata: MetadataSchema,
-                excludedTrackIds: array().of(string()).optional(),
                 targetPlaylists: array()
                     .of(
                         object({

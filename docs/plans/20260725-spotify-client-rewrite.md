@@ -758,15 +758,17 @@ so dropping `spotifyReady` is safe. Do not look for that configuration in this r
 - Modify: `src/utils.ts`, `src/config/sync-config.ts`, `src/config/sync-config.test.ts`,
   `src/services/sync.service.test.ts`, `sync-config.json`, `package.json`, `pnpm-lock.yaml`
 
-- [ ] delete `src/utils/retry.ts` and its barrel export - retry policy now lives in two specialized
+- [x] delete `src/utils/retry.ts` and its barrel export - retry policy now lives in two specialized
       places
-- [ ] remove `excludedTrackIds` from the `PlaylistConfig` type, the yup schema, `sync-config.json`,
+- [x] remove `excludedTrackIds` from the `PlaylistConfig` type, the yup schema, `sync-config.json`,
       and the test fixtures; it is read by no line of code
-- [ ] remove `spotify-web-api-node` and `@types/spotify-web-api-node`, then run `pnpm install` and
+- [x] remove `spotify-web-api-node` and `@types/spotify-web-api-node`, then run `pnpm install` and
       commit the updated `pnpm-lock.yaml`
-- [ ] verify `grep -rn "spotify-web-api-node\|lowdb\|excludedTrackIds\|utils/retry" src package.json`
+- [x] verify `grep -rn "spotify-web-api-node\|lowdb\|excludedTrackIds\|utils/retry" src package.json`
       returns nothing and `grep -c "lowdb\|spotify-web-api-node" pnpm-lock.yaml` returns 0
-- [ ] Gate G passes
+      - ➕ the only remaining `lowdb` occurrence was a test title in `db.service.test.ts`; renamed to
+        "legacy refresh token" so the grep is literally empty while the migration itself stays
+- [x] Gate G passes
 
 ### Task 16: Verify acceptance criteria
 
