@@ -698,11 +698,11 @@ so dropping `spotifyReady` is safe. Do not look for that configuration in this r
 - Modify: `src/services/health.service.ts`
 - Modify: `src/services/health.service.test.ts`, `src/controllers/health.controller.test.ts`
 
-- [ ] replace `spotifyReady` with `spotify: { state }` sourced from `SpotifyAuthService`, and add
+- [x] replace `spotifyReady` with `spotify: { state }` sourced from `SpotifyAuthService`, and add
       `mapping: { resolved, unresolved }` from `DbService`
-- [ ] write tests: each of the three auth states maps through; counts come from the database; the
+- [x] write tests: each of the three auth states maps through; counts come from the database; the
       serialized body contains no `accounts.spotify.com` substring
-- [ ] Gate G passes
+- [x] Gate G passes
 
 ### Task 12: Spotify callback with state verification
 

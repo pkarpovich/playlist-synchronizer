@@ -3,14 +3,19 @@ import { test } from 'node:test';
 import express from 'express';
 
 import { HealthController } from './health.controller.js';
-import { HealthService, HealthSnapshot } from '../services.js';
+import {
+    HealthService,
+    HealthSnapshot,
+    SpotifyAuthState,
+} from '../services.js';
 
-function makeSnapshot(): HealthSnapshot {
+function makeSnapshot(state: SpotifyAuthState = 'authorized'): HealthSnapshot {
     return {
         status: 'partial',
         lastSyncAt: '2026-06-16T12:00:00.000Z',
         ageSeconds: 90,
-        spotifyReady: true,
+        spotify: { state },
+        mapping: { resolved: 3, unresolved: 1 },
         lastRun: {
             startedAt: 1,
             finishedAt: 2,
@@ -75,4 +80,25 @@ test('healthCheck responds 200 with the health snapshot', async () => {
 
     assert.equal(result.statusCode, 200);
     assert.deepEqual(result.body, snapshot);
+});
+
+test('healthCheck responds 200 with the auth state in every state', async () => {
+    const states: SpotifyAuthState[] = [
+        'not-authorized',
+        'authorized',
+        'needs-reauthorization',
+    ];
+
+    for (const state of states) {
+        const healthService = {
+            snapshot: () => makeSnapshot(state),
+        } as unknown as HealthService;
+        const controller = new HealthController(healthService);
+        const result = makeResponse();
+
+        await controller.healthCheck({} as express.Request, result.res);
+
+        assert.equal(result.statusCode, 200);
+        assert.equal((result.body as HealthSnapshot).spotify.state, state);
+    }
 });
