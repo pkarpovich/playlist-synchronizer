@@ -710,13 +710,13 @@ so dropping `spotifyReady` is safe. Do not look for that configuration in this r
 - Modify: `src/controllers/spotify.controller.ts`
 - Create: `src/controllers/spotify.controller.test.ts`
 
-- [ ] depend on `spotifyAuthService`; validate `code` presence, handle the `error` query parameter,
+- [x] depend on `spotifyAuthService`; validate `code` presence, handle the `error` query parameter,
       and pass `state` into `exchangeCode`
-- [ ] respond `400` with a clear message for a missing `code`, a present `error`, or a `state`
+- [x] respond `400` with a clear message for a missing `code`, a present `error`, or a `state`
       mismatch; `200` only on success, still triggering `cronService.triggerAllJobs()`
-- [ ] write tests: success returns `200` and triggers jobs; missing `code` returns `400`;
+- [x] write tests: success returns `200` and triggers jobs; missing `code` returns `400`;
       `error=access_denied` returns `400`; wrong `state` returns `400` and does not trigger jobs
-- [ ] Gate G passes
+- [x] Gate G passes
 
 ### Task 13: Container wiring and startup sequence
 

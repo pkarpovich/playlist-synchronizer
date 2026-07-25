@@ -3,13 +3,17 @@ import {
     CronService,
     HttpService,
     LogService,
-    SpotifyService,
+    SpotifyAuthService,
 } from '../services.js';
 import { BaseController } from './base.controller.js';
 
+function readQueryParam(value: unknown): string | null {
+    return typeof value === 'string' && value ? value : null;
+}
+
 export class SpotifyController implements BaseController {
     constructor(
-        private readonly spotifyService: SpotifyService,
+        private readonly spotifyAuthService: SpotifyAuthService,
         private readonly cronService: CronService,
         private readonly logService: LogService,
     ) {}
@@ -26,11 +30,40 @@ export class SpotifyController implements BaseController {
         req: express.Request,
         res: express.Response,
     ): Promise<void> {
-        const code = req.query.code as string;
+        const authError = readQueryParam(req.query.error);
 
-        await this.spotifyService.authorizationCodeGrant(code);
+        if (authError) {
+            this.logService.error(
+                `Spotify authorization was denied: ${authError}`,
+            );
+            res.status(400).send('Spotify authorization was denied');
+            return;
+        }
+
+        const code = readQueryParam(req.query.code);
+
+        if (!code) {
+            this.logService.error(
+                'Spotify callback carried no authorization code',
+            );
+            res.status(400).send('Missing authorization code');
+            return;
+        }
+
+        try {
+            await this.spotifyAuthService.exchangeCode(
+                code,
+                readQueryParam(req.query.state),
+            );
+        } catch (error) {
+            this.logService.error(
+                `Spotify authorization exchange failed: ${String(error)}`,
+            );
+            res.status(400).send('Spotify authorization failed');
+            return;
+        }
+
         this.cronService.triggerAllJobs();
-
         this.logService.success('Spotify authorization was successful');
 
         res.status(200).send('OK');
