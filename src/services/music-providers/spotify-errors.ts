@@ -1,10 +1,7 @@
 export type TokenErrorClass = 'invalid-grant' | 'config-error' | 'transient';
 
 export type ApiErrorAction =
-    | 'refresh-retry'
-    | 'no-retry'
-    | 'retry-after'
-    | 'backoff';
+    'refresh-retry' | 'no-retry' | 'retry-after' | 'backoff';
 
 const DefaultRetryAfterMs = 1000;
 const MaxRetryAfterMs = 60000;

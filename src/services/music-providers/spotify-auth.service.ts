@@ -25,9 +25,7 @@ const MaxAttempts = RetryDelaysMs.length + 1;
 const StateBytes = 16;
 
 export type SpotifyAuthState =
-    | 'not-authorized'
-    | 'authorized'
-    | 'needs-reauthorization';
+    'not-authorized' | 'authorized' | 'needs-reauthorization';
 
 type TokenSuccess = {
     accessToken: string;
