@@ -803,13 +803,16 @@ so dropping `spotifyReady` is safe. Do not look for that configuration in this r
 
 ### Task 17: [Final] Update documentation
 
-- [ ] update `README.md`: the service stays alive when the refresh token expires, reports
+- [x] update `README.md`: the service stays alive when the refresh token expires, reports
       `needs-reauthorization` in `/health`, and prints the re-authorization link to the log; note the
       180-day refresh token lifetime; note that state now lives in a SQLite database under `DB_PATH`
-- [ ] this work adds no environment variables; leave the env-var table unchanged
-- [ ] drop the `excludedTrackIds` mention from the configuration example
-- [ ] move this plan to `docs/plans/completed/`
-- [ ] Gate G passes
+      - added a `State` section (`<DB_PATH>/sync.db`, the three collections, the one-time legacy
+        token import) and a `Spotify authorization` section (180-day lifetime, the three `/health`
+        states, link to the log only, failed-not-crashed runs)
+- [x] this work adds no environment variables; leave the env-var table unchanged
+- [x] drop the `excludedTrackIds` mention from the configuration example
+- [x] move this plan to `docs/plans/completed/`
+- [x] Gate G passes
 
 ## Post-Completion
 
@@ -842,4 +845,11 @@ adding them. Remove them by hand if desired.
   `git pull` on the host and will collide with this
 - production sets `JOB_CRON_TIME` while the code reads `JOB_CRON_PATTERN` (`src/config/config.ts:60`),
   so the schedule is silently ignored and only matches by accident of the `@hourly` default
+- ➕ same class of defect, found in Task 17 and deliberately left alone because it predates this plan:
+  `DEFAULT_DB_PATH = './db/db.json'` (`src/config/config.ts:36`) and `DB_PATH=./db/db.json` in
+  `.env.example` are file paths, while `dbPath` has always been a **folder** (the old lowdb service
+  took `dbFolderPath` and wrote `<dbPath>/db.json`; `DbService` now writes `<dbPath>/sync.db`). Both
+  should read `./db`. Production is unaffected - `docker-compose.yml` sets `DB_PATH: /app/db`
+  correctly - but a local run on the defaults opens `./db/db.json/sync.db` and, where the legacy
+  `./db/db.json` file already exists, `mkdirSync` fails
 - consider tightening the external uptime check with a condition on `[BODY].spotify.state`

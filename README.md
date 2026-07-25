@@ -10,6 +10,35 @@ The app allows to synchronize of playlists from one service to others.
 ## Requirements
 - Node 24 (managed via `mise`, see `mise.toml`)
 
+## State
+All state lives in a SQLite database at `<DB_PATH>/sync.db`, opened through the built-in
+`node:sqlite` module. It holds three collections:
+
+- the Spotify auth record (refresh token, revocation timestamp, pending OAuth state)
+- `track_map` - the source track to Spotify URI mapping, so a track is searched for once and never
+  again
+- `playlist_state` - what this app added to each target playlist, which is what removals are driven
+  from. Tracks the app did not add are never removed, so manual additions survive syncing.
+
+A refresh token left over from the previous lowdb store (`<DB_PATH>/db.json`) is imported once at
+startup; that file is left on disk untouched.
+
+## Spotify authorization
+Spotify's refresh token has a **180-day lifetime**, so re-authorization is a recurring, expected
+event rather than an outage.
+
+When the token expires, the token endpoint answers `400 invalid_grant`. The service **stays alive**:
+it discards the dead token, moves to the `needs-reauthorization` state, and keeps serving HTTP.
+
+- `GET /health` reports `spotify: { state }`, one of `not-authorized`, `authorized`,
+  `needs-reauthorization`, plus `mapping: { resolved, unresolved }`
+- the re-authorization link is printed **to the log only** (`docker logs playlist-synchronizer`) and
+  never to `/health` or a notification channel, because it carries a single-use `state` value
+- opening that link and authorizing hits `SPOTIFY_REDIRECT_URI`, which verifies the `state`, stores
+  the new refresh token, and triggers a sync run
+
+Sync runs while unauthorized are recorded as failed with the reason; they do not crash the process.
+
 ## Environment variables
 Copy `.env.example` to `.env` and fill in the values.
 
@@ -33,7 +62,6 @@ Copy `.env.example` to `.env` and fill in the values.
         "userName": "flomaster-mc",
         "name": "РЗТ Mainstream 2022"
       },
-      "excludedTrackIds": [],
       "targetPlaylists": [
         {
           "type": "spotify",
