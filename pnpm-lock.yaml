@@ -33,9 +33,6 @@ importers:
       helmet:
         specifier: ^8.2
         version: 8.2.0
-      lowdb:
-        specifier: ^7.0.1
-        version: 7.0.1
       signale:
         specifier: ^1.4.0
         version: 1.4.0
@@ -1289,10 +1286,6 @@ packages:
     resolution: {integrity: sha512-9ie8ItPR6tjY5uYJh8K/Zrv/RMZ5VOlOWvtZdEHYSTFKZfIBPQa9tOAEeAWhd+AnIneLJ22w5fjOYtoutpWq5w==}
     engines: {node: '>=18'}
 
-  lowdb@7.0.1:
-    resolution: {integrity: sha512-neJAj8GwF0e8EpycYIDFqEPcx9Qz4GUho20jWFR7YiFeXzF1YMLdxB36PypcTSPMA+4+LvgyMacYhlr18Zlymw==}
-    engines: {node: '>=18'}
-
   math-intrinsics@1.1.0:
     resolution: {integrity: sha512-/IXtbwEk5HTPyEwyKX6hGkYXxM9nbj64B+ilVJnC/R6B0pH5G4V3b0pVbL7DBj4tkhBAppbQUlf6F6Xl9LHu1g==}
     engines: {node: '>= 0.4'}
@@ -1687,10 +1680,6 @@ packages:
   statuses@2.0.2:
     resolution: {integrity: sha512-DvEy55V3DB7uknRo+4iOGT5fP1slR8wQohVdknigZPMpMstaKJQWhwiYBACJE3Ul2pTnATihhBYnRhZQHGBiRw==}
     engines: {node: '>= 0.8'}
-
-  steno@4.0.2:
-    resolution: {integrity: sha512-yhPIQXjrlt1xv7dyPQg2P17URmXbuM5pdGkpiMB3RenprfiBlvK415Lctfe0eshk90oA7/tNq7WEiMK8RSP39A==}
-    engines: {node: '>=18'}
 
   string-argv@0.3.2:
     resolution: {integrity: sha512-aqD2Q0144Z+/RqG52NeHEkZauTAUWJO8c6yTftGJKO3Tja5tUgIfmIl6kExvhtxSDP7fXB6DvzkfMpCd/F3G+Q==}
@@ -3227,10 +3216,6 @@ snapshots:
       strip-ansi: 7.1.0
       wrap-ansi: 9.0.2
 
-  lowdb@7.0.1:
-    dependencies:
-      steno: 4.0.2
-
   math-intrinsics@1.1.0: {}
 
   media-typer@1.1.0: {}
@@ -3639,8 +3624,6 @@ snapshots:
   statuses@2.0.1: {}
 
   statuses@2.0.2: {}
-
-  steno@4.0.2: {}
 
   string-argv@0.3.2: {}
 

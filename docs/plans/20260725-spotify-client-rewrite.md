@@ -467,20 +467,20 @@ so dropping `spotifyReady` is safe. Do not look for that configuration in this r
 - Modify: `src/container.ts`, `src/services.ts`, `package.json`, `pnpm-lock.yaml`
 - Delete: `src/services/local-db.service.ts`, `src/entities/auth-store.entity.ts`
 
-- [ ] create `DbService` wrapping `node:sqlite` `DatabaseSync`, opening `<dbPath>/sync.db`, creating
+- [x] create `DbService` wrapping `node:sqlite` `DatabaseSync`, opening `<dbPath>/sync.db`, creating
       the parent folder when missing, and creating the three tables from Technical Details with
       `CREATE TABLE IF NOT EXISTS`
-- [ ] implement the lowdb migration exactly as specified: only when `auth` has no `spotify` row and
+- [x] implement the lowdb migration exactly as specified: only when `auth` has no `spotify` row and
       `<dbPath>/db.json` parses with a non-empty `refreshToken`; leave `db.json` in place
-- [ ] expose typed accessors for the `auth` row (read, write refresh token, write `revoked_at`, write
+- [x] expose typed accessors for the `auth` row (read, write refresh token, write `revoked_at`, write
       `pending_state`); no generic query surface
-- [ ] register `dbService` in `src/container.ts`, add it to the `Container` interface, delete the
+- [x] register `dbService` in `src/container.ts`, add it to the `Container` interface, delete the
       `authStore`/`LocalDbService` registration and remove `lowdb` from `package.json`, then run
       `pnpm install` so `pnpm-lock.yaml` no longer contains `lowdb`
-- [ ] write tests against `:memory:`: tables exist after construction, auth round-trips, migration
+- [x] write tests against `:memory:`: tables exist after construction, auth round-trips, migration
       imports a token exactly once and is a no-op on the second call, migration ignores an absent or
       malformed `db.json`
-- [ ] Gate G passes
+- [x] Gate G passes
 
 ### Task 2: Pure Spotify error classification
 

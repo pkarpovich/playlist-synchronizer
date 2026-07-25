@@ -10,10 +10,10 @@ import express from 'express';
 import {
     ConfigService,
     CronService,
+    DbService,
     FetchFn,
     HealthService,
     HttpService,
-    LocalDbService,
     LogService,
     NoopNotifier,
     Notifier,
@@ -23,21 +23,16 @@ import {
     YandexMusicService,
 } from './services.js';
 import { Config, IConfig } from './config.js';
-import { AuthStore } from './entities.js';
 import {
     initApiController,
     SpotifyController,
     HealthController,
 } from './controllers.js';
 
-const defaultAuthStore: AuthStore = {
-    refreshToken: '',
-};
-
 interface Container {
     logService: LogService;
     configService: ConfigService<IConfig>;
-    authStore: LocalDbService<AuthStore>;
+    dbService: DbService;
     httpService: HttpService;
     cronService: CronService;
     fetchFn: FetchFn;
@@ -73,6 +68,7 @@ export async function initContainer(): Promise<AwilixContainer<Container>> {
         configService: asClass(ConfigService<IConfig>)
             .inject(() => ({ config: Config }))
             .singleton(),
+        dbService: asClass(DbService).singleton(),
         httpService: asClass(HttpService).singleton(),
         cronService: asClass(CronService).singleton(),
         fetchFn: asValue<FetchFn>(globalThis.fetch),
@@ -85,15 +81,6 @@ export async function initContainer(): Promise<AwilixContainer<Container>> {
         apiRouter: asFunction(initApiController).singleton(),
         notifier: asFunction(initNotifier).singleton(),
         syncService: asClass(SyncService).singleton(),
-    });
-
-    const dbPath = container.cradle.configService.get('dbPath');
-    const authStoreDb = await LocalDbService.create(defaultAuthStore, dbPath);
-
-    container.register({
-        authStore: asFunction(
-            () => new LocalDbService<AuthStore>(authStoreDb),
-        ).singleton(),
     });
 
     return container;

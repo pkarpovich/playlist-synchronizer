@@ -1,10 +1,10 @@
 import SpotifyClient from 'spotify-web-api-node';
 
 import { BaseMusicService } from './base-music.service.js';
-import { LocalDbService } from '../local-db.service.js';
+import { DbService } from '../db.service.js';
 import { ConfigService } from '../config.service.js';
 import { LogService } from '../log.service.js';
-import { AuthStore, Playlist, Track } from '../../entities.js';
+import { Playlist, Track } from '../../entities.js';
 import { IConfig } from '../../config.js';
 import {
     parseUrlToQueryParams,
@@ -13,6 +13,8 @@ import {
 } from '../../utils.js';
 
 const TracksPerRequest = 99;
+
+const SpotifyAuthService = 'spotify';
 
 const scopes = [
     'playlist-read-private',
@@ -34,7 +36,7 @@ export class SpotifyService implements BaseMusicService {
     isReady = false;
 
     constructor(
-        private readonly authStore: LocalDbService<AuthStore>,
+        private readonly dbService: DbService,
         private readonly configService: ConfigService<IConfig>,
         private readonly logService: LogService,
     ) {
@@ -46,7 +48,8 @@ export class SpotifyService implements BaseMusicService {
     }
 
     async initializeClient(): Promise<void> {
-        const { refreshToken } = this.authStore.get();
+        const refreshToken =
+            this.dbService.getAuth(SpotifyAuthService)?.refreshToken;
 
         if (!refreshToken) {
             const url = this.client.createAuthorizeURL(scopes, 'spotify-app');
@@ -67,7 +70,7 @@ export class SpotifyService implements BaseMusicService {
         await this.client.setRefreshToken(body.refresh_token);
         this.isReady = true;
 
-        await this.authStore.set({ refreshToken: body.refresh_token });
+        this.dbService.setRefreshToken(SpotifyAuthService, body.refresh_token);
     }
 
     async refreshAccess(): Promise<void> {

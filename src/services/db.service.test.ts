@@ -1,0 +1,178 @@
+import { strict as assert } from 'node:assert';
+import { mkdtempSync, rmSync, writeFileSync, existsSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { DatabaseSync } from 'node:sqlite';
+import { test, TestContext } from 'node:test';
+
+import { IConfig } from '../config.js';
+import { ConfigService } from './config.service.js';
+import { DbService, parseLegacyRefreshToken } from './db.service.js';
+import { LogService } from './log.service.js';
+
+const DbFile = 'sync.db';
+
+interface LogEntry {
+    level: string;
+    message: string;
+}
+
+function makeLogStub(logs: LogEntry[]): LogService {
+    const push = (level: string) => (message: string | Error) =>
+        logs.push({ level, message: String(message) });
+
+    return {
+        createScope: () => ({}),
+        info: push('info'),
+        warn: push('warn'),
+        success: push('success'),
+        error: push('error'),
+        await: push('await'),
+    } as unknown as LogService;
+}
+
+function makeDbService(dbPath: string, logs: LogEntry[] = []): DbService {
+    const configService = new ConfigService<IConfig>({ dbPath } as IConfig);
+
+    return new DbService(configService, makeLogStub(logs));
+}
+
+function makeTempDir(t: TestContext): string {
+    const dir = mkdtempSync(join(tmpdir(), 'playlist-synchronizer-'));
+    t.after(() => rmSync(dir, { recursive: true, force: true }));
+
+    return dir;
+}
+
+function listTables(dbFilePath: string): string[] {
+    const db = new DatabaseSync(dbFilePath);
+    const rows = db
+        .prepare("SELECT name FROM sqlite_master WHERE type = 'table'")
+        .all();
+    db.close();
+
+    return rows.map((row) => String(row.name));
+}
+
+test('creates the three tables on construction', (t) => {
+    const dir = makeTempDir(t);
+    makeDbService(dir);
+
+    const tables = listTables(join(dir, DbFile));
+
+    assert.ok(tables.includes('auth'));
+    assert.ok(tables.includes('track_map'));
+    assert.ok(tables.includes('playlist_state'));
+});
+
+test('reading an unknown auth service returns null', () => {
+    const dbService = makeDbService(':memory:');
+
+    assert.equal(dbService.getAuth('spotify'), null);
+});
+
+test('auth values round-trip through the database', () => {
+    const dbService = makeDbService(':memory:');
+
+    dbService.setRefreshToken('spotify', 'refresh-1');
+    dbService.setRevokedAt('spotify', 1700000000000);
+    dbService.setPendingState('spotify', 'state-1');
+
+    assert.deepEqual(dbService.getAuth('spotify'), {
+        service: 'spotify',
+        refreshToken: 'refresh-1',
+        revokedAt: 1700000000000,
+        pendingState: 'state-1',
+    });
+
+    dbService.setRefreshToken('spotify', '');
+    dbService.setRevokedAt('spotify', null);
+    dbService.setPendingState('spotify', null);
+
+    assert.deepEqual(dbService.getAuth('spotify'), {
+        service: 'spotify',
+        refreshToken: '',
+        revokedAt: null,
+        pendingState: null,
+    });
+});
+
+test('writing a single auth column creates a row with defaults', () => {
+    const dbService = makeDbService(':memory:');
+
+    dbService.setPendingState('spotify', 'state-1');
+
+    assert.deepEqual(dbService.getAuth('spotify'), {
+        service: 'spotify',
+        refreshToken: '',
+        revokedAt: null,
+        pendingState: 'state-1',
+    });
+});
+
+test('migration imports the lowdb refresh token and leaves db.json in place', (t) => {
+    const dir = makeTempDir(t);
+    const legacyFile = join(dir, 'db.json');
+    writeFileSync(legacyFile, JSON.stringify({ refreshToken: 'legacy-1' }));
+
+    const logs: LogEntry[] = [];
+    const dbService = makeDbService(dir, logs);
+
+    assert.equal(dbService.getAuth('spotify')?.refreshToken, 'legacy-1');
+    assert.ok(existsSync(legacyFile));
+    assert.equal(logs.filter(({ level }) => level === 'info').length, 1);
+});
+
+test('migration is a no-op on the second call', (t) => {
+    const dir = makeTempDir(t);
+    writeFileSync(
+        join(dir, 'db.json'),
+        JSON.stringify({ refreshToken: 'legacy-1' }),
+    );
+
+    const dbService = makeDbService(dir);
+    dbService.setRefreshToken('spotify', 'rotated-1');
+
+    dbService.migrateLegacyAuth();
+
+    assert.equal(dbService.getAuth('spotify')?.refreshToken, 'rotated-1');
+});
+
+test('migration ignores a malformed db.json', (t) => {
+    const dir = makeTempDir(t);
+    writeFileSync(join(dir, 'db.json'), '{ not json');
+
+    const dbService = makeDbService(dir);
+
+    assert.equal(dbService.getAuth('spotify'), null);
+});
+
+test('migration ignores a db.json without a refresh token', (t) => {
+    const dir = makeTempDir(t);
+    writeFileSync(join(dir, 'db.json'), JSON.stringify({ refreshToken: '' }));
+
+    const dbService = makeDbService(dir);
+
+    assert.equal(dbService.getAuth('spotify'), null);
+});
+
+test('migration ignores an absent db.json', () => {
+    const dbService = makeDbService(':memory:');
+
+    assert.equal(dbService.getAuth('spotify'), null);
+});
+
+test('parseLegacyRefreshToken rejects everything but a non-empty token', () => {
+    assert.equal(
+        parseLegacyRefreshToken(JSON.stringify({ refreshToken: 'token-1' })),
+        'token-1',
+    );
+    assert.equal(parseLegacyRefreshToken('{ not json'), null);
+    assert.equal(parseLegacyRefreshToken('null'), null);
+    assert.equal(parseLegacyRefreshToken('"token-1"'), null);
+    assert.equal(parseLegacyRefreshToken(JSON.stringify({})), null);
+    assert.equal(
+        parseLegacyRefreshToken(JSON.stringify({ refreshToken: 42 })),
+        null,
+    );
+});
