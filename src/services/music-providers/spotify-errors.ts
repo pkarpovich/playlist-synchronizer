@@ -46,11 +46,11 @@ export function classifyTokenResponse(
     status: number,
     body: unknown,
 ): TokenErrorClass {
-    if (status !== 400) {
+    if (status === 429 || status >= 500) {
         return 'transient';
     }
 
-    if (readTokenErrorCode(body) === InvalidGrantCode) {
+    if (status === 400 && readTokenErrorCode(body) === InvalidGrantCode) {
         return 'invalid-grant';
     }
 

@@ -44,6 +44,14 @@ test('classifyTokenResponse treats rate limiting and server errors as transient'
     );
 });
 
+test('classifyTokenResponse treats rejected credentials as a configuration problem', () => {
+    assert.equal(
+        classifyTokenResponse(401, { error: 'invalid_client' }),
+        'config-error',
+    );
+    assert.equal(classifyTokenResponse(403, {}), 'config-error');
+});
+
 test('classifyApiStatus maps every api status to its action', () => {
     assert.equal(classifyApiStatus(401), 'refresh-retry');
     assert.equal(classifyApiStatus(403), 'no-retry');

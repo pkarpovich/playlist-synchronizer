@@ -257,8 +257,15 @@ export class SyncService {
         }
 
         const stale = new Set(staleUris);
+        const owned = new Set([
+            ...recordedUris,
+            ...adopted.map(([targetUri]) => targetUri),
+        ]);
         const duplicateUris = [...presentCounts]
-            .filter(([targetUri, count]) => count > 1 && !stale.has(targetUri))
+            .filter(
+                ([targetUri, count]) =>
+                    count > 1 && !stale.has(targetUri) && owned.has(targetUri),
+            )
             .map(([targetUri]) => targetUri);
         if (duplicateUris.length) {
             await service.removeTracksFromPlaylist(

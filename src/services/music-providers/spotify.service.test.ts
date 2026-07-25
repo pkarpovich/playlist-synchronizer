@@ -219,6 +219,42 @@ test('a page body that cannot be parsed fails the read instead of truncating it'
     );
 });
 
+test('a page without an items array fails the read instead of reporting an empty playlist', async () => {
+    const harness = makeHarness([{ status: 200, body: {} }]);
+
+    await assert.rejects(
+        () => harness.service.getPlaylistTrackUris(playlist),
+        /unreadable playlist page/,
+    );
+});
+
+test('a page of track-keyed entries fails the read instead of reporting an empty playlist', async () => {
+    const harness = makeHarness([
+        {
+            status: 200,
+            body: {
+                items: [
+                    {
+                        added_at: '2026-01-01T00:00:00Z',
+                        track: {
+                            uri: 'spotify:track:1aaaaaaaaaaaaaaaaaaaaa',
+                            name: 'Song',
+                            type: 'track',
+                            artists: [{ name: 'Artist' }],
+                        },
+                    },
+                ],
+                next: null,
+            },
+        },
+    ]);
+
+    await assert.rejects(
+        () => harness.service.getPlaylistTrackUris(playlist),
+        /without an item field/,
+    );
+});
+
 test('reading a playlist issues only GET requests with a bearer token', async () => {
     const harness = makeHarness([
         { status: 200, body: firstPage },

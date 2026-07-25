@@ -541,6 +541,25 @@ test('a URI present three times is removed once and re-added once', async () => 
     assert.equal(lastRun?.playlists[0].added, 0);
 });
 
+test('a duplicated URI with no provenance row is left untouched', async () => {
+    const { syncService, target } = makeHarness();
+    target.setUris('sp-good', [
+        'spotify:track:manual',
+        'spotify:track:manual',
+        'spotify:track:1',
+    ]);
+
+    await syncService.syncAll(makeSingleConfig());
+
+    assert.equal(target.removeCalls.length, 0);
+    assert.equal(target.addCalls.length, 0);
+    assert.deepEqual(target.getUris('sp-good'), [
+        'spotify:track:manual',
+        'spotify:track:manual',
+        'spotify:track:1',
+    ]);
+});
+
 test('adoption inserts provenance for already-present desired URIs', async () => {
     const { syncService, target, dbService } = makeHarness();
     target.setUris('sp-good', ['spotify:track:1']);

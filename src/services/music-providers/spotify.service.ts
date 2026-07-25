@@ -203,13 +203,19 @@ export class SpotifyService implements BaseMusicService {
 
         while (url) {
             const page = (await this.request(url)) as PlaylistItemsPage | null;
-            if (!page) {
+            if (!page || !Array.isArray(page.items)) {
                 throw new Error(
                     `Spotify returned an unreadable playlist page for ${url}`,
                 );
             }
 
-            for (const entry of page.items ?? []) {
+            for (const entry of page.items) {
+                if (!entry.is_local && !('item' in entry)) {
+                    throw new Error(
+                        `Spotify returned a playlist entry without an item field for ${url}`,
+                    );
+                }
+
                 const track = toTrack(entry);
                 if (!track) {
                     continue;
