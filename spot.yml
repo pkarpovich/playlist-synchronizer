@@ -1,0 +1,12 @@
+tasks:
+  - name: deploy
+    commands:
+      - name: clone repo if missing
+        script: |
+          test -d ~/playlist-synchronizer/.git || git clone git@github.com:pkarpovich/playlist-synchronizer.git ~/playlist-synchronizer
+      - name: pull latest source
+        script: git -C ~/playlist-synchronizer pull
+      - name: pull image
+        script: cd ~/playlist-synchronizer && docker compose pull
+      - name: restart service
+        script: cd ~/playlist-synchronizer && docker compose up -d

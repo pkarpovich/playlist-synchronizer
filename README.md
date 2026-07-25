@@ -10,6 +10,27 @@ The app allows to synchronize of playlists from one service to others.
 ## Requirements
 - Node 24 (managed via `mise`, see `mise.toml`)
 
+## Deploy
+The service runs on the host as a git checkout with `compose.yaml` at the repo root, behind the
+shared Traefik gateway (external docker network `proxy`, TLS terminated at the edge). Images are
+published to `ghcr.io/pkarpovich/playlist-synchronizer` by the publish workflow on push to `main`,
+so `latest` always matches `main`.
+
+Deploys use [Spot](https://github.com/umputun/spot). The `deploy` task clones the repo if missing,
+`git pull`s, `docker compose pull`s the latest image, and `docker compose up -d`. The target host is
+in `inventory.yml`.
+
+```sh
+mise run deploy                               # uses ~/.ssh/id_ed25519
+SSH_KEY=/path/to/other/key mise run deploy    # override the key
+```
+
+On the host, `~/playlist-synchronizer/.env` must carry `DOMAIN`, `HTTP_PORT`, the three `SPOTIFY_*`
+values, `JOB_CRON_PATTERN`, and - for this deployment - `YANDEX_API_PROXY`, `NOTIFY_URL` and
+`NOTIFY_SECRET`. `sync-config.json` is per-host: mark it with
+`git update-index --skip-worktree sync-config.json` in the checkout so a local playlist
+configuration survives `git pull`.
+
 ## State
 All state lives in a SQLite database at `<DB_PATH>/sync.db`, opened through the built-in
 `node:sqlite` module. It holds three collections:
