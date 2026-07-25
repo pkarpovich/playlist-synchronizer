@@ -772,20 +772,34 @@ so dropping `spotifyReady` is safe. Do not look for that configuration in this r
 
 ### Task 16: Verify acceptance criteria
 
-- [ ] `spotify-auth.service.test.ts` has a test asserting `initialize()` resolves (does not reject)
+- [x] `spotify-auth.service.test.ts` has a test asserting `initialize()` resolves (does not reject)
       when the token endpoint answers `400 invalid_grant`, that the state becomes
       `needs-reauthorization`, and that a logged message contains `accounts.spotify.com/authorize`
-- [ ] `spotify-auth.service.test.ts` asserts zero retry attempts on `invalid_grant` and exactly the
+      - verified: "initialize resolves on invalid_grant, discards the token and logs the authorize URL"
+- [x] `spotify-auth.service.test.ts` asserts zero retry attempts on `invalid_grant` and exactly the
       delay sequence 500/1000/2000 on `5xx`
-- [ ] `grep -rn "/playlists/" src --include="*.ts"` shows only `/items` paths and no `/tracks`
-- [ ] `spotify.service.test.ts` asserts add and remove of 250 URIs each produce 100/100/50 request
+      - verified: the `invalid_grant` test asserts one fetch call and an empty delay list; "a 5xx
+        response retries with the 500/1000/2000 delay sequence" asserts the sequence exactly
+- [x] `grep -rn "/playlists/" src --include="*.ts"` shows only `/items` paths and no `/tracks`
+      - verified: every Spotify path ends in `/items`; `grep -rn "/tracks" src --include="*.ts"` is
+        empty. The remaining non-`/items` hits are the Yandex `/users/{owner}/playlists/{kind}`
+        endpoint, which this plan does not touch
+- [x] `spotify.service.test.ts` asserts add and remove of 250 URIs each produce 100/100/50 request
       bodies and that the remove body uses the `items` key
-- [ ] `sync.service.test.ts` asserts that with an empty `playlist_state` no removal request is issued
+      - verified: both chunking tests assert `[100, 100, 50]` body sizes, and "the removal body uses
+        the items key and not tracks" asserts `body.tracks` is undefined
+- [x] `sync.service.test.ts` asserts that with an empty `playlist_state` no removal request is issued
       regardless of target contents
-- [ ] `track-mapping.service.test.ts` asserts a second run over the same source issues zero search
+      - verified: "an empty playlist_state yields zero removals whatever the target holds"
+- [x] `track-mapping.service.test.ts` asserts a second run over the same source issues zero search
       requests
-- [ ] `health.controller.test.ts` asserts `200` with `spotify.state` present in every auth state
-- [ ] Gate G passes on a clean checkout
+      - verified: "a mapped track issues zero searches on the next call"
+- [x] `health.controller.test.ts` asserts `200` with `spotify.state` present in every auth state
+      - verified: "healthCheck responds 200 with the auth state in every state" loops all three states
+- [x] Gate G passes on a clean checkout
+      - `pnpm install --frozen-lockfile` reports the lockfile up to date, then `pnpm check-types`,
+        `pnpm lint` (0 errors), `pnpm test` (200 pass, 0 fail), and `pnpm build` all exit 0; the
+        comment check produces no output
 
 ### Task 17: [Final] Update documentation
 
