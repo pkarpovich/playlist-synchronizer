@@ -742,14 +742,14 @@ so dropping `spotifyReady` is safe. Do not look for that configuration in this r
 - Modify: `src/utils/cleanup.ts`, `src/index.ts`
 - Create: `src/utils/cleanup.test.ts`
 
-- [ ] change the signature to `cleanup(beforeExit: () => void, exitFn: () => void = () => process.exit(0)): void`
+- [x] change the signature to `cleanup(beforeExit: () => void, exitFn: () => void = () => process.exit(0)): void`
       so the handler is testable; `src/index.ts` keeps its single-argument call
-- [ ] register handlers for `SIGINT`, `SIGTERM`, `SIGUSR1`, `SIGUSR2`, each running `beforeExit()`
+- [x] register handlers for `SIGINT`, `SIGTERM`, `SIGUSR1`, `SIGUSR2`, each running `beforeExit()`
       then `exitFn()`; `SIGTERM` is currently unhandled although `docker stop` sends it
-- [ ] delete the `uncaughtException` handler, which logs and then calls `exitHandler.bind(...)`
+- [x] delete the `uncaughtException` handler, which logs and then calls `exitHandler.bind(...)`
       without invoking it, and remove the `process.stdin.resume()` leftover
-- [ ] write a test passing a recording `exitFn` and emitting each signal, asserting both callbacks ran
-- [ ] Gate G passes
+- [x] write a test passing a recording `exitFn` and emitting each signal, asserting both callbacks ran
+- [x] Gate G passes
 
 ### Task 15: Remove dead code and dependencies
 
