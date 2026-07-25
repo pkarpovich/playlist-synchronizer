@@ -34,6 +34,12 @@ edit. Keeping it out of git is what lets `git pull` run unattended - `git update
 --skip-worktree` is not enough, because a merge that touches the file still refuses to overwrite
 local changes.
 
+If `NOTIFY_URL` points at a host that lives behind a Tailscale subnet router rather than at a
+Tailscale node itself, the deployment host has to accept subnet routes (`tailscale set
+--accept-routes`). Without it the name resolves to a private address that is sent out the public
+interface and the notification times out, while everything else keeps working - the Yandex SOCKS
+proxy is addressed by its node IP and so is unaffected.
+
 ## State
 All state lives in a SQLite database at `<DB_PATH>/sync.db`, opened through the built-in
 `node:sqlite` module. It holds three collections:
