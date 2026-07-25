@@ -5,5 +5,7 @@ export type Track = {
 
     artists: string[];
 
+    unavailable?: boolean;
+
     source?: unknown;
 };

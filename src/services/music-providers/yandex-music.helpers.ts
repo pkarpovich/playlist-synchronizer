@@ -12,7 +12,7 @@ export type YandexTrack = {
 
 export type YandexPlaylistResponse = {
     result?: {
-        tracks?: { track?: YandexTrack | null }[];
+        tracks?: { id?: string; track?: YandexTrack | null }[];
     };
 };
 
@@ -58,7 +58,13 @@ export function mapPlaylistTracks(json: YandexPlaylistResponse): Track[] {
         const track = item.track;
 
         if (track === null) {
-            return [];
+            const entryId = item.id;
+
+            if (typeof entryId !== 'string' || entryId.trim().length === 0) {
+                return [];
+            }
+
+            return [{ id: entryId, name: '', artists: [], unavailable: true }];
         }
 
         if (track === undefined) {

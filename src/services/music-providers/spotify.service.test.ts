@@ -527,6 +527,30 @@ test('a search response without a tracks envelope means zero candidates', async 
     assert.equal(harness.calls.length, 2);
 });
 
+test('malformed search candidates are skipped instead of failing the resolve', async () => {
+    const harness = makeHarness([
+        {
+            status: 200,
+            body: searchBody([
+                null,
+                { uri: 'spotify:track:no-name', artists: [] },
+                { uri: 'spotify:track:no-artists', name: 'тРи пОлОсКи' },
+                {
+                    uri: 'spotify:track:null-artist',
+                    name: 'тРи пОлОсКи',
+                    artists: [null],
+                },
+                skryptonite,
+            ]),
+        },
+    ]);
+
+    const resolved = await harness.service.resolveTrack(source);
+
+    assert.equal(resolved?.uri, 'spotify:track:tri-poloski');
+    assert.equal(harness.calls.length, 1);
+});
+
 test('an empty step one result triggers the free-text search', async () => {
     const harness = makeHarness([
         { status: 200, body: searchBody([]) },

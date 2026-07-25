@@ -89,6 +89,7 @@ class StubMusicService extends BaseMusicService {
 class TrackMappingStub {
     mapping = new Map<string, string>();
     sourceTypes: MusicServiceTypes[] = [];
+    requestedIds: string[] = [];
 
     get resolveCalls(): number {
         return this.sourceTypes.length;
@@ -99,6 +100,7 @@ class TrackMappingStub {
         sourceTracks: Track[],
     ): Promise<Map<string, string>> {
         this.sourceTypes.push(sourceType);
+        this.requestedIds.push(...sourceTracks.map(({ id }) => id ?? ''));
         const resolved = new Map<string, string>();
 
         for (const { id } of sourceTracks) {
@@ -480,6 +482,54 @@ test('a source track that disappears removes exactly its recorded URI', async ()
 
     const lastRun = syncService.lastRun;
     assert.equal(lastRun?.playlists[0].removed, 1);
+});
+
+test('a source track that turns unavailable keeps its recorded URI', async () => {
+    let sourceTracks: Track[] = [
+        { id: 'y-1', name: 'A', artists: ['Artist'] },
+        { id: 'y-2', name: 'B', artists: ['Artist'] },
+    ];
+    const { syncService, target, dbService } = makeHarness(
+        async () => sourceTracks,
+    );
+
+    await syncService.syncAll(makeSingleConfig());
+    assert.deepEqual(target.getUris('sp-good'), [
+        'spotify:track:1',
+        'spotify:track:2',
+    ]);
+
+    sourceTracks = [
+        { id: 'y-1', name: 'A', artists: ['Artist'] },
+        { id: 'y-2', name: '', artists: [], unavailable: true },
+    ];
+    await syncService.syncAll(makeSingleConfig());
+
+    assert.equal(target.removeCalls.length, 0);
+    assert.deepEqual(target.getUris('sp-good'), [
+        'spotify:track:1',
+        'spotify:track:2',
+    ]);
+    assert.deepEqual(
+        playlistState(dbService, 'sp-good').map(({ targetUri }) => targetUri),
+        ['spotify:track:1', 'spotify:track:2'],
+    );
+
+    const lastRun = syncService.lastRun;
+    assert.equal(lastRun?.playlists[0].removed, 0);
+    assert.equal(lastRun?.playlists[0].sourceTracks, 1);
+    assert.equal(lastRun?.playlists[0].notFound, 0);
+});
+
+test('an unavailable source track is never handed to the track mapping', async () => {
+    const { syncService, trackMapping } = makeHarness(async () => [
+        { id: 'y-1', name: 'A', artists: ['Artist'] },
+        { id: 'y-2', name: '', artists: [], unavailable: true },
+    ]);
+
+    await syncService.syncAll(makeSingleConfig());
+
+    assert.deepEqual(trackMapping.requestedIds, ['y-1']);
 });
 
 test('a URI another source track still maps to survives its provenance source leaving', async () => {

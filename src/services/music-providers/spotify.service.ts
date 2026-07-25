@@ -38,7 +38,7 @@ type PlaylistItemsPage = {
 };
 
 type SearchPage = {
-    tracks?: { items?: SpotifyTrack[] };
+    tracks?: { items?: (SpotifyTrack | null)[] };
 };
 
 type RequestOutcome =
@@ -69,6 +69,17 @@ function toTrack(entry: PlaylistItemEntry): PlaylistEntryTrack | null {
         name: item.name,
         artists: (item.artists ?? []).map(({ name }) => name),
     };
+}
+
+function isSearchCandidate(
+    candidate: SpotifyTrack | null,
+): candidate is SpotifyTrack {
+    return (
+        typeof candidate?.uri === 'string' &&
+        typeof candidate.name === 'string' &&
+        Array.isArray(candidate.artists) &&
+        candidate.artists.every((artist) => typeof artist?.name === 'string')
+    );
 }
 
 function toResolvedTrack(track: SpotifyTrack): SpotifyResolvedTrack {
@@ -246,7 +257,7 @@ export class SpotifyService implements BaseMusicService {
             );
         }
 
-        return page.tracks?.items ?? [];
+        return (page.tracks?.items ?? []).filter(isSearchCandidate);
     }
 
     private async request(

@@ -160,15 +160,18 @@ export class SyncService {
             syncConfig.metadata,
             loggerCtx,
         );
-        result.sourceTracks = sourcePlaylistTracks.length;
+        const availableTracks = sourcePlaylistTracks.filter(
+            ({ unavailable }) => !unavailable,
+        );
+        result.sourceTracks = availableTracks.length;
 
-        if (!sourcePlaylistTracks.length) {
+        if (!availableTracks.length) {
             return { ...result, status: 'empty-source' };
         }
 
         const mapping = await this.trackMappingService.resolve(
             syncConfig.type,
-            sourcePlaylistTracks,
+            availableTracks,
         );
         result.matched = mapping.size;
         result.notFound = result.sourceTracks - mapping.size;

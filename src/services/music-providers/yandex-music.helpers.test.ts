@@ -50,7 +50,7 @@ test('mapPlaylistTracks keeps the raw track as the track source', () => {
     assert.deepEqual(tracks[0].source, fixture.result?.tracks?.[0].track);
 });
 
-test('mapPlaylistTracks skips unavailable tracks with a null track body', () => {
+test('mapPlaylistTracks skips a null track body that carries no entry id', () => {
     const tracks = mapPlaylistTracks({
         result: {
             tracks: [
@@ -78,6 +78,32 @@ test('mapPlaylistTracks skips unavailable tracks with a null track body', () => 
             },
         },
     ]);
+});
+
+test('mapPlaylistTracks keeps a null track body as an unavailable entry id', () => {
+    const tracks = mapPlaylistTracks({
+        result: {
+            tracks: [
+                { id: '10994777', track: null },
+                {
+                    id: '20580170',
+                    track: {
+                        id: '20580170',
+                        title: 'Numb',
+                        artists: [{ name: 'Linkin Park' }],
+                    },
+                },
+            ],
+        },
+    });
+
+    assert.deepEqual(tracks[0], {
+        id: '10994777',
+        name: '',
+        artists: [],
+        unavailable: true,
+    });
+    assert.equal(tracks[1].unavailable, undefined);
 });
 
 test('mapPlaylistTracks maps the source track id', () => {
