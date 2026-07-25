@@ -22,6 +22,7 @@ import {
     SpotifyAuthService,
     SpotifyService,
     SyncService,
+    TrackMappingService,
     YandexMusicService,
 } from './services.js';
 import { Config, IConfig } from './config.js';
@@ -43,6 +44,7 @@ interface Container {
     yandexMusicService: YandexMusicService;
     spotifyAuthService: SpotifyAuthService;
     spotifyService: SpotifyService;
+    trackMappingService: TrackMappingService;
     healthService: HealthService;
     spotifyController: SpotifyController;
     healthController: HealthController;
@@ -83,6 +85,7 @@ export async function initContainer(): Promise<AwilixContainer<Container>> {
         yandexMusicService: asClass(YandexMusicService).singleton(),
         spotifyAuthService: asClass(SpotifyAuthService).singleton(),
         spotifyService: asClass(SpotifyService).singleton(),
+        trackMappingService: asClass(TrackMappingService).singleton(),
         healthService: asClass(HealthService).singleton(),
         healthController: asClass(HealthController).singleton(),
         spotifyController: asClass(SpotifyController).singleton(),

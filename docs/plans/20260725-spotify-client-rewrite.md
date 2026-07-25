@@ -646,18 +646,18 @@ so dropping `spotifyReady` is safe. Do not look for that configuration in this r
 - Create: `src/services/track-mapping.service.test.ts`
 - Modify: `src/services/db.service.ts`, `src/services.ts`, `src/container.ts`
 
-- [ ] add `track_map` accessors to `DbService`: read a row by `(source_type, source_id, target_type)`,
+- [x] add `track_map` accessors to `DbService`: read a row by `(source_type, source_id, target_type)`,
       upsert a resolution, upsert a negative result, and count resolved versus unresolved
-- [ ] create `TrackMappingService` with dependencies `dbService`, `spotifyService`, `logService`,
+- [x] create `TrackMappingService` with dependencies `dbService`, `spotifyService`, `logService`,
       `now`, exposing `resolve(sourceType, sourceTracks): Promise<Map<string, string>>` returning
       source id to target URI for everything currently resolvable
-- [ ] apply the retry policy: search only when there is no row, or the row is negative and
+- [x] apply the retry policy: search only when there is no row, or the row is negative and
       `last_tried_at` is older than 24 hours; always update `last_tried_at` and `attempts`
-- [ ] write tests with a stubbed `SpotifyService` and a fixed `now`: an unmapped track is searched
+- [x] write tests with a stubbed `SpotifyService` and a fixed `now`: an unmapped track is searched
       once and stored; a mapped track issues **zero** searches on the next call; a negative row within
       24 hours issues zero searches; a negative row older than 24 hours is retried; a later successful
       retry clears the negative state
-- [ ] Gate G passes
+- [x] Gate G passes
 
 ### Task 10: Provenance-driven sync
 

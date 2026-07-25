@@ -5,6 +5,7 @@ export * from './services/music-providers/spotify-auth.service.js';
 export * from './services/music-providers/spotify-errors.js';
 export * from './services/music-providers/spotify-types.js';
 export * from './services/db.service.js';
+export * from './services/track-mapping.service.js';
 export * from './services/http.service.js';
 export * from './services/sync.service.js';
 export * from './services/health.service.js';

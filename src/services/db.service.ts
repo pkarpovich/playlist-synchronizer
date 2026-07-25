@@ -52,6 +52,40 @@ export type AuthRecord = {
     pendingState: string | null;
 };
 
+export type TrackMapKey = {
+    sourceType: string;
+    sourceId: string;
+    targetType: string;
+};
+
+export type TrackMapRecord = {
+    targetUri: string | null;
+    isrc: string | null;
+    durationMs: number | null;
+    resolvedAt: number | null;
+    lastTriedAt: number | null;
+    attempts: number;
+};
+
+export type TrackMapResolution = {
+    targetUri: string;
+    isrc: string | null;
+    durationMs: number | null;
+};
+
+export type TrackMapCounts = {
+    resolved: number;
+    unresolved: number;
+};
+
+function toNumberOrNull(value: unknown): number | null {
+    return typeof value === 'number' ? value : null;
+}
+
+function toStringOrNull(value: unknown): string | null {
+    return typeof value === 'string' ? value : null;
+}
+
 export function parseLegacyRefreshToken(content: string): string | null {
     try {
         const parsed: unknown = JSON.parse(content);
@@ -138,6 +172,92 @@ export class DbService {
 
     setPendingState(service: string, pendingState: string | null): void {
         this.writeAuthColumn(service, 'pending_state', pendingState);
+    }
+
+    getTrackMap({
+        sourceType,
+        sourceId,
+        targetType,
+    }: TrackMapKey): TrackMapRecord | null {
+        const row = this.db
+            .prepare(
+                'SELECT target_uri, isrc, duration_ms, resolved_at, last_tried_at, attempts FROM track_map WHERE source_type = ? AND source_id = ? AND target_type = ?',
+            )
+            .get(sourceType, sourceId, targetType);
+
+        if (!row) {
+            return null;
+        }
+
+        return {
+            targetUri: toStringOrNull(row.target_uri),
+            isrc: toStringOrNull(row.isrc),
+            durationMs: toNumberOrNull(row.duration_ms),
+            resolvedAt: toNumberOrNull(row.resolved_at),
+            lastTriedAt: toNumberOrNull(row.last_tried_at),
+            attempts: Number(row.attempts ?? 0),
+        };
+    }
+
+    setTrackResolution(
+        { sourceType, sourceId, targetType }: TrackMapKey,
+        { targetUri, isrc, durationMs }: TrackMapResolution,
+        triedAt: number,
+    ): void {
+        this.db
+            .prepare(
+                `INSERT INTO track_map (source_type, source_id, target_type, target_uri, isrc, duration_ms, resolved_at, last_tried_at, attempts)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
+                 ON CONFLICT(source_type, source_id, target_type) DO UPDATE SET
+                     target_uri = excluded.target_uri,
+                     isrc = excluded.isrc,
+                     duration_ms = excluded.duration_ms,
+                     resolved_at = excluded.resolved_at,
+                     last_tried_at = excluded.last_tried_at,
+                     attempts = track_map.attempts + 1`,
+            )
+            .run(
+                sourceType,
+                sourceId,
+                targetType,
+                targetUri,
+                isrc,
+                durationMs,
+                triedAt,
+                triedAt,
+            );
+    }
+
+    setTrackMiss(
+        { sourceType, sourceId, targetType }: TrackMapKey,
+        triedAt: number,
+    ): void {
+        this.db
+            .prepare(
+                `INSERT INTO track_map (source_type, source_id, target_type, target_uri, isrc, duration_ms, resolved_at, last_tried_at, attempts)
+                 VALUES (?, ?, ?, NULL, NULL, NULL, NULL, ?, 1)
+                 ON CONFLICT(source_type, source_id, target_type) DO UPDATE SET
+                     target_uri = NULL,
+                     isrc = NULL,
+                     duration_ms = NULL,
+                     resolved_at = NULL,
+                     last_tried_at = excluded.last_tried_at,
+                     attempts = track_map.attempts + 1`,
+            )
+            .run(sourceType, sourceId, targetType, triedAt);
+    }
+
+    countTrackMap(): TrackMapCounts {
+        const row = this.db
+            .prepare(
+                'SELECT COUNT(*) AS total, COUNT(target_uri) AS resolved FROM track_map',
+            )
+            .get();
+
+        const total = Number(row?.total ?? 0);
+        const resolved = Number(row?.resolved ?? 0);
+
+        return { resolved, unresolved: total - resolved };
     }
 
     migrateLegacyAuth(): void {
