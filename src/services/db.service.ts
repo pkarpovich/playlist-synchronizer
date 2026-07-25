@@ -312,6 +312,20 @@ export class DbService {
         }));
     }
 
+    listOtherSourceUris({
+        targetType,
+        targetPlaylistId,
+        sourcePlaylistId,
+    }: PlaylistStateKey): string[] {
+        const rows = this.db
+            .prepare(
+                'SELECT DISTINCT target_uri FROM playlist_state WHERE target_type = ? AND target_playlist_id = ? AND source_playlist_id <> ?',
+            )
+            .all(targetType, targetPlaylistId, sourcePlaylistId);
+
+        return rows.map((row) => String(row.target_uri));
+    }
+
     addPlaylistState(
         { targetType, targetPlaylistId, sourcePlaylistId }: PlaylistStateKey,
         { targetUri, sourceType, sourceId }: PlaylistStateEntry,

@@ -344,6 +344,47 @@ test('rows of another source playlist stay invisible to this one', () => {
     assert.equal(dbService.listPlaylistState(fromB).length, 1);
 });
 
+test('URIs of other source playlists are listed for the same target', () => {
+    const dbService = makeDbService(':memory:');
+    const fromA = {
+        targetType: 'spotify',
+        targetPlaylistId: 'sp-1',
+        sourcePlaylistId: 'src-a',
+    };
+    const fromB = { ...fromA, sourcePlaylistId: 'src-b' };
+    const otherTarget = { ...fromB, targetPlaylistId: 'sp-2' };
+    const entry = { sourceType: 'yandexMusic', sourceId: 'y-1' };
+
+    dbService.addPlaylistState(
+        fromA,
+        { ...entry, targetUri: 'spotify:track:shared' },
+        1000,
+    );
+    dbService.addPlaylistState(
+        fromB,
+        { ...entry, targetUri: 'spotify:track:shared' },
+        2000,
+    );
+    dbService.addPlaylistState(
+        fromB,
+        { ...entry, targetUri: 'spotify:track:b-only' },
+        2000,
+    );
+    dbService.addPlaylistState(
+        otherTarget,
+        { ...entry, targetUri: 'spotify:track:elsewhere' },
+        3000,
+    );
+
+    assert.deepEqual(dbService.listOtherSourceUris(fromA).sort(), [
+        'spotify:track:b-only',
+        'spotify:track:shared',
+    ]);
+    assert.deepEqual(dbService.listOtherSourceUris(fromB), [
+        'spotify:track:shared',
+    ]);
+});
+
 test('adding the same URI twice keeps one row with the latest source', () => {
     const dbService = makeDbService(':memory:');
     const key = {

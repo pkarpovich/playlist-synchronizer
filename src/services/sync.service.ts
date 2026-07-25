@@ -247,12 +247,23 @@ export class SyncService {
         }
 
         const currentSourceIds = new Set(sourceTracks.map(({ id }) => id));
-        const staleUris = provenance
+        const releasedUris = provenance
             .filter(
                 ({ targetUri, sourceId }) =>
                     !currentSourceIds.has(sourceId) && !desired.has(targetUri),
             )
             .map(({ targetUri }) => targetUri);
+        const claimedElsewhere = new Set(
+            this.dbService.listOtherSourceUris(key),
+        );
+        this.dbService.deletePlaylistState(
+            key,
+            releasedUris.filter((targetUri) => claimedElsewhere.has(targetUri)),
+        );
+
+        const staleUris = releasedUris.filter(
+            (targetUri) => !claimedElsewhere.has(targetUri),
+        );
         if (staleUris.length) {
             await service.removeTracksFromPlaylist(staleUris, target.metadata);
             this.dbService.deletePlaylistState(key, staleUris);

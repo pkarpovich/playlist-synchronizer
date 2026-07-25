@@ -492,6 +492,111 @@ test('two source playlists sharing a target keep each other tracks', async () =>
     ]);
 });
 
+test('a URI another source still holds survives this source dropping it', async () => {
+    let tracksA: Track[] = [
+        { id: 'y-a1', name: 'Shared', artists: ['Artist'] },
+        { id: 'y-a2', name: 'Own', artists: ['Artist'] },
+    ];
+    const { syncService, target, trackMapping, dbService } = makeHarness(
+        async ({ id }) =>
+            id === 'src-a'
+                ? tracksA
+                : [{ id: 'y-b1', name: 'Shared', artists: ['Artist'] }],
+    );
+    trackMapping.mapping.set('y-a1', 'spotify:track:shared');
+    trackMapping.mapping.set('y-b1', 'spotify:track:shared');
+    trackMapping.mapping.set('y-a2', 'spotify:track:own');
+    const sharedConfig: SyncConfig = {
+        playlists: ['src-a', 'src-b'].map((id) => ({
+            type: MusicServiceTypes.YANDEX_MUSIC,
+            metadata: { id, userName: 'u', name: id },
+            targetPlaylists: [
+                {
+                    type: MusicServiceTypes.SPOTIFY,
+                    metadata: {
+                        id: 'sp-shared',
+                        userName: 'u',
+                        name: 'Shared Target',
+                    },
+                },
+            ],
+        })),
+    };
+
+    await syncService.syncAll(sharedConfig);
+    assert.deepEqual(target.getUris('sp-shared'), [
+        'spotify:track:shared',
+        'spotify:track:own',
+    ]);
+
+    tracksA = [{ id: 'y-a2', name: 'Own', artists: ['Artist'] }];
+    await syncService.syncAll(sharedConfig);
+
+    assert.equal(target.removeCalls.length, 0);
+    assert.deepEqual(target.getUris('sp-shared'), [
+        'spotify:track:shared',
+        'spotify:track:own',
+    ]);
+    assert.deepEqual(
+        playlistState(dbService, 'sp-shared', 'src-a').map(
+            ({ targetUri }) => targetUri,
+        ),
+        ['spotify:track:own'],
+    );
+    assert.deepEqual(
+        playlistState(dbService, 'sp-shared', 'src-b').map(
+            ({ targetUri }) => targetUri,
+        ),
+        ['spotify:track:shared'],
+    );
+});
+
+test('a URI is removed once the last source holding it drops it', async () => {
+    let tracksA: Track[] = [
+        { id: 'y-a1', name: 'Shared', artists: ['Artist'] },
+        { id: 'y-a2', name: 'Own', artists: ['Artist'] },
+    ];
+    let tracksB: Track[] = [
+        { id: 'y-b1', name: 'Shared', artists: ['Artist'] },
+    ];
+    const { syncService, target, trackMapping } = makeHarness(async ({ id }) =>
+        id === 'src-a' ? tracksA : tracksB,
+    );
+    trackMapping.mapping.set('y-a1', 'spotify:track:shared');
+    trackMapping.mapping.set('y-b1', 'spotify:track:shared');
+    trackMapping.mapping.set('y-a2', 'spotify:track:own');
+    trackMapping.mapping.set('y-b2', 'spotify:track:b-own');
+    const sharedConfig: SyncConfig = {
+        playlists: ['src-a', 'src-b'].map((id) => ({
+            type: MusicServiceTypes.YANDEX_MUSIC,
+            metadata: { id, userName: 'u', name: id },
+            targetPlaylists: [
+                {
+                    type: MusicServiceTypes.SPOTIFY,
+                    metadata: {
+                        id: 'sp-shared',
+                        userName: 'u',
+                        name: 'Shared Target',
+                    },
+                },
+            ],
+        })),
+    };
+
+    await syncService.syncAll(sharedConfig);
+
+    tracksA = [{ id: 'y-a2', name: 'Own', artists: ['Artist'] }];
+    tracksB = [{ id: 'y-b2', name: 'B Own', artists: ['Artist'] }];
+    await syncService.syncAll(sharedConfig);
+
+    assert.equal(target.removeCalls.length, 1);
+    assert.deepEqual(target.removeCalls[0].uris, ['spotify:track:shared']);
+    assert.deepEqual(target.getUris('sp-shared'), [
+        'spotify:track:own',
+        'spotify:track:b-own',
+    ]);
+});
+
 test('a source track that disappears removes exactly its recorded URI', async () => {
     let sourceTracks: Track[] = [
         { id: 'y-1', name: 'A', artists: ['Artist'] },
