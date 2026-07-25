@@ -405,6 +405,12 @@ and a trailing bare `feat.`/`ft.` clause - and that removal runs **before** punc
 cross-form - cross comparison would make `Song - Part 2` match `Song`, the exact false positive this
 rewrite exists to stop.
 
+Clarified in Task 5, because same-form comparison alone does not stop that false positive: an
+undecorated title strips to itself, so `stripped === stripped` still equates `Song - Part 2` with
+`Song`. The stripped comparison therefore only applies when **both** titles actually lost a
+decoration (`stripped !== full` on both sides). A decorated title never matches a bare one; only
+`full === full` can accept that pair.
+
 Resolution order in `SpotifyService.resolveTrack(source)`:
 
 1. Search `track:"<title>" artist:"<first artist>"` with `limit=10`. Accept the first candidate whose
@@ -549,18 +555,18 @@ so dropping `spotifyReady` is safe. Do not look for that configuration in this r
 - Create: `src/services/music-providers/spotify-match.helpers.ts`
 - Create: `src/services/music-providers/spotify-match.helpers.test.ts`
 
-- [ ] implement `normalizeTitle`, `normalizeArtist`, `titleMatches`, `artistOverlaps` exactly per
+- [x] implement `normalizeTitle`, `normalizeArtist`, `titleMatches`, `artistOverlaps` exactly per
       Technical Details, including same-form-to-same-form comparison and the ordering of stripping
       before punctuation removal
-- [ ] write normalization tests: `(feat. X)`, bare `feat. X`, `[Bonus Track]`, `- Radio Edit`,
+- [x] write normalization tests: `(feat. X)`, bare `feat. X`, `[Bonus Track]`, `- Radio Edit`,
       `- Remastered 2011`, diacritics, `&` versus `and`, punctuation, extra whitespace
-- [ ] write tests that legitimate titles survive: `(Don't Fear) The Reaper` and `Song - Part 2` do not
+- [x] write tests that legitimate titles survive: `(Don't Fear) The Reaper` and `Song - Part 2` do not
       collapse to nothing and match themselves; `Song - Part 2` does **not** match `Song`
-- [ ] write Cyrillic tests drawn from the real source data: `Быть богатым feat. Платина` strips to
+- [x] write Cyrillic tests drawn from the real source data: `Быть богатым feat. Платина` strips to
       `быть богатым`; `тРи пОлОсКи` normalizes case-insensitively
-- [ ] write `artistOverlaps` tests: exact normalized match accepts, `Скриптонит` versus `Skryptonite`
+- [x] write `artistOverlaps` tests: exact normalized match accepts, `Скриптонит` versus `Skryptonite`
       does **not** overlap (documenting why step 1 of resolution must not use this check)
-- [ ] Gate G passes
+- [x] Gate G passes
 
 ### Task 6: SpotifyService - HTTP layer and playlist reads
 
