@@ -195,6 +195,22 @@ test('a URI repeated across pages is returned once', async () => {
     assert.equal(new Set(ids).size, ids.length);
 });
 
+test('getPlaylistTrackUris keeps every occurrence and applies the same skips', async () => {
+    const harness = makeHarness([
+        { status: 200, body: firstPage },
+        { status: 200, body: secondPage },
+    ]);
+
+    const uris = await harness.service.getPlaylistTrackUris(playlist);
+
+    assert.deepEqual(uris, [
+        'spotify:track:1aaaaaaaaaaaaaaaaaaaaa',
+        'spotify:track:2bbbbbbbbbbbbbbbbbbbbb',
+        'spotify:track:1aaaaaaaaaaaaaaaaaaaaa',
+        'spotify:track:3cccccccccccccccccccccc',
+    ]);
+});
+
 test('reading a playlist issues only GET requests with a bearer token', async () => {
     const harness = makeHarness([
         { status: 200, body: firstPage },

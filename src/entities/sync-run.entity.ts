@@ -6,6 +6,8 @@ export type PlaylistRunResult = {
     sourceTracks: number;
     matched: number;
     added: number;
+    removed: number;
+    adopted: number;
     notFound: number;
     error?: string;
 };

@@ -23,6 +23,8 @@ function makeSnapshot(): HealthSnapshot {
                     sourceTracks: 3,
                     matched: 3,
                     added: 1,
+                    removed: 0,
+                    adopted: 0,
                     notFound: 0,
                 },
             ],

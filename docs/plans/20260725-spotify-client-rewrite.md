@@ -666,20 +666,31 @@ so dropping `spotifyReady` is safe. Do not look for that configuration in this r
 - Modify: `src/services/db.service.ts`
 - Modify: `src/entities/sync-run.entity.ts`
 - Modify: `src/services/sync.service.test.ts`, `src/entities/sync-run.entity.test.ts`
+- ➕ Modify: `src/services/music-providers/base-music.service.ts`,
+  `src/services/music-providers/spotify.service.ts`,
+  `src/services/music-providers/yandex-music.service.ts`,
+  `src/services/music-providers/spotify.service.test.ts` - step 8 needs how many times a URI occurs in
+  the target, which `getPlaylistTracks` deliberately discards, so `getPlaylistTrackUris(playlist)` was
+  added to `BaseMusicService` (Spotify returns every entry URI in playlist order with the same
+  null/non-track/local skips; Yandex throws `Method not implemented.` like its other write members)
+- ➕ Modify: `src/services/db.service.test.ts`, `src/services/health.service.test.ts`,
+  `src/controllers/health.controller.test.ts`, `src/services/notifications/notifier.test.ts`,
+  `src/services/notifications/sync-summary.test.ts` - `removed` and `adopted` are required fields, so
+  every `PlaylistRunResult` literal in the suite gains them
 
-- [ ] add `playlist_state` accessors to `DbService`: list rows for a playlist, insert a row, delete
+- [x] add `playlist_state` accessors to `DbService`: list rows for a playlist, insert a row, delete
       rows by URI
-- [ ] rewrite the per-target section of `SyncService.sync` to follow the eight numbered steps of the
+- [x] rewrite the per-target section of `SyncService.sync` to follow the eight numbered steps of the
       sync algorithm in Technical Details, replacing `findTracksInService`, `filterDuplicates`, and
       `removeDeletedTracks`
-- [ ] extend `PlaylistRunResult` with `removed: number` and `adopted: number`, populated in every
+- [x] extend `PlaylistRunResult` with `removed: number` and `adopted: number`, populated in every
       branch including the error branch
-- [ ] write tests with stubs: an empty `playlist_state` yields **zero** removals even when the target
+- [x] write tests with stubs: an empty `playlist_state` yields **zero** removals even when the target
       holds tracks absent from the source; a source track that disappears causes exactly its recorded
       URI to be removed; a target track with no provenance row is never removed; a URI present three
       times is removed once and re-added once; adoption inserts provenance for already-present desired
       URIs
-- [ ] Gate G passes
+- [x] Gate G passes
 
 ### Task 11: /health reports auth state and mapping counts
 

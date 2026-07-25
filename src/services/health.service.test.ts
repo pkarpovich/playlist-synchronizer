@@ -19,6 +19,8 @@ function makeLastRun(finishedAt: number): LastRun {
                 sourceTracks: 3,
                 matched: 3,
                 added: 1,
+                removed: 0,
+                adopted: 0,
                 notFound: 0,
             },
             {
@@ -27,6 +29,8 @@ function makeLastRun(finishedAt: number): LastRun {
                 sourceTracks: 0,
                 matched: 0,
                 added: 0,
+                removed: 0,
+                adopted: 0,
                 notFound: 0,
                 error: 'source unavailable',
             },

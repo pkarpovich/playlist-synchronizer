@@ -162,6 +162,111 @@ test('migration ignores an absent db.json', () => {
     assert.equal(dbService.getAuth('spotify'), null);
 });
 
+test('playlist state rows round-trip per playlist', () => {
+    const dbService = makeDbService(':memory:');
+    const key = { targetType: 'spotify', targetPlaylistId: 'sp-1' };
+
+    dbService.addPlaylistState(
+        key,
+        {
+            targetUri: 'spotify:track:1',
+            sourceType: 'yandexMusic',
+            sourceId: 'y-1',
+        },
+        1000,
+    );
+    dbService.addPlaylistState(
+        { targetType: 'spotify', targetPlaylistId: 'sp-2' },
+        {
+            targetUri: 'spotify:track:2',
+            sourceType: 'yandexMusic',
+            sourceId: 'y-2',
+        },
+        2000,
+    );
+
+    assert.deepEqual(dbService.listPlaylistState(key), [
+        {
+            targetUri: 'spotify:track:1',
+            sourceType: 'yandexMusic',
+            sourceId: 'y-1',
+            addedAt: 1000,
+        },
+    ]);
+});
+
+test('an unknown playlist has no state rows', () => {
+    const dbService = makeDbService(':memory:');
+
+    assert.deepEqual(
+        dbService.listPlaylistState({
+            targetType: 'spotify',
+            targetPlaylistId: 'unknown',
+        }),
+        [],
+    );
+});
+
+test('adding the same URI twice keeps one row with the latest source', () => {
+    const dbService = makeDbService(':memory:');
+    const key = { targetType: 'spotify', targetPlaylistId: 'sp-1' };
+
+    dbService.addPlaylistState(
+        key,
+        {
+            targetUri: 'spotify:track:1',
+            sourceType: 'yandexMusic',
+            sourceId: 'y-1',
+        },
+        1000,
+    );
+    dbService.addPlaylistState(
+        key,
+        {
+            targetUri: 'spotify:track:1',
+            sourceType: 'yandexMusic',
+            sourceId: 'y-2',
+        },
+        3000,
+    );
+
+    assert.deepEqual(dbService.listPlaylistState(key), [
+        {
+            targetUri: 'spotify:track:1',
+            sourceType: 'yandexMusic',
+            sourceId: 'y-2',
+            addedAt: 3000,
+        },
+    ]);
+});
+
+test('deleting by URI removes only the listed rows of that playlist', () => {
+    const dbService = makeDbService(':memory:');
+    const key = { targetType: 'spotify', targetPlaylistId: 'sp-1' };
+    const otherKey = { targetType: 'spotify', targetPlaylistId: 'sp-2' };
+
+    for (const targetUri of ['spotify:track:1', 'spotify:track:2']) {
+        dbService.addPlaylistState(
+            key,
+            { targetUri, sourceType: 'yandexMusic', sourceId: 'y-1' },
+            1000,
+        );
+        dbService.addPlaylistState(
+            otherKey,
+            { targetUri, sourceType: 'yandexMusic', sourceId: 'y-1' },
+            1000,
+        );
+    }
+
+    dbService.deletePlaylistState(key, ['spotify:track:1', 'spotify:track:3']);
+
+    assert.deepEqual(
+        dbService.listPlaylistState(key).map(({ targetUri }) => targetUri),
+        ['spotify:track:2'],
+    );
+    assert.equal(dbService.listPlaylistState(otherKey).length, 2);
+});
+
 test('parseLegacyRefreshToken rejects everything but a non-empty token', () => {
     assert.equal(
         parseLegacyRefreshToken(JSON.stringify({ refreshToken: 'token-1' })),

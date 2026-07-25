@@ -78,6 +78,21 @@ export type TrackMapCounts = {
     unresolved: number;
 };
 
+export type PlaylistStateKey = {
+    targetType: string;
+    targetPlaylistId: string;
+};
+
+export type PlaylistStateEntry = {
+    targetUri: string;
+    sourceType: string;
+    sourceId: string;
+};
+
+export type PlaylistStateRecord = PlaylistStateEntry & {
+    addedAt: number | null;
+};
+
 function toNumberOrNull(value: unknown): number | null {
     return typeof value === 'number' ? value : null;
 }
@@ -258,6 +273,61 @@ export class DbService {
         const resolved = Number(row?.resolved ?? 0);
 
         return { resolved, unresolved: total - resolved };
+    }
+
+    listPlaylistState({
+        targetType,
+        targetPlaylistId,
+    }: PlaylistStateKey): PlaylistStateRecord[] {
+        const rows = this.db
+            .prepare(
+                'SELECT target_uri, source_type, source_id, added_at FROM playlist_state WHERE target_type = ? AND target_playlist_id = ?',
+            )
+            .all(targetType, targetPlaylistId);
+
+        return rows.map((row) => ({
+            targetUri: String(row.target_uri),
+            sourceType: String(row.source_type),
+            sourceId: String(row.source_id),
+            addedAt: toNumberOrNull(row.added_at),
+        }));
+    }
+
+    addPlaylistState(
+        { targetType, targetPlaylistId }: PlaylistStateKey,
+        { targetUri, sourceType, sourceId }: PlaylistStateEntry,
+        addedAt: number,
+    ): void {
+        this.db
+            .prepare(
+                `INSERT INTO playlist_state (target_type, target_playlist_id, target_uri, source_type, source_id, added_at)
+                 VALUES (?, ?, ?, ?, ?, ?)
+                 ON CONFLICT(target_type, target_playlist_id, target_uri) DO UPDATE SET
+                     source_type = excluded.source_type,
+                     source_id = excluded.source_id,
+                     added_at = excluded.added_at`,
+            )
+            .run(
+                targetType,
+                targetPlaylistId,
+                targetUri,
+                sourceType,
+                sourceId,
+                addedAt,
+            );
+    }
+
+    deletePlaylistState(
+        { targetType, targetPlaylistId }: PlaylistStateKey,
+        targetUris: string[],
+    ): void {
+        const statement = this.db.prepare(
+            'DELETE FROM playlist_state WHERE target_type = ? AND target_playlist_id = ? AND target_uri = ?',
+        );
+
+        for (const targetUri of targetUris) {
+            statement.run(targetType, targetPlaylistId, targetUri);
+        }
     }
 
     migrateLegacyAuth(): void {

@@ -55,6 +55,11 @@ export class YandexMusicService extends BaseMusicService {
         return mapPlaylistTracks(json);
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    getPlaylistTrackUris(playlist: Playlist): Promise<string[]> {
+        throw new Error('Method not implemented.');
+    }
+
     private getDispatcher(
         proxyUrl: string,
     ): ReturnType<typeof socksDispatcher> | undefined {

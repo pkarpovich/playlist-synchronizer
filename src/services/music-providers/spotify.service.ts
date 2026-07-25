@@ -48,7 +48,9 @@ type RequestOutcome =
     | { kind: 'retry-after'; status: number; delayMs: number }
     | { kind: 'backoff'; status: number; reason: string };
 
-function toTrack(entry: PlaylistItemEntry): Track | null {
+type PlaylistEntryTrack = Track & { id: string };
+
+function toTrack(entry: PlaylistItemEntry): PlaylistEntryTrack | null {
     if (entry.is_local) {
         return null;
     }
@@ -119,32 +121,26 @@ export class SpotifyService implements BaseMusicService {
     }
 
     async getPlaylistTracks({ id }: Playlist): Promise<Track[]> {
-        const tracks: Track[] = [];
+        const entries = await this.readPlaylistEntries(id);
         const seen = new Set<string>();
+        const tracks: Track[] = [];
 
-        let url: string | null =
-            `${ApiBaseUrl}/playlists/${id}/items?limit=${PageLimit}&offset=0`;
-
-        while (url) {
-            const page = (await this.request(url)) as PlaylistItemsPage | null;
-            if (!page) {
-                break;
+        for (const track of entries) {
+            if (seen.has(track.id)) {
+                continue;
             }
 
-            for (const entry of page.items ?? []) {
-                const track = toTrack(entry);
-                if (!track?.id || seen.has(track.id)) {
-                    continue;
-                }
-
-                seen.add(track.id);
-                tracks.push(track);
-            }
-
-            url = page.next ?? null;
+            seen.add(track.id);
+            tracks.push(track);
         }
 
         return tracks;
+    }
+
+    async getPlaylistTrackUris({ id }: Playlist): Promise<string[]> {
+        const entries = await this.readPlaylistEntries(id);
+
+        return entries.map(({ id: uri }) => uri);
     }
 
     async resolveTrack({
@@ -211,6 +207,35 @@ export class SpotifyService implements BaseMusicService {
                 }),
             });
         }
+    }
+
+    private async readPlaylistEntries(
+        id: string,
+    ): Promise<PlaylistEntryTrack[]> {
+        const entries: PlaylistEntryTrack[] = [];
+
+        let url: string | null =
+            `${ApiBaseUrl}/playlists/${id}/items?limit=${PageLimit}&offset=0`;
+
+        while (url) {
+            const page = (await this.request(url)) as PlaylistItemsPage | null;
+            if (!page) {
+                break;
+            }
+
+            for (const entry of page.items ?? []) {
+                const track = toTrack(entry);
+                if (!track) {
+                    continue;
+                }
+
+                entries.push(track);
+            }
+
+            url = page.next ?? null;
+        }
+
+        return entries;
     }
 
     private async search(query: string): Promise<SpotifyTrack[]> {
