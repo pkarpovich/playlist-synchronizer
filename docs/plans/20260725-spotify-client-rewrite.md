@@ -575,28 +575,35 @@ so dropping `spotifyReady` is safe. Do not look for that configuration in this r
 - Create: `src/services/music-providers/spotify.service.test.ts`
 - Create: `src/services/music-providers/__fixtures__/spotify-playlist-items.json`
 - Modify: `src/container.ts`
+- ➕ Modify: `src/services/music-providers/spotify-auth.service.ts` - step 4 of the request algorithm
+  needs the auth service to expose a forced refresh, so `refreshAccessToken()` was added: it drops the
+  cached access token and goes back through the single-flight `getAccessToken()`
 
-- [ ] rewrite `SpotifyService` with dependencies `spotifyAuthService`, `logService`, `fetchFn`,
+- [x] rewrite `SpotifyService` with dependencies `spotifyAuthService`, `logService`, `fetchFn`,
       `delayFn`; register `spotifyAuthService` in `src/container.ts` as part of this task so awilix can
       resolve it
-- [ ] **keep the tree compiling**: retain thin delegating members until Task 13 removes them -
+- [x] **keep the tree compiling**: retain thin delegating members until Task 13 removes them -
       `initializeClient()` -> `spotifyAuthService.initialize()`, `authorizationCodeGrant(code)` ->
       `spotifyAuthService.exchangeCode(code, state)`, and `get isReady()` ->
       `spotifyAuthService.isReady` (which also satisfies `BaseMusicService` and keeps
       `SyncService.isAllServicesReady()` working)
-- [ ] implement the private request helper following the seven numbered steps in Technical Details
-- [ ] implement `getPlaylistTracks` over `GET /playlists/{id}/items` with `limit=50`, paging on
+- [x] ➕ the rewrite removed the `spotify-web-api-node` client that `searchTrackByName`,
+      `addTracksToPlaylist`, and `removeTracksFromPlaylist` were built on, so those three
+      `BaseMusicService` members carry `throw new Error('Method not implemented.')` bodies (the
+      existing `YandexMusicService` precedent) until Tasks 7 and 8 implement them
+- [x] implement the private request helper following the seven numbered steps in Technical Details
+- [x] implement `getPlaylistTracks` over `GET /playlists/{id}/items` with `limit=50`, paging on
       `next`, reading `item` (not `track`), skipping entries where `item` is null, `item.type` is not
       `'track'`, or `is_local` is true; deduplicate in memory and never mutate the playlist on read
-- [ ] create the fixture by transcribing this shape, synthesizing values and fetching nothing: page 1
+- [x] create the fixture by transcribing this shape, synthesizing values and fetching nothing: page 1
       has `items` with entries `{ added_at, is_local, item: { uri, name, type: 'track', artists: [{ name }], duration_ms, external_ids: { isrc } } }`,
       one entry with `item: null`, one with `item.type: 'episode'`, one with `is_local: true`, plus
       `next` pointing at page 2; page 2 has the same shape with `next: null`. No `popularity`,
       `followers`, or `available_markets` keys appear anywhere
-- [ ] write tests: paging collects both pages; the three skip cases are dropped rather than throwing;
+- [x] write tests: paging collects both pages; the three skip cases are dropped rather than throwing;
       `401` triggers exactly one refresh and one retry; `403` triggers neither; `429` waits the parsed
       `Retry-After` via the recording `delayFn`; a read issues zero mutation requests
-- [ ] Gate G passes
+- [x] Gate G passes
 
 ### Task 7: SpotifyService - track resolution
 

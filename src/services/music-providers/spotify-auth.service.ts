@@ -147,6 +147,13 @@ export class SpotifyAuthService {
         return this.refreshInFlight;
     }
 
+    async refreshAccessToken(): Promise<string> {
+        this.accessToken = null;
+        this.expiresAt = 0;
+
+        return this.getAccessToken();
+    }
+
     async exchangeCode(code: string, state: string | null): Promise<void> {
         const pendingState =
             this.dbService.getAuth(AuthServiceName)?.pendingState ?? null;

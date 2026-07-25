@@ -1,259 +1,266 @@
-import SpotifyClient from 'spotify-web-api-node';
-
 import { BaseMusicService } from './base-music.service.js';
-import { DbService } from '../db.service.js';
-import { ConfigService } from '../config.service.js';
 import { LogService } from '../log.service.js';
 import { Playlist, Track } from '../../entities.js';
-import { IConfig } from '../../config.js';
+import { DelayFn, SpotifyAuthService } from './spotify-auth.service.js';
 import {
-    parseUrlToQueryParams,
-    retry,
-    splitArrayIntoChunk,
-} from '../../utils.js';
+    classifyApiStatus,
+    parseRetryAfter,
+    SpotifyHttpError,
+} from './spotify-errors.js';
+import {
+    SpotifyFetchFn,
+    SpotifyFetchResponse,
+    SpotifyTrack,
+} from './spotify-types.js';
 
-const TracksPerRequest = 99;
+const ApiBaseUrl = 'https://api.spotify.com/v1';
+const PageLimit = 50;
+const BackoffDelaysMs = [500, 1000, 2000];
+const MaxRateLimitRetries = 2;
 
-const SpotifyAuthService = 'spotify';
+type PlaylistItemEntry = {
+    is_local?: boolean;
+    item: SpotifyTrack | null;
+};
 
-const scopes = [
-    'playlist-read-private',
-    'playlist-modify-private',
-    'playlist-modify-public',
-];
+type PlaylistItemsPage = {
+    items?: PlaylistItemEntry[];
+    next?: string | null;
+};
 
-interface Response<T> {
-    body: T;
-    headers: Record<string, string>;
-    statusCode: number;
+type RequestOutcome =
+    | { kind: 'done'; body: unknown }
+    | { kind: 'fatal'; error: Error }
+    | { kind: 'refresh' }
+    | { kind: 'retry-after'; status: number; delayMs: number }
+    | { kind: 'backoff'; status: number; reason: string };
+
+function toTrack(entry: PlaylistItemEntry): Track | null {
+    if (entry.is_local) {
+        return null;
+    }
+
+    const { item } = entry;
+    if (!item?.uri) {
+        return null;
+    }
+
+    if (item.type && item.type !== 'track') {
+        return null;
+    }
+
+    return {
+        id: item.uri,
+        name: item.name,
+        artists: (item.artists ?? []).map(({ name }) => name),
+    };
+}
+
+async function readJson(response: SpotifyFetchResponse): Promise<unknown> {
+    try {
+        return await response.json();
+    } catch {
+        return null;
+    }
 }
 
 export class SpotifyService implements BaseMusicService {
-    private client: SpotifyClient;
-
-    private readonly cache = new Map<string, SpotifyApi.TrackObjectFull>();
-
-    isReady = false;
-
     constructor(
-        private readonly dbService: DbService,
-        private readonly configService: ConfigService<IConfig>,
+        private readonly spotifyAuthService: SpotifyAuthService,
         private readonly logService: LogService,
-    ) {
-        this.client = new SpotifyClient({
-            clientId: configService.get('spotify.clientId'),
-            clientSecret: configService.get('spotify.clientSecret'),
-            redirectUri: configService.get('spotify.redirectUri'),
-        });
+        private readonly fetchFn: SpotifyFetchFn,
+        private readonly delayFn: DelayFn,
+    ) {}
+
+    get isReady(): boolean {
+        return this.spotifyAuthService.isReady;
     }
 
     async initializeClient(): Promise<void> {
-        const refreshToken =
-            this.dbService.getAuth(SpotifyAuthService)?.refreshToken;
-
-        if (!refreshToken) {
-            const url = this.client.createAuthorizeURL(scopes, 'spotify-app');
-            this.logService.warn(
-                `Spotify login required. Please open this URL in your browser: ${url}`,
-            );
-            return;
-        }
-
-        this.client.setRefreshToken(refreshToken);
-        await this.refreshAccess();
+        await this.spotifyAuthService.initialize();
     }
 
-    async authorizationCodeGrant(code: string): Promise<void> {
-        const { body } = await this.client.authorizationCodeGrant(code);
-
-        await this.client.setAccessToken(body.access_token);
-        await this.client.setRefreshToken(body.refresh_token);
-        this.isReady = true;
-
-        this.dbService.setRefreshToken(SpotifyAuthService, body.refresh_token);
-    }
-
-    async refreshAccess(): Promise<void> {
-        const { body } = await this.client.refreshAccessToken();
-
-        await this.client.setAccessToken(body.access_token);
-        this.isReady = true;
+    async authorizationCodeGrant(
+        code: string,
+        state: string | null = null,
+    ): Promise<void> {
+        await this.spotifyAuthService.exchangeCode(code, state);
     }
 
     async getPlaylistTracks({ id }: Playlist): Promise<Track[]> {
-        const items: SpotifyApi.PlaylistTrackObject[] = [];
-        let nextPage: string | null = null;
+        const tracks: Track[] = [];
+        const seen = new Set<string>();
 
-        do {
-            const { limit, offset } = nextPage
-                ? parseUrlToQueryParams(nextPage)
-                : { limit: 100, offset: 0 };
+        let url: string | null =
+            `${ApiBaseUrl}/playlists/${id}/items?limit=${PageLimit}&offset=0`;
 
-            const resp: Response<SpotifyApi.PlaylistTrackResponse> =
-                await retry<Response<SpotifyApi.PlaylistTrackResponse>>(
-                    () =>
-                        this.client.getPlaylistTracks(id, {
-                            limit: Number(limit),
-                            offset: Number(offset),
-                        }),
-                    () => this.refreshAccess(),
+        while (url) {
+            const page = (await this.request(url)) as PlaylistItemsPage | null;
+            if (!page) {
+                break;
+            }
+
+            for (const entry of page.items ?? []) {
+                const track = toTrack(entry);
+                if (!track?.id || seen.has(track.id)) {
+                    continue;
+                }
+
+                seen.add(track.id);
+                tracks.push(track);
+            }
+
+            url = page.next ?? null;
+        }
+
+        return tracks;
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    searchTrackByName(name: string, artists: string[]): Promise<Track | null> {
+        throw new Error('Method not implemented.');
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    addTracksToPlaylist(trackIds: string[], playlist: Playlist): Promise<void> {
+        throw new Error('Method not implemented.');
+    }
+
+    removeTracksFromPlaylist(
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        tracks: Track[],
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        playlist: Playlist,
+    ): Promise<void> {
+        throw new Error('Method not implemented.');
+    }
+
+    private async request(
+        url: string,
+        init: RequestInit = {},
+    ): Promise<unknown> {
+        let refreshUsed = false;
+        let rateLimitRetries = 0;
+        let attempt = 0;
+        let lastStatus = 0;
+        let lastReason = 'no attempt was made';
+
+        while (attempt < BackoffDelaysMs.length) {
+            const token = await this.spotifyAuthService.getAccessToken();
+            const outcome = await this.attempt(url, init, token);
+
+            if (outcome.kind === 'done') {
+                return outcome.body;
+            }
+
+            if (outcome.kind === 'fatal') {
+                throw outcome.error;
+            }
+
+            if (outcome.kind === 'refresh') {
+                if (refreshUsed) {
+                    throw new SpotifyHttpError(
+                        `Spotify rejected the access token for ${url}`,
+                        401,
+                    );
+                }
+
+                refreshUsed = true;
+                await this.spotifyAuthService.refreshAccessToken();
+                continue;
+            }
+
+            if (outcome.kind === 'retry-after') {
+                if (rateLimitRetries === MaxRateLimitRetries) {
+                    throw new SpotifyHttpError(
+                        `Spotify kept rate limiting ${url}`,
+                        outcome.status,
+                    );
+                }
+
+                rateLimitRetries += 1;
+                lastStatus = outcome.status;
+                lastReason = `HTTP ${outcome.status}`;
+                this.logService.warn(
+                    `Spotify rate limited ${url}, waiting ${outcome.delayMs}ms`,
                 );
+                await this.delayFn(outcome.delayMs);
+                attempt += 1;
+                continue;
+            }
 
-            items.push(...resp.body.items);
-            nextPage = resp.body.next;
-        } while (nextPage);
-
-        const tracks = items.map<Track>(({ track }) => ({
-            id: track?.uri,
-            name: track?.name as string,
-            artists: track?.artists.map(({ name }) => name) as string[],
-            source: track,
-        }));
-
-        const duplicates = this.findDuplicateTracksInPlaylist(tracks);
-        if (duplicates.length === 0) {
-            return tracks;
+            lastStatus = outcome.status;
+            lastReason = outcome.reason;
+            this.logService.warn(
+                `Spotify request to ${url} failed (${outcome.reason}), retrying`,
+            );
+            await this.delayFn(BackoffDelaysMs[attempt]);
+            attempt += 1;
         }
 
-        await this.removeTracksFromPlaylist(duplicates, { id } as Playlist);
-        return tracks.filter(
-            (t) => duplicates.findIndex((dt) => dt.id === t.id) === -1,
+        throw new SpotifyHttpError(
+            `Spotify request to ${url} failed after ${BackoffDelaysMs.length} attempts: ${lastReason}`,
+            lastStatus,
         );
     }
 
-    async searchArtistByName(
-        name: string,
-    ): Promise<SpotifyApi.ArtistObjectFull | undefined> {
-        const { body } = await retry<Response<SpotifyApi.SearchResponse>>(
-            () => this.client.searchArtists(name),
-            () => this.refreshAccess(),
-        );
+    private async attempt(
+        url: string,
+        init: RequestInit,
+        token: string,
+    ): Promise<RequestOutcome> {
+        const headers: Record<string, string> = {
+            Authorization: `Bearer ${token}`,
+        };
 
-        return this.tryToFindMostRelevantArtist(body.artists, name);
-    }
-
-    async searchTrackByName(
-        name: string,
-        artists: string[],
-    ): Promise<Track | null> {
-        let track = null;
-
-        for (const artist of artists) {
-            const searchQuery = `${name} ${artist}`;
-
-            if (this.cache.has(searchQuery)) {
-                track = this.cache.get(searchQuery);
-                break;
-            }
-
-            track =
-                (await this.searchTrackByQuery(searchQuery)) ||
-                (await this.searchTrackByQuery(
-                    await this.createAdvancedSearchQuery(name, artist),
-                ));
-
-            if (track) {
-                this.cache.set(searchQuery, track);
-                break;
-            }
+        if (init.body) {
+            headers['Content-Type'] = 'application/json';
         }
 
-        if (!track) {
-            return null;
+        let response: SpotifyFetchResponse;
+
+        try {
+            response = await this.fetchFn(url, { ...init, headers });
+        } catch (error) {
+            return { kind: 'backoff', status: 0, reason: String(error) };
+        }
+
+        if (response.ok) {
+            if (response.status === 204) {
+                return { kind: 'done', body: null };
+            }
+
+            return { kind: 'done', body: await readJson(response) };
+        }
+
+        const action = classifyApiStatus(response.status);
+
+        if (action === 'refresh-retry') {
+            return { kind: 'refresh' };
+        }
+
+        if (action === 'retry-after') {
+            return {
+                kind: 'retry-after',
+                status: response.status,
+                delayMs: parseRetryAfter(response.headers.get('retry-after')),
+            };
+        }
+
+        if (action === 'backoff') {
+            return {
+                kind: 'backoff',
+                status: response.status,
+                reason: `HTTP ${response.status}`,
+            };
         }
 
         return {
-            id: track.uri,
-            name: track.name,
-            artists: track.artists.map(({ name }) => name),
-        } as Track;
-    }
-
-    async addTracksToPlaylist(
-        trackIds: string[],
-        playlist: Playlist,
-    ): Promise<void> {
-        const trackIdChunks = splitArrayIntoChunk<string>(
-            trackIds,
-            TracksPerRequest,
-        );
-
-        for (const ids of trackIdChunks) {
-            await retry<Response<SpotifyApi.AddTracksToPlaylistResponse>>(
-                () => this.client.addTracksToPlaylist(playlist.id, ids),
-                () => this.refreshAccess(),
-            );
-        }
-    }
-
-    async removeTracksFromPlaylist(
-        tracks: Track[],
-        playlist: Playlist,
-    ): Promise<void> {
-        await retry(
-            () =>
-                this.client.removeTracksFromPlaylist(
-                    playlist.id,
-                    tracks.map(
-                        (t) => ({ uri: t.id }) as SpotifyApi.TrackObjectFull,
-                    ),
-                ),
-            () => this.refreshAccess(),
-        );
-    }
-
-    private async searchTrackByQuery(
-        query: string,
-    ): Promise<SpotifyApi.TrackObjectFull | undefined> {
-        const { body } = await retry<Response<SpotifyApi.SearchResponse>>(
-            () => this.client.searchTracks(query),
-            () => this.refreshAccess(),
-        );
-
-        return body.tracks?.items[0];
-    }
-
-    private async createAdvancedSearchQuery(
-        trackName: string,
-        artistName: string,
-    ): Promise<string> {
-        let query = trackName;
-
-        const artist = await this.searchArtistByName(artistName);
-        if (artist) {
-            query += ` ${artist.name}`;
-        }
-
-        return query;
-    }
-
-    private tryToFindMostRelevantArtist(
-        artists:
-            | SpotifyApi.PagingObject<SpotifyApi.ArtistObjectFull>
-            | undefined,
-        originalName: string,
-    ): SpotifyApi.ArtistObjectFull | undefined {
-        const mostRelevantBySearch = artists?.items[0];
-        const artistWithSameName = artists?.items.find(
-            (artist) => artist.name === originalName,
-        );
-
-        if (mostRelevantBySearch && artistWithSameName) {
-            return mostRelevantBySearch.popularity >
-                artistWithSameName.popularity &&
-                mostRelevantBySearch.followers.total >
-                    artistWithSameName.followers.total
-                ? mostRelevantBySearch
-                : artistWithSameName;
-        }
-
-        return mostRelevantBySearch;
-    }
-
-    private findDuplicateTracksInPlaylist(tracks: Track[]): Track[] {
-        return tracks.filter(
-            (track, index) =>
-                tracks.findIndex((t) => t.id === track.id) !== index,
-        );
+            kind: 'fatal',
+            error: new SpotifyHttpError(
+                `Spotify request to ${url} failed with HTTP ${response.status}`,
+                response.status,
+            ),
+        };
     }
 }

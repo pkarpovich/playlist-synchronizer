@@ -19,6 +19,7 @@ import {
     NoopNotifier,
     Notifier,
     RelayNotifier,
+    SpotifyAuthService,
     SpotifyService,
     SyncService,
     YandexMusicService,
@@ -40,6 +41,7 @@ interface Container {
     now: () => number;
     delayFn: DelayFn;
     yandexMusicService: YandexMusicService;
+    spotifyAuthService: SpotifyAuthService;
     spotifyService: SpotifyService;
     healthService: HealthService;
     spotifyController: SpotifyController;
@@ -79,6 +81,7 @@ export async function initContainer(): Promise<AwilixContainer<Container>> {
             (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
         ),
         yandexMusicService: asClass(YandexMusicService).singleton(),
+        spotifyAuthService: asClass(SpotifyAuthService).singleton(),
         spotifyService: asClass(SpotifyService).singleton(),
         healthService: asClass(HealthService).singleton(),
         healthController: asClass(HealthController).singleton(),
