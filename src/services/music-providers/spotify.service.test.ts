@@ -2,7 +2,7 @@ import { strict as assert } from 'node:assert';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 
-import { Playlist } from '../../entities.js';
+import { Playlist, Track } from '../../entities.js';
 import { LogService } from '../log.service.js';
 import { DelayFn, SpotifyAuthService } from './spotify-auth.service.js';
 import {
@@ -348,6 +348,200 @@ test('isReady follows the auth service readiness', () => {
 
     harness.auth.isReady = true;
     assert.equal(harness.service.isReady, true);
+});
+
+function searchBody(items: unknown[]): unknown {
+    return { tracks: { items } };
+}
+
+function queryOf({ url }: FetchCall): string {
+    return new URL(url).searchParams.get('q') ?? '';
+}
+
+function assertSearchCall(call: FetchCall): void {
+    const { searchParams, origin, pathname } = new URL(call.url);
+
+    assert.equal(origin + pathname, 'https://api.spotify.com/v1/search');
+    assert.equal(searchParams.get('type'), 'track');
+    assert.equal(searchParams.get('limit'), '10');
+    assert.ok(!call.init?.method || call.init.method === 'GET');
+    assert.equal(call.init?.body, undefined);
+}
+
+const skryptonite = {
+    uri: 'spotify:track:tri-poloski',
+    name: 'тРи пОлОсКи',
+    type: 'track',
+    duration_ms: 214_000,
+    artists: [{ name: 'Skryptonite' }],
+    external_ids: { isrc: 'QZES71982314' },
+};
+
+const source: Track = {
+    id: '1045',
+    name: 'тРи пОлОсКи',
+    artists: ['Скриптонит', 'Райда'],
+};
+
+test('resolveTrack sends the field-filtered query with limit 10', async () => {
+    const harness = makeHarness([
+        { status: 200, body: searchBody([skryptonite]) },
+    ]);
+
+    await harness.service.resolveTrack(source);
+
+    assert.equal(harness.calls.length, 1);
+    assertSearchCall(harness.calls[0]);
+    assert.equal(
+        queryOf(harness.calls[0]),
+        'track:"тРи пОлОсКи" artist:"Скриптонит"',
+    );
+});
+
+test('step one accepts a candidate whose artists do not overlap the source', async () => {
+    const harness = makeHarness([
+        { status: 200, body: searchBody([skryptonite]) },
+    ]);
+
+    const resolved = await harness.service.resolveTrack(source);
+
+    assert.deepEqual(resolved, {
+        uri: 'spotify:track:tri-poloski',
+        isrc: 'QZES71982314',
+        durationMs: 214_000,
+    });
+    assert.equal(harness.calls.length, 1);
+});
+
+test('step two rejects the same candidate because its artists do not overlap', async () => {
+    const harness = makeHarness([
+        { status: 200, body: searchBody([]) },
+        { status: 200, body: searchBody([skryptonite]) },
+    ]);
+
+    const resolved = await harness.service.resolveTrack(source);
+
+    assert.equal(resolved, null);
+    assert.equal(harness.calls.length, 2);
+    assert.equal(queryOf(harness.calls[1]), 'тРи пОлОсКи Скриптонит');
+});
+
+test('an empty step one result triggers the free-text search', async () => {
+    const harness = makeHarness([
+        { status: 200, body: searchBody([]) },
+        {
+            status: 200,
+            body: searchBody([
+                {
+                    uri: 'spotify:track:other',
+                    name: 'Another song',
+                    artists: [{ name: 'Скриптонит' }],
+                },
+                {
+                    uri: 'spotify:track:tri-poloski',
+                    name: 'тРи пОлОсКи',
+                    artists: [{ name: 'Райда' }],
+                },
+            ]),
+        },
+    ]);
+
+    const resolved = await harness.service.resolveTrack(source);
+
+    assert.deepEqual(resolved, {
+        uri: 'spotify:track:tri-poloski',
+        isrc: null,
+        durationMs: null,
+    });
+    assert.equal(harness.calls.length, 2);
+    assertSearchCall(harness.calls[1]);
+});
+
+test('a missing tracks envelope is treated as zero candidates', async () => {
+    const harness = makeHarness([
+        { status: 200, body: {} },
+        { status: 200, body: {} },
+    ]);
+
+    const resolved = await harness.service.resolveTrack(source);
+
+    assert.equal(resolved, null);
+    assert.equal(harness.calls.length, 2);
+});
+
+test('step one accepts the first candidate whose title matches', async () => {
+    const harness = makeHarness([
+        {
+            status: 200,
+            body: searchBody([
+                {
+                    uri: 'spotify:track:wrong',
+                    name: 'тРи пОлОсКи - Part 2',
+                    artists: [{ name: 'Skryptonite' }],
+                },
+                skryptonite,
+            ]),
+        },
+    ]);
+
+    const resolved = await harness.service.resolveTrack(source);
+
+    assert.equal(resolved?.uri, 'spotify:track:tri-poloski');
+});
+
+test('when nothing matches the result is null and no mutation request follows', async () => {
+    const harness = makeHarness([
+        {
+            status: 200,
+            body: searchBody([
+                {
+                    uri: 'spotify:track:wrong',
+                    name: 'A different song',
+                    artists: [{ name: 'Skryptonite' }],
+                },
+            ]),
+        },
+        {
+            status: 200,
+            body: searchBody([
+                {
+                    uri: 'spotify:track:wrong',
+                    name: 'A different song',
+                    artists: [{ name: 'Скриптонит' }],
+                },
+            ]),
+        },
+    ]);
+
+    const resolved = await harness.service.resolveTrack(source);
+
+    assert.equal(resolved, null);
+    assert.equal(harness.calls.length, 2);
+    harness.calls.forEach(assertSearchCall);
+});
+
+test('artist objects without followers or popularity resolve without throwing', async () => {
+    const harness = makeHarness([
+        {
+            status: 200,
+            body: searchBody([
+                {
+                    uri: 'spotify:track:tri-poloski',
+                    name: 'тРи пОлОсКи',
+                    type: 'track',
+                    artists: [{ name: 'Skryptonite' }],
+                },
+            ]),
+        },
+    ]);
+
+    const resolved = await harness.service.resolveTrack(source);
+
+    assert.deepEqual(resolved, {
+        uri: 'spotify:track:tri-poloski',
+        isrc: null,
+        durationMs: null,
+    });
 });
 
 test('the interim shims delegate to the auth service', async () => {

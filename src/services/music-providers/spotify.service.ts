@@ -7,6 +7,7 @@ import {
     parseRetryAfter,
     SpotifyHttpError,
 } from './spotify-errors.js';
+import { artistOverlaps, titleMatches } from './spotify-match.helpers.js';
 import {
     SpotifyFetchFn,
     SpotifyFetchResponse,
@@ -15,8 +16,15 @@ import {
 
 const ApiBaseUrl = 'https://api.spotify.com/v1';
 const PageLimit = 50;
+const SearchLimit = 10;
 const BackoffDelaysMs = [500, 1000, 2000];
 const MaxRateLimitRetries = 2;
+
+export type SpotifyResolvedTrack = {
+    uri: string;
+    isrc: string | null;
+    durationMs: number | null;
+};
 
 type PlaylistItemEntry = {
     is_local?: boolean;
@@ -26,6 +34,10 @@ type PlaylistItemEntry = {
 type PlaylistItemsPage = {
     items?: PlaylistItemEntry[];
     next?: string | null;
+};
+
+type SearchPage = {
+    tracks?: { items?: SpotifyTrack[] };
 };
 
 type RequestOutcome =
@@ -53,6 +65,14 @@ function toTrack(entry: PlaylistItemEntry): Track | null {
         id: item.uri,
         name: item.name,
         artists: (item.artists ?? []).map(({ name }) => name),
+    };
+}
+
+function toResolvedTrack(track: SpotifyTrack): SpotifyResolvedTrack {
+    return {
+        uri: track.uri,
+        isrc: track.external_ids?.isrc ?? null,
+        durationMs: track.duration_ms ?? null,
     };
 }
 
@@ -116,6 +136,37 @@ export class SpotifyService implements BaseMusicService {
         return tracks;
     }
 
+    async resolveTrack({
+        name,
+        artists,
+    }: Track): Promise<SpotifyResolvedTrack | null> {
+        const [firstArtist = ''] = artists;
+
+        const filtered = await this.search(
+            `track:"${name}" artist:"${firstArtist}"`,
+        );
+        const byFilter = filtered.find((candidate) =>
+            titleMatches(candidate.name, name),
+        );
+
+        if (byFilter) {
+            return toResolvedTrack(byFilter);
+        }
+
+        const freeText = await this.search(`${name} ${firstArtist}`);
+        const byFreeText = freeText.find(
+            (candidate) =>
+                titleMatches(candidate.name, name) &&
+                artistOverlaps(candidate, artists),
+        );
+
+        if (!byFreeText) {
+            return null;
+        }
+
+        return toResolvedTrack(byFreeText);
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     searchTrackByName(name: string, artists: string[]): Promise<Track | null> {
         throw new Error('Method not implemented.');
@@ -133,6 +184,20 @@ export class SpotifyService implements BaseMusicService {
         playlist: Playlist,
     ): Promise<void> {
         throw new Error('Method not implemented.');
+    }
+
+    private async search(query: string): Promise<SpotifyTrack[]> {
+        const params = new URLSearchParams({
+            q: query,
+            type: 'track',
+            limit: String(SearchLimit),
+        });
+
+        const page = (await this.request(
+            `${ApiBaseUrl}/search?${params.toString()}`,
+        )) as SearchPage | null;
+
+        return page?.tracks?.items ?? [];
     }
 
     private async request(

@@ -611,17 +611,19 @@ so dropping `spotifyReady` is safe. Do not look for that configuration in this r
 - Modify: `src/services/music-providers/spotify.service.ts`
 - Modify: `src/services/music-providers/spotify.service.test.ts`
 
-- [ ] implement `resolveTrack(source): Promise<{ uri, isrc, durationMs } | null>` following the three
+- [x] implement `resolveTrack(source): Promise<{ uri, isrc, durationMs } | null>` following the three
       numbered resolution steps in Technical Details, always with `limit=10` and `type=track`
-- [ ] delete `searchArtistByName`, `createAdvancedSearchQuery`, `tryToFindMostRelevantArtist`, the
-      in-process `cache` field, and every access to `popularity` and `followers`
-- [ ] write tests: the field-filtered query is sent with `limit=10` and the exact filter syntax; a
+- [x] delete `searchArtistByName`, `createAdvancedSearchQuery`, `tryToFindMostRelevantArtist`, the
+      in-process `cache` field, and every access to `popularity` and `followers` - already removed by
+      the Task 6 rewrite, verified here by
+      `grep -rn "searchArtistByName\|createAdvancedSearchQuery\|tryToFindMostRelevantArtist\|popularity\|followers" src` returning nothing
+- [x] write tests: the field-filtered query is sent with `limit=10` and the exact filter syntax; a
       candidate whose artists do **not** overlap is still accepted from step 1 (the
       `Скриптонит`/`Skryptonite` case) but is **rejected** in step 2; an empty step-1 result triggers
       step 2; when nothing passes, the result is `null` and no add request follows
-- [ ] write a test that a search response whose artist objects lack `followers` and `popularity`
+- [x] write a test that a search response whose artist objects lack `followers` and `popularity`
       resolves without throwing
-- [ ] Gate G passes
+- [x] Gate G passes
 
 ### Task 8: SpotifyService - add and remove with chunking
 
