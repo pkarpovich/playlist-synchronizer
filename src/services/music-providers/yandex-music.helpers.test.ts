@@ -30,12 +30,24 @@ test('buildPlaylistUrl composes the official playlist endpoint', () => {
 test('mapPlaylistTracks maps titles and artists from the fixture', () => {
     const tracks = mapPlaylistTracks(fixture);
 
-    assert.equal(tracks.length, 3);
+    assert.equal(tracks.length, 4);
     assert.deepEqual(
         tracks.map(({ name }) => name),
-        ['Smells Like Teen Spirit', 'Numb / Encore', 'Bohemian Rhapsody'],
+        ['Smells Like Teen Spirit', 'Numb / Encore', 'Bohemian Rhapsody', ''],
     );
     assert.deepEqual(tracks[0].artists, ['Nirvana']);
+});
+
+test('mapPlaylistTracks reads the numeric entry id the live API returns', () => {
+    const tracks = mapPlaylistTracks(fixture);
+
+    assert.deepEqual(tracks[3], {
+        id: '145513389',
+        name: '',
+        artists: [],
+        unavailable: true,
+    });
+    assert.equal(tracks[0].id, '10994777');
 });
 
 test('mapPlaylistTracks flattens multi-artist tracks', () => {
@@ -87,9 +99,9 @@ test('mapPlaylistTracks keeps a null track body as an unavailable entry id', () 
     const tracks = mapPlaylistTracks({
         result: {
             tracks: [
-                { id: '10994777', track: null },
+                { id: 10994777, track: null },
                 {
-                    id: '20580170',
+                    id: 20580170,
                     track: {
                         id: '20580170',
                         title: 'Numb',
@@ -114,7 +126,7 @@ test('mapPlaylistTracks maps the source track id', () => {
 
     assert.deepEqual(
         tracks.map(({ id }) => id),
-        ['10994777', '20580170', '31163'],
+        ['10994777', '20580170', '31163', '145513389'],
     );
 });
 

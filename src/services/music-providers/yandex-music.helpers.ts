@@ -4,15 +4,17 @@ export type YandexArtist = {
     name: string;
 };
 
+export type YandexEntityId = string | number;
+
 export type YandexTrack = {
-    id?: string;
+    id?: YandexEntityId;
     title?: string;
     artists?: YandexArtist[];
 };
 
 export type YandexPlaylistResponse = {
     result?: {
-        tracks?: { id?: string; track?: YandexTrack | null }[];
+        tracks?: { id?: YandexEntityId; track?: YandexTrack | null }[];
     };
 };
 
@@ -45,6 +47,18 @@ export function parseSocksProxy(proxyUrl: string): SocksProxyConfig {
     };
 }
 
+function readEntityId(value: unknown): string | null {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+        return String(value);
+    }
+
+    if (typeof value === 'string' && value.trim().length > 0) {
+        return value;
+    }
+
+    return null;
+}
+
 export function mapPlaylistTracks(json: YandexPlaylistResponse): Track[] {
     const tracks = json.result?.tracks;
 
@@ -58,9 +72,9 @@ export function mapPlaylistTracks(json: YandexPlaylistResponse): Track[] {
         const track = item.track;
 
         if (track === null) {
-            const entryId = item.id;
+            const entryId = readEntityId(item.id);
 
-            if (typeof entryId !== 'string' || entryId.trim().length === 0) {
+            if (!entryId) {
                 throw new Error(
                     'Unexpected Yandex playlist response: an unavailable entry is missing a non-empty "id"',
                 );
@@ -97,7 +111,9 @@ export function mapPlaylistTracks(json: YandexPlaylistResponse): Track[] {
             );
         }
 
-        if (typeof track.id !== 'string' || track.id.trim().length === 0) {
+        const trackId = readEntityId(track.id);
+
+        if (!trackId) {
             throw new Error(
                 'Unexpected Yandex playlist response: track body is missing a non-empty "id"',
             );
@@ -105,7 +121,7 @@ export function mapPlaylistTracks(json: YandexPlaylistResponse): Track[] {
 
         return [
             {
-                id: track.id,
+                id: trackId,
                 name: track.title,
                 artists: artists.map(({ name }) => name),
                 source: track,
