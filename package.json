@@ -8,7 +8,7 @@
     "start": "node dist/index.js",
     "dev": "tsx --watch src/index.ts",
     "build": "tsc",
-    "format": "prettier 'src/**/*.ts'",
+    "format": "prettier --check 'src/**/*.ts'",
     "format:fix": "prettier --write 'src/**/*.ts'",
     "lint": "eslint 'src/**/*.ts'",
     "lint:fix": "eslint --fix 'src/**/*.ts'",
@@ -25,26 +25,24 @@
   "author": "Pavel Karpovich <pavel.karpovich@outlook.com>",
   "license": "MIT",
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@tsconfig/node24": "^24.0.0",
     "@types/express": "^5.0.6",
     "@types/node": "^24",
     "@types/signale": "^1.4.4",
-    "@typescript-eslint/eslint-plugin": "^5.55.0",
-    "@typescript-eslint/parser": "^5.55.0",
-    "eslint": "^8.36.0",
-    "eslint-config-prettier": "^8.7.0",
-    "eslint-import-resolver-typescript": "^3.5.3",
-    "eslint-plugin-import": "^2.32.0",
-    "eslint-plugin-prettier": "^5.5.4",
+    "eslint": "^10.8.0",
+    "eslint-config-prettier": "^10.1.8",
     "husky": "^9.1.7",
     "lint-staged": "^17.2.0",
     "prettier": "^3.9.6",
     "tsx": "^4.23.1",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.65.0"
   },
   "lint-staged": {
     "src/**/*.ts": [
-      "eslint --fix"
+      "eslint --fix",
+      "prettier --write"
     ]
   },
   "dependencies": {
@@ -56,9 +54,6 @@
     "helmet": "^8.3.0",
     "signale": "^1.4.0",
     "yup": "^1.7"
-  },
-  "peerDependencies": {
-    "eslint-plugin-import": ">=2.25.3 <3.0.0"
   },
   "repository": {
     "type": "git",
